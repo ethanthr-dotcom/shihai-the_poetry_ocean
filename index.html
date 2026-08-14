@@ -1,0 +1,1670 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>诗海·古诗词浏览器</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/icon-16.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/icons/icon-48.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+  <link rel="shortcut icon" href="assets/icons/icon-32.png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <style>
+    * { box-sizing: border-box; }
+    /* 度量兜底字体：消除网络字体加载替换时的布局跳动（size-adjust 对齐占位字体度量） */
+    @font-face { font-family: "SerifFallback"; src: local("Songti SC"), local("STSong"), local("SimSun"), local("宋体"); size-adjust: 100%; ascent-override: 92%; descent-override: 20%; font-display: swap; }
+    @font-face { font-family: "SansFallback"; src: local("PingFang SC"), local("Microsoft YaHei"), local("Heiti SC"), local("SimHei"); size-adjust: 100%; ascent-override: 92%; descent-override: 20%; font-display: swap; }
+    :root {
+      /* 配色（默认：暖纸） */
+      --bg-color: #f4f1e8;
+      --text-color: #2f2a24;
+      --card-bg: rgba(255,255,255,.82);
+      --card-border: #ddd4c7;
+      --card-shadow: 0 8px 26px rgba(70,55,35,.08);
+      --accent-color: #4f5f4a;
+      --meta-color: #766d63;
+      --tip-color: #756c62;
+      --label-color: #665d54;
+      --input-bg: #fff;
+      --input-border: #cfc4b6;
+      --subtitle-color: #746b61;
+      --category-color: #958a7e;
+      --error-color: #a3382f;
+      --button-text: #fff;
+      --seal-color: #a3382f;
+      /* 字体（默认：思源宋体，按需从 jsDelivr 加载） */
+      --font-body: "Noto Serif SC", "SerifFallback", "Songti SC", "STSong", "SimSun", "宋体", serif;
+      --font-content: "Noto Serif SC", "SerifFallback", "Songti SC", "STSong", "SimSun", serif;
+      /* 排版（默认：居中） */
+      --max-width: 900px;
+      --page-padding: 48px 20px;
+      --card-padding: 42px 28px;
+      --content-font-size: 26px;
+      --title-font-size: 36px;
+      --meta-font-size: 23px;
+      --category-font-size: 20px;
+      --h1-font-size: 34px;
+    }
+    ::selection { background: var(--accent-color); color: var(--button-text); }
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background 0.3s, color 0.3s;
+    }
+    /* 页面点缀：主题色的柔和光晕 */
+    body::before, body::after {
+      content: "";
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: -1;
+      background: radial-gradient(circle, var(--accent-color), transparent 70%);
+      opacity: .06;
+    }
+    body::before { top: -140px; right: -140px; width: 380px; height: 380px; }
+    body::after { bottom: -160px; left: -160px; width: 420px; height: 420px; opacity: .05; }
+    /* 页面点缀：飞鸟、竹子、山峦（跟随主题色） */
+    .deco { position: fixed; z-index: 0; pointer-events: none; color: var(--accent-color); opacity: .1; }
+    .deco-birds { top: 84px; left: 5vw; width: 130px; animation: birdFloat 7s ease-in-out infinite alternate; }
+    .deco-bamboo { left: max(6px, calc(50% - 620px)); bottom: 0; height: 46vh; opacity: .08; }
+    .deco-mountains { right: 0; bottom: 0; width: min(48vw, 540px); opacity: .07; }
+    .deco-cat { right: max(10px, calc(50% - 640px)); bottom: 26vh; width: 78px; opacity: .12; }
+    .deco-dog { left: max(80px, calc(50% - 540px)); bottom: 4vh; width: 88px; opacity: .12; }
+    @keyframes birdFloat {
+      from { transform: translate(0, 0); }
+      to { transform: translate(22px, -12px); }
+    }
+    @media (max-width: 900px) { .deco-bamboo, .deco-birds { display: none; } }
+    @media (max-width: 1150px) { .deco-cat, .deco-dog { display: none; } }
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: var(--page-padding);
+      position: relative;
+      z-index: 1;
+    }
+    h1 {
+      text-align: center;
+      margin: 0 0 8px;
+      line-height: 0;
+    }
+    /* SVG logo：顶部阳刻 / 页脚阴刻 */
+    .site-logo { display: block; margin: 0 auto; height: 52px; width: auto; }
+    .splash-logo { height: 64px; width: auto; opacity: 0; animation: splashIn 1.1s cubic-bezier(.22,.61,.36,1) .1s forwards; }
+    .footer-logo { display: block; margin: 0 auto; height: 44px; width: auto; }
+    .subtitle {
+      text-align: center;
+      color: var(--subtitle-color);
+      margin-bottom: 28px;
+    }
+    .controls, .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      box-shadow: var(--card-shadow);
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .controls { padding: 18px; margin-bottom: 22px; }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--label-color);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--input-border);
+      border-radius: 9px;
+      font-size: 15px;
+      background: var(--input-bg);
+      color: var(--text-color);
+      font-family: inherit;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    input::placeholder { color: var(--label-color); opacity: .6; }
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      background: var(--accent-color);
+      color: var(--button-text);
+      font-family: inherit;
+    }
+    button:disabled { opacity: .55; cursor: wait; }
+    .secondary {
+      background: transparent;
+      color: var(--accent-color);
+      border: 1px solid var(--accent-color);
+      margin-top: 10px;
+    }
+    .secondary:hover { background: var(--accent-color); color: var(--button-text); }
+    /* ====== 卡片比例选择（居中） ====== */
+    .ratio-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
+    .ratio-label { font-size: 13px; color: var(--label-color); }
+    .ratio-opt:disabled { opacity: .45; cursor: not-allowed; }
+    .ratio-opt {
+      width: auto; padding: 5px 12px; font-size: 13px; border-radius: 8px;
+      border: 1px solid var(--input-border); background: var(--input-bg);
+      color: var(--text-color); cursor: pointer; font-family: inherit; transition: all .2s;
+    }
+    .ratio-opt.active { background: var(--accent-color); color: var(--button-text); border-color: var(--accent-color); }
+    /* 字体加载完成前隐藏卡片内容，加载完同时淡入，避免跳动 */
+    .title, .meta, .content, .category { transition: opacity .4s ease; }
+    .title.pending, .meta.pending, .content.pending, .category.pending { opacity: 0; }
+    /* ====== 顶部加载进度条 ====== */
+    #progress {
+      position: fixed; top: 0; left: 0; height: 3px; width: 0;
+      background: var(--accent-color); z-index: 1001; opacity: 0;
+      box-shadow: 0 0 8px color-mix(in srgb, var(--accent-color) 55%, transparent);
+      transition: width .35s ease, opacity .3s ease;
+    }
+    #progress.run { opacity: 1; width: 88%; transition: width 1.3s cubic-bezier(.22,.61,.36,1), opacity .2s; }
+    #progress.done { width: 100%; opacity: 0; transition: width .25s ease, opacity .45s ease .15s; }
+    /* ====== 按钮悬浮动画（纯色：提亮 + 微放大 + 阴影） ====== */
+    #randomButton, .theme-opt, .theme-toggle {
+      transition: transform .25s cubic-bezier(.22,.61,.36,1), background .25s,
+        box-shadow .25s, filter .25s, border-color .25s;
+    }
+    #randomButton:hover {
+      filter: brightness(1.12);
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 22px color-mix(in srgb, var(--accent-color) 30%, transparent);
+    }
+    .theme-opt:hover, .theme-toggle:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent-color);
+    }
+    .tip {
+      font-size: 13px;
+      color: var(--tip-color);
+      margin-top: 10px;
+      line-height: 1.6;
+      text-align: center;
+    }
+    .card {
+      padding: var(--card-padding);
+      min-height: 360px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      scroll-margin-top: 20px;
+    }
+    /* 点缀：卡片内淡雅水印 */
+    .card::before {
+      content: "詩";
+      position: absolute;
+      right: 4%;
+      bottom: -30px;
+      font-family: var(--font-content);
+      font-size: 190px;
+      line-height: 1;
+      color: var(--text-color);
+      opacity: .045;
+      pointer-events: none;
+    }
+    /* 点缀：卡片内框装饰 */
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border: 1px solid var(--accent-color);
+      border-radius: 8px;
+      pointer-events: none;
+      opacity: .22;
+    }
+    .title {
+      font-size: var(--title-font-size);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .meta {
+      color: var(--meta-color);
+      margin-bottom: 28px;
+      font-size: var(--meta-font-size);
+    }
+    .content {
+      margin: 0 auto;
+      font-family: var(--font-content);
+      font-size: var(--content-font-size);
+      line-height: 2;
+      text-align: center;
+    }
+    /* 每行保持完整分句；.wrap 允许八字以上分句自适应换行 */
+    .verse-line { margin: 0; white-space: nowrap; }
+    .verse-line.wrap { white-space: normal; }
+        /* 行尾标点占零宽（悬挂标点）：居中只按文字计算，视觉对齐 */
+        .hang-punct { display: inline-block; width: 0; }
+    .title, .meta { white-space: nowrap; }
+    /* 竖排显示（设置里可选）：高度随最长句自适应，绝不截断 */
+    body.vertical .content {
+      writing-mode: vertical-rl;
+      max-width: none;
+      width: fit-content;
+      height: auto;
+      margin: 0 auto;
+      line-height: 2;
+      white-space: normal;
+    }
+    body.vertical .verse-line { display: block; margin: 0; white-space: nowrap; }
+    .category {
+      margin-top: 30px;
+      font-size: var(--category-font-size);
+      color: var(--category-color);
+    }
+    /* 页脚：阴刻 logo → 宣传语 → 版权，全部居中 */
+    .site-footer { margin: 42px auto 12px; text-align: center; }
+    .slogan {
+      margin-top: 14px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--category-color);
+      text-align: center;
+    }
+    .copyright {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--category-color);
+      opacity: .85;
+      user-select: none;
+    }
+    .status {
+      padding-top: 100px;
+      color: var(--meta-color);
+      line-height: 1.8;
+    }
+    .error { color: var(--error-color); font-size: 16px; }
+    /* ====== 开屏动画 ====== */
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-color);
+      cursor: pointer;
+      transition: opacity .8s ease, visibility 0s linear .8s;
+    }
+    #splash.hide { opacity: 0; visibility: hidden; }
+    .splash-box { text-align: center; }
+    .splash-rule {
+      width: 0;
+      height: 1px;
+      margin: 22px auto;
+      background: var(--text-color);
+      opacity: 0;
+      animation: ruleGrow 1s ease .6s forwards;
+    }
+    .splash-motto {
+      font-size: 17px;
+      letter-spacing: 4px;
+      color: var(--meta-color);
+      opacity: 0;
+      animation: fadeUp .8s ease 1.1s forwards;
+    }
+    .splash-note {
+      margin-top: 14px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--category-color);
+      opacity: 0;
+      animation: fadeUp .8s ease 1.5s forwards;
+    }
+    @keyframes splashIn {
+      from { opacity: 0; letter-spacing: 26px; text-indent: 26px; }
+      to { opacity: 1; letter-spacing: 10px; text-indent: 10px; }
+    }
+    @keyframes ruleGrow { to { width: 120px; opacity: .4; } }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
+    /* ====== 主题切换面板 ====== */
+    .theme-toggle {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 26px;
+      height: 26px;
+      background: transparent;
+      border: 0;
+      color: var(--text-color);
+      cursor: pointer;
+      z-index: 1200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 0;
+      /* 开屏动画完成后才显示（JS 加 .ready） */
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .5s ease, transform .25s ease;
+    }
+    .theme-toggle.ready { opacity: .7; pointer-events: auto; }
+    .theme-toggle.ready:hover { opacity: 1; }
+    .theme-toggle svg { width: 26px; height: 26px; display: block; }
+    .theme-toggle.ready:hover { transform: rotate(30deg); opacity: 1; }
+    .theme-toggle:active { transform: rotate(60deg) scale(.92); }
+    .theme-panel {
+      position: absolute;
+      top: 66px;
+      right: 16px;
+      width: 240px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      box-shadow: var(--card-shadow);
+      padding: 16px;
+      z-index: 1199;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px) scale(.96);
+      transform-origin: top right;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: opacity .22s ease, transform .22s cubic-bezier(.22,.61,.36,1), visibility 0s linear .22s, background 0.3s, border-color 0.3s;
+    }
+    .theme-panel.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+      transition: opacity .22s ease .02s, transform .22s cubic-bezier(.22,.61,.36,1) .02s, visibility 0s, background 0.3s, border-color 0.3s;
+    }
+    .theme-section { margin-bottom: 14px; }
+    .theme-section:last-child { margin-bottom: 0; }
+    .theme-label {
+      font-size: 12px;
+      color: var(--label-color);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .theme-options { display: flex; flex-wrap: wrap; gap: 6px; }
+    .theme-opt {
+      width: auto;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-color);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .theme-opt.active {
+      background: var(--accent-color);
+      color: var(--button-text);
+      border-color: var(--accent-color);
+    }
+    @media (max-width: 650px) {
+      .row { grid-template-columns: 1fr; }
+      .theme-panel { right: 8px; left: 8px; width: auto; }
+      .splash-logo { height: 46px; }
+      .deco-mountains { width: 70vw; }
+    }
+  </style>
+</head>
+<body>
+  <div id="progress"></div>
+
+  <!-- 点缀：飞鸟（左上）、竹子（左下）、山峦（右下） -->
+  <svg class="deco deco-birds" viewBox="0 0 130 62" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+    <path d="M6 26 Q16 12 26 24 Q36 12 46 26"/>
+    <path d="M56 42 Q64 31 72 40 Q80 31 88 42"/>
+    <path d="M94 18 Q101 9 108 17 Q115 9 122 18"/>
+  </svg>
+  <svg class="deco deco-bamboo" viewBox="0 0 110 400" fill="currentColor" aria-hidden="true">
+    <rect x="28" y="0" width="11" height="86" rx="5"/>
+    <rect x="28" y="92" width="11" height="96" rx="5"/>
+    <rect x="28" y="194" width="11" height="96" rx="5"/>
+    <rect x="28" y="296" width="11" height="104" rx="5"/>
+    <rect x="68" y="40" width="9" height="80" rx="4"/>
+    <rect x="68" y="126" width="9" height="86" rx="4"/>
+    <rect x="68" y="218" width="9" height="86" rx="4"/>
+    <rect x="68" y="310" width="9" height="90" rx="4"/>
+    <path d="M39 60 C56 46 72 44 84 48 C70 58 52 62 39 60 Z"/>
+    <path d="M39 200 C22 188 10 186 0 190 C12 200 28 204 39 200 Z"/>
+    <path d="M77 140 C92 128 104 126 110 130 C100 140 88 144 77 140 Z"/>
+  </svg>
+  <svg class="deco deco-mountains" viewBox="0 0 560 240" fill="currentColor" aria-hidden="true">
+    <path d="M0 240 L96 116 L168 196 L252 72 L340 190 L424 108 L560 240 Z" opacity=".5"/>
+    <path d="M0 240 L128 156 L224 218 L326 132 L446 214 L560 172 L560 240 Z"/>
+  </svg>
+  <!-- 点缀：小猫（右侧）、小狗（左下） -->
+  <svg class="deco deco-cat" viewBox="0 0 100 110" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M32 38 L27 14 L43 26 C46 25 52 25 55 26 L71 14 L66 38"/>
+    <path d="M32 38 C28 44 26 49 27 55 C29 65 39 71 49 71 C59 71 69 65 71 55 C72 49 70 44 66 38"/>
+    <path d="M33 69 C25 78 22 88 25 100 L73 100 C76 88 73 78 65 69"/>
+    <path d="M73 98 C86 96 92 87 89 75"/>
+    <path d="M41 48 L41 50 M57 48 L57 50"/>
+  </svg>
+  <svg class="deco deco-dog" viewBox="0 0 110 110" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M36 24 C30 14 20 14 17 22 C14 30 20 40 28 42"/>
+    <path d="M74 24 C80 14 90 14 93 22 C96 30 90 40 82 42"/>
+    <path d="M28 42 C26 30 38 20 55 20 C72 20 84 30 82 42 C80 54 70 62 55 62 C40 62 30 54 28 42 Z"/>
+    <path d="M55 42 L55 48 M55 48 C51 52 46 52 44 50 M55 48 C59 52 64 52 66 50"/>
+    <path d="M40 60 C32 72 30 86 33 100 L77 100 C80 86 78 72 70 60"/>
+    <path d="M77 96 C90 94 96 84 92 72"/>
+  </svg>
+  <!-- 开屏动画：说明非营利初衷（每次会话显示一次，点击可跳过） -->
+  <div id="splash">
+    <div class="splash-box">
+      <img class="splash-logo" src="assets/logo-yang.svg" alt="诗海">
+      <div class="splash-rule"></div>
+      <div class="splash-motto">掬古人之诗 · 养今时之心</div>
+      <div class="splash-note">非营利项目 · 数据源自开源社区 · 仅供学习欣赏</div>
+    </div>
+  </div>
+
+  <main class="page">
+    <h1><img class="site-logo" src="assets/logo-yang.svg" alt="诗海"></h1>
+    <div class="subtitle">在线古诗词浏览器</div>
+
+    <section class="controls">
+      <div class="row">
+        <div>
+          <label for="author">作者（可留空）</label>
+          <input id="author" placeholder="例如：李白">
+        </div>
+        <div>
+          <label for="dynasty">朝代（可留空）</label>
+          <input id="dynasty" placeholder="例如：唐">
+        </div>
+        <div>
+          <label for="type">体裁（可留空）</label>
+          <input id="type" placeholder="例如：五言绝句">
+        </div>
+      </div>
+      <button id="randomButton" type="button">随机显示一首诗/词</button>
+      <button id="shareButton" type="button" class="secondary">分享诗词卡片</button>
+      <div class="ratio-row">
+        <span class="ratio-label">卡片比例</span>
+        <button class="ratio-opt active" data-ratio="1:1" type="button">1:1</button>
+        <button class="ratio-opt" data-ratio="3:4" type="button">3:4</button>
+        <button class="ratio-opt" data-ratio="9:16" type="button">9:16</button>
+        <button class="ratio-opt" data-ratio="auto" type="button">自适应</button>
+      </div>
+      <div class="tip" id="libTip">
+        共收录 34 万余首古诗词 · 非营利项目 · 按需加载即时抽取
+      </div>
+    </section>
+
+    <section class="card" id="card">
+      <div class="status">正在加载诗词库……</div>
+    </section>
+
+    <footer class="site-footer">
+      <img class="footer-logo" src="assets/logo-yin.svg" alt="诗海">
+      <div class="slogan">诗海 · 非营利古诗词共享项目</div>
+      <div class="copyright">版权所有 © Ethan 2026 · 非营利项目 · 诗词数据来源于 chinese-poetry 开源项目</div>
+      <div class="copyright">数据来源：chinese-poetry/chinese-poetry · MIT License</div>
+    </footer>
+  </main>
+
+  <button id="themeToggle" class="theme-toggle" title="主题设置" aria-label="主题设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  <div id="themePanel" class="theme-panel">
+    <div class="theme-section">
+      <div class="theme-label">配色</div>
+      <div class="theme-options" data-group="color">
+        <button class="theme-opt active" data-value="warm">暖纸</button>
+        <button class="theme-opt" data-value="ink">水墨</button>
+        <button class="theme-opt" data-value="dark">暗夜</button>
+        <button class="theme-opt" data-value="celadon">青瓷</button>
+        <button class="theme-opt" data-value="morandi">莫兰迪</button>
+        <button class="theme-opt" data-value="vivid">炽烈</button>
+        <button class="theme-opt" data-value="vangogh">星夜</button>
+        <button class="theme-opt" data-value="rembrandt">伦勃朗</button>
+        <button class="theme-opt" data-value="rouge">胭脂</button>
+        <button class="theme-opt" data-value="daiqing">黛青</button>
+        <button class="theme-opt" data-value="moss">苔绿</button>
+        <button class="theme-opt" data-value="amber">琥珀</button>
+        <button class="theme-opt" data-value="indigo">靛蓝</button>
+        <button class="theme-opt" data-value="lotus">藕荷</button>
+        <button class="theme-opt" data-value="pine">松烟</button>
+        <button class="theme-opt" data-value="qinghua">青花</button>
+      </div>
+    </div>
+    <div class="theme-section">
+      <div class="theme-label">排版</div>
+      <div class="theme-options" data-group="layout">
+        <button class="theme-opt active" data-value="centered">居中</button>
+        <button class="theme-opt" data-value="wide">宽屏</button>
+        <button class="theme-opt" data-value="compact">紧凑</button>
+      </div>
+    </div>
+    <div class="theme-section">
+      <div class="theme-label">字号</div>
+      <div class="theme-options" data-group="size">
+        <button class="theme-opt" data-value="small">小</button>
+        <button class="theme-opt active" data-value="medium">中</button>
+        <button class="theme-opt" data-value="large">大</button>
+      </div>
+    </div>
+    <div class="theme-section">
+      <div class="theme-label">文字方向</div>
+      <div class="theme-options" data-group="direction">
+        <button class="theme-opt active" data-value="horizontal">横排</button>
+        <button class="theme-opt" data-value="vertical">竖排</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== 数据源配置 ======
+    // 本地开发走相对路径（本地服务器秒加载），线上走 jsDelivr CDN（国内可访问）
+    const IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+    const DATA_BASE = IS_LOCAL ? "" : "https://cdn.jsdelivr.net/gh/ethanthr-dotcom/shihai-the_poetry_ocean@main/";
+
+    const INDEX_CACHE_KEY = "poetry-index-v4";
+    const FULL_CACHE_KEY = "poetry-index-full-v2";
+    const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 天
+
+    // 精简索引：{ total, chunks: [{ file, count, dynasties[] }] }
+    let INDEX = null;
+    // 筛选索引（额外含 authors/types），仅用户使用作者/体裁筛选时按需加载
+    let FULL_INDEX = null;
+    let TOTAL = 0;
+    const chunkCache = new Map();
+
+    const $ = (id) => document.getElementById(id);
+    const button = $("randomButton");
+    const card = $("card");
+    const authorInput = $("author");
+    const dynastyInput = $("dynasty");
+    const typeInput = $("type");
+    const progressEl = $("progress");
+    function progressStart() {
+      if (!progressEl) return;
+      progressEl.classList.remove("done", "run");
+      progressEl.style.width = "";
+      void progressEl.offsetWidth;
+      progressEl.classList.add("run");
+    }
+    function progressDone() {
+      if (!progressEl) return;
+      progressEl.classList.remove("run");
+      progressEl.classList.add("done");
+      setTimeout(() => {
+        progressEl.classList.remove("done");
+        progressEl.style.width = "0";
+      }, 500);
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showStatus(message, isError) {
+      card.innerHTML =
+        '<div class="status' + (isError ? " error" : "") + '">' +
+        escapeHtml(message) +
+        "</div>";
+    }
+
+    // 按完整句拆分正文（。！？；各占一行，避免单字独占一行或重叠）
+    function splitVerses(text) {
+      const clean = (text || "").replace(/\s+/g, "");
+      if (!clean) return [];
+      const lines = [];
+      let buf = "";
+      for (const ch of clean) {
+        buf += ch;
+        if ("。！？；".includes(ch)) { lines.push(buf); buf = ""; }
+      }
+      if (buf) lines.push(buf);
+      return lines;
+    }
+
+    let currentPoem = null;
+
+    // 按逗号/顿号拆分长句为完整分句（每行都以标点结尾，绝不在分句中间断开）
+    function splitClauseLines(text) {
+      const parts = [];
+      let buf = "";
+      for (const ch of text) {
+        buf += ch;
+        if ("，、".includes(ch)) { parts.push(buf); buf = ""; }
+      }
+      if (buf) parts.push(buf);
+      return parts.length > 1 ? parts : [text];
+    }
+
+    // 行尾标点做成零宽悬挂标点：居中按文字计算，视觉上各行对齐
+    const HANG_PUNCT = "，、。！？；：";
+    function verseHtml(text) {
+      const last = text.charAt(text.length - 1);
+      if (HANG_PUNCT.includes(last)) {
+        return (
+          escapeHtml(text.slice(0, -1)) +
+          '<span class="hang-punct">' + escapeHtml(last) + "</span>"
+        );
+      }
+      return escapeHtml(text);
+    }
+
+    // 判断是否为五言/七言绝句（体裁命中，或各分句均为五/七字且不超过四句）
+    function isShortJueju(poem) {
+      const t = poem.y || "";
+      if (/五言绝句|七言绝句/.test(t)) return true;
+      const clauses = [];
+      for (const v of splitVerses(poem.c)) {
+        for (const c of splitClauseLines(v)) clauses.push(c);
+      }
+      if (clauses.length < 2 || clauses.length > 4) return false;
+      return clauses.every((c) => {
+        const n = c.replace(/[，、。！？；]/g, "").length;
+        return n === 5 || n === 7;
+      });
+    }
+
+    // 排版规则（不缩小字号）：
+    // 1. 五/七言绝句：一行两个小句（句号换行），宽度不够时改为逗号换行
+    // 2. 非五/七言：八字以上的小句允许自适应换行，八字以下保持整行
+    function fitCardText() {
+      const contentEl = card.querySelector(".content");
+      if (!contentEl || !currentPoem) return;
+      const verses = splitVerses(currentPoem.c);
+      const isV = document.body.classList.contains("vertical");
+      // 竖排：恢复整句成列
+      if (isV) {
+        contentEl.innerHTML = verses
+          .map((v) => '<div class="verse-line">' + escapeHtml(v) + "</div>")
+          .join("");
+        return;
+      }
+      const cs = getComputedStyle(card);
+      const innerW =
+        card.clientWidth -
+        parseFloat(cs.paddingLeft) -
+        parseFloat(cs.paddingRight) -
+        28;
+
+      const clauses = [];
+      for (const v of verses) {
+        for (const c of splitClauseLines(v)) clauses.push(c);
+      }
+
+      const html = [];
+      if (isShortJueju(currentPoem)) {
+        // 探针元素继承正文字体，实测两小句同行是否放得下
+        const probe = document.createElement("span");
+        probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap;";
+        contentEl.appendChild(probe);
+        for (let i = 0; i < clauses.length; i += 2) {
+          const a = clauses[i];
+          const b = clauses[i + 1];
+          if (b) {
+            probe.textContent = a + b;
+            if (probe.scrollWidth <= innerW + 2) {
+              html.push('<div class="verse-line">' + verseHtml(a + b) + "</div>");
+              continue;
+            }
+          }
+          html.push('<div class="verse-line">' + verseHtml(a) + "</div>");
+          if (b) html.push('<div class="verse-line">' + verseHtml(b) + "</div>");
+        }
+        probe.remove();
+      } else {
+        for (const c of clauses) {
+          const n = c.replace(/[，、。！？；]/g, "").length;
+          const cls = n >= 8 ? "verse-line wrap" : "verse-line";
+          html.push('<div class="' + cls + '">' + verseHtml(c) + "</div>");
+        }
+      }
+      contentEl.innerHTML = html.join("");
+    }
+
+    let fitTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(fitTimer);
+      fitTimer = setTimeout(fitCardText, 120);
+    });
+
+    function renderPoem(poem) {
+      currentPoem = poem;
+      const title = poem.t ?? "";
+      const author = poem.a ?? "";
+      const dynasty = poem.d ?? "";
+      const type = poem.y ?? "";
+      const content = poem.c ?? "";
+      const meta = [dynasty, author].filter(Boolean).join(" · ");
+      const verses = splitVerses(content);
+      const contentHtml = verses.length
+        ? verses.map((x) => '<div class="verse-line">' + verseHtml(x) + "</div>").join("")
+        : "未找到正文";
+      card.innerHTML =
+        '<div class="title">' + escapeHtml(title || "无题") + "</div>" +
+        '<div class="meta">' + escapeHtml(meta) + "</div>" +
+        '<div class="content">' + contentHtml + "</div>" +
+        (type ? '<div class="category">体裁：' + escapeHtml(type) + "</div>" : "");
+
+      // 字体加载完成前隐藏全部卡片内容，加载完同时淡入，避免跳动
+      const pendingEls = card.querySelectorAll(".title, .meta, .content, .category");
+      pendingEls.forEach((el) => el.classList.add("pending"));
+      const loadText = (poem.t || "") + (poem.c || "");
+      const fontReady =
+        document.fonts && document.fonts.load
+          ? document.fonts.load('1em "Noto Serif SC"', loadText)
+          : Promise.resolve();
+      Promise.resolve(fontReady)
+        .catch(() => {})
+        .finally(() => {
+          requestAnimationFrame(() => {
+            fitCardText();
+            pendingEls.forEach((el) => el.classList.remove("pending"));
+          });
+        });
+    }
+
+    function weightedRandom(items) {
+      const total = items.reduce((s, c) => s + c.count, 0);
+      let r = Math.random() * total;
+      for (const item of items) {
+        r -= item.count;
+        if (r < 0) return item;
+      }
+      return items[items.length - 1];
+    }
+
+    async function loadChunk(file) {
+      if (chunkCache.has(file)) return chunkCache.get(file);
+      const res = await fetch(DATA_BASE + "data/" + file);
+      if (!res.ok) throw new Error("分块数据加载失败：" + file);
+      const poems = await res.json();
+      chunkCache.set(file, poems);
+      return poems;
+    }
+
+    // 兼容新旧索引格式（dynasties 数组 / dynasty 字符串）
+    function chunkHasDynasty(c, dynasty) {
+      if (Array.isArray(c.dynasties)) return c.dynasties.includes(dynasty);
+      return c.dynasty === dynasty;
+    }
+
+    function filterChunks(author, dynasty, type) {
+      const source = (author || type) && FULL_INDEX ? FULL_INDEX : INDEX;
+      let chunks = source.chunks;
+      if (dynasty) {
+        chunks = chunks.filter((c) => chunkHasDynasty(c, dynasty));
+      }
+      if (author) {
+        chunks = chunks.filter(
+          (c) => Array.isArray(c.authors) && c.authors.some((a) => a.trim() === author)
+        );
+      }
+      if (type) {
+        chunks = chunks.filter(
+          (c) => Array.isArray(c.types) && c.types.some((t) => t.trim() === type)
+        );
+      }
+      return chunks;
+    }
+
+    function matchPoem(poem, author, dynasty, type) {
+      if (author && (poem.a ?? "").trim() !== author) return false;
+      if (dynasty && (poem.d ?? "").trim() !== dynasty) return false;
+      if (type && (poem.y ?? "").trim() !== type) return false;
+      return true;
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    async function loadRandomPoem(userAction) {
+      button.disabled = true;
+      button.textContent = "正在读取……";
+      progressStart();
+
+      const author = authorInput.value.trim();
+      const dynasty = dynastyInput.value.trim();
+      const type = typeInput.value.trim();
+
+      try {
+        if (!INDEX) {
+          showStatus("诗词库尚未加载完成，请稍候……");
+          return;
+        }
+
+        if ((author || type) && !FULL_INDEX) {
+          await ensureFullIndex();
+          if (!FULL_INDEX) {
+            showStatus("筛选数据加载失败，请检查网络后重试", true);
+            return;
+          }
+        }
+
+        const candidates = filterChunks(author, dynasty, type);
+        if (!candidates.length) {
+          showStatus("未找到匹配条件的诗", true);
+          return;
+        }
+
+        const first = weightedRandom(candidates);
+        const rest = shuffle(candidates.filter((c) => c.file !== first.file));
+        const order = [first].concat(rest);
+        const maxTries = Math.min(order.length, 8);
+
+        for (let i = 0; i < maxTries; i++) {
+          const chunk = order[i];
+          const poems = await loadChunk(chunk.file);
+          const matched = poems.filter((p) => matchPoem(p, author, dynasty, type));
+          if (matched.length) {
+            const poem = matched[Math.floor(Math.random() * matched.length)];
+            renderPoem(poem);
+            // 用户搜索/抽取有结果后，自动滑到诗词卡片
+            if (userAction) {
+              card.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+            return;
+          }
+        }
+        showStatus("未找到匹配条件的诗", true);
+      } catch (err) {
+        showStatus("读取失败：" + (err && err.message ? err.message : err), true);
+      } finally {
+        button.disabled = false;
+        button.textContent = "随机显示一首诗/词";
+        progressDone();
+      }
+    }
+
+    // 加载精简索引（gzip 后约 1KB），首屏极快；带 localStorage 缓存
+    async function loadIndex() {
+      try {
+        const cached = localStorage.getItem(INDEX_CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < CACHE_TTL) {
+            INDEX = data;
+            TOTAL = (INDEX && INDEX.total) || 0;
+            try {
+              const fc = localStorage.getItem(FULL_CACHE_KEY);
+              if (fc) {
+                const { data: fd, ts: fts } = JSON.parse(fc);
+                if (Date.now() - fts < CACHE_TTL) FULL_INDEX = fd;
+              }
+            } catch (e) {}
+            showStatus(
+              "共收录 " + TOTAL.toLocaleString("zh-CN") + " 首诗，点击下方按钮随机抽取"
+            );
+            return;
+          }
+        }
+      } catch (e) {}
+
+      showStatus("正在加载诗词库……");
+      progressStart();
+      try {
+        const res = await fetch(DATA_BASE + "data/index.json");
+        if (!res.ok) throw new Error("索引加载失败 (HTTP " + res.status + ")");
+        INDEX = await res.json();
+        TOTAL = (INDEX && INDEX.total) || 0;
+        // 顶部提示改为实际收录数
+        const libTip = $("libTip");
+        if (libTip && TOTAL) {
+          libTip.textContent =
+            "共收录 " + Math.floor(TOTAL / 10000) +
+            " 万余首古诗词 · 非营利项目 · 按需加载即时抽取";
+        }
+        showStatus(
+          "共收录 " + TOTAL.toLocaleString("zh-CN") + " 首诗词，点击下方按钮随机抽取"
+        );
+        try {
+          localStorage.setItem(
+            INDEX_CACHE_KEY, JSON.stringify({ data: INDEX, ts: Date.now() })
+          );
+        } catch (e) {}
+        progressDone();
+      } catch (err) {
+        showStatus(
+          "诗词库加载失败：" + (err && err.message ? err.message : err), true
+        );
+        progressDone();
+      }
+    }
+
+    // 按需加载筛选索引（含 authors/types，仅筛选时使用）
+    async function ensureFullIndex() {
+      if (FULL_INDEX) return;
+      try {
+        const res = await fetch(DATA_BASE + "data/index-full.json");
+        if (!res.ok) return;
+        FULL_INDEX = await res.json();
+        try {
+          localStorage.setItem(
+            FULL_CACHE_KEY, JSON.stringify({ data: FULL_INDEX, ts: Date.now() })
+          );
+        } catch (e) {}
+      } catch (e) {}
+    }
+
+    button.addEventListener("click", loadRandomPoem);
+
+    // ====== 分享：纯 Canvas 手绘诗词卡片（高分辨率、按句排版、间距自适应） ======
+    let shareRatio = "1:1";
+    document.querySelectorAll(".ratio-opt").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (btn.disabled) return;
+        shareRatio = btn.dataset.ratio;
+        document.querySelectorAll(".ratio-opt").forEach((b) =>
+          b.classList.toggle("active", b === btn)
+        );
+      });
+    });
+    // 竖排显示时强制使用自适应比例（按浏览器卡片实际宽高比）
+    function syncRatioOptions() {
+      const forceAuto = currentTheme.direction === "vertical";
+      if (forceAuto) shareRatio = "auto";
+      document.querySelectorAll(".ratio-opt").forEach((b) => {
+        const isAuto = b.dataset.ratio === "auto";
+        b.disabled = forceAuto && !isAuto;
+        b.classList.toggle("active", forceAuto ? isAuto : b.dataset.ratio === shareRatio);
+      });
+    }
+
+    // 圆角矩形路径（印章方框用）
+    function roundRectPath(c, x, y, w, h, r) {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+
+    const shareButton = $("shareButton");
+    shareButton.addEventListener("click", async () => {
+      if (!currentPoem) {
+        showStatus("请先随机抽取一首诗，再分享", true);
+        return;
+      }
+      shareButton.disabled = true;
+      shareButton.textContent = "生成中……";
+      try {
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        const css = getComputedStyle(document.documentElement);
+        const v = (name, fb) => css.getPropertyValue(name).trim() || fb;
+        const bg = v("--bg-color", "#f4f1e8");
+        const textColor = v("--text-color", "#2f2a24");
+        const metaColor = v("--meta-color", "#766d63");
+        const accent = v("--accent-color", "#4f5f4a");
+        const catColor = v("--category-color", "#958a7e");
+        const sealColor = v("--seal-color", "#a3382f");
+        const FONT = '"Noto Serif SC", "Songti SC", "SimSun", serif';
+        const vertical = currentTheme.direction === "vertical";
+
+        const title = currentPoem.t || "无题";
+        const authorMeta = [currentPoem.d, currentPoem.a].filter(Boolean).join(" · ");
+        const verses = splitVerses(currentPoem.c);
+
+        // 画布：宽固定 3000px；高按比例（自适应 = 浏览器中卡片的实际显示比例）；文字到边框间距固定，卡片不缩放
+        const W = 3000;
+        let H;
+        if (shareRatio === "auto") {
+          const cw = card.clientWidth || 1;
+          const ch = card.clientHeight || cw;
+          H = Math.round((W * ch) / cw);
+        } else {
+          const [rw, rh] = shareRatio.split(":").map(Number);
+          H = Math.round((W * rh) / rw);
+        }
+        const M = Math.round(W * 0.115);
+        const canvas = document.createElement("canvas");
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        // 内框装饰线
+        ctx.strokeStyle = accent;
+        ctx.globalAlpha = 0.25;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(M * 0.45, M * 0.45, W - M * 0.9, H - M * 0.9);
+        ctx.globalAlpha = 1;
+
+        // 水印「詩」
+        ctx.save();
+        ctx.globalAlpha = 0.045;
+        ctx.fillStyle = textColor;
+        ctx.font = "600 " + Math.round(W * 0.38) + "px " + FONT;
+        ctx.fillText("詩", W * 0.8, H * 0.87);
+        ctx.restore();
+        
+        // 点缀：竹子（左下）、山峦（右下），低透明度不干扰文字
+        const decoBaseY = H - Math.round(M * 0.45);
+        ctx.save();
+        ctx.fillStyle = accent;
+        // 竹子：四段竹节 + 竹叶
+        ctx.globalAlpha = 0.09;
+        const bX = Math.round(M * 0.6), bW = Math.round(W * 0.0075);
+        const segH = Math.round(Math.min(H * 0.085, W * 0.075));
+        for (let i = 0; i < 4; i++) {
+          const yT = decoBaseY - segH * (i + 1) - Math.round(segH * 0.1) * i;
+          roundRectPath(ctx, bX, yT, bW, segH, bW * 0.45);
+          ctx.fill();
+        }
+        const leafY = decoBaseY - segH * 4.5;
+        ctx.beginPath();
+        ctx.ellipse(bX + bW * 3.4, leafY, bW * 3.6, bW, -0.45, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(bX - bW * 2.2, leafY + bW * 3, bW * 3.2, bW * 0.9, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        // 山峦：远山（淡）+ 近山（稍深）
+        const mX0 = W * 0.6, mX1 = W - M * 0.45;
+        const mH = Math.min(H * 0.125, W * 0.11);
+        ctx.globalAlpha = 0.05;
+        ctx.beginPath();
+        ctx.moveTo(mX0, decoBaseY);
+        ctx.lineTo(mX0 + (mX1 - mX0) * 0.2, decoBaseY - mH * 0.8);
+        ctx.lineTo(mX0 + (mX1 - mX0) * 0.38, decoBaseY - mH * 0.36);
+        ctx.lineTo(mX0 + (mX1 - mX0) * 0.6, decoBaseY - mH);
+        ctx.lineTo(mX0 + (mX1 - mX0) * 0.8, decoBaseY - mH * 0.4);
+        ctx.lineTo(mX1, decoBaseY - mH * 0.68);
+        ctx.lineTo(mX1, decoBaseY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.09;
+        ctx.beginPath();
+        ctx.moveTo(mX0 + (mX1 - mX0) * 0.25, decoBaseY);
+        ctx.lineTo(mX0 + (mX1 - mX0) * 0.45, decoBaseY - mH * 0.56);
+        ctx.lineTo(mX0 + (mX1 - mX0) * 0.62, decoBaseY - mH * 0.24);
+        ctx.lineTo(mX0 + (mX1 - mX0) * 0.82, decoBaseY - mH * 0.6);
+        ctx.lineTo(mX1, decoBaseY - mH * 0.32);
+        ctx.lineTo(mX1, decoBaseY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        
+        const footerText = "诗海 · 非营利古诗词共享项目";
+        
+        // 印章位 logo：横排用阴刻横版、竖排用竖版；加载失败时退化为红色圆角方框
+        const logoImg = await new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = vertical ? "assets/logo-vertical.svg" : "assets/logo-yin.svg";
+        });
+        const LOGO_RATIO = 222 / 126; // 横版 logo 宽高比
+        const V_LOGO_RATIO = 126 / 222; // 竖版 logo 宽高比
+
+        if (!vertical) {
+          // ---------- 横排：换行必须在标点处——优先整句（逗号分隔的两小句）一行，放不下才一小句一行；字号按设计基准，实在超宽才等比缩小 ----------
+          const availW = W - M * 2 - 100;
+          const availH = H - M * 2;
+          const SC = W / 750; // 设计字号（标题36/作者23/正文26/体裁20）到画布的缩放
+          const measureList = (size, list) => {
+            ctx.font = size + "px " + FONT;
+            return list.reduce((m, s) => Math.max(m, ctx.measureText(s).width), 0);
+          };
+          const clauseLines = [];
+          for (const verse of verses) {
+            for (const p of splitClauseLines(verse)) clauseLines.push(p);
+          }
+          let scale = 1;
+          const layout = () => {
+            const fontSize = Math.round(26 * SC * scale);
+            const logoH = Math.round(fontSize * 1.45);
+            return {
+              fontSize,
+              titleFont: Math.round(36 * SC * scale),
+              metaFont: Math.round(23 * SC * scale),
+              catFont: Math.round(20 * SC * scale),
+              lineH: Math.round(fontSize * 1.8),
+              logoH,
+              logoW: Math.round(logoH * LOGO_RATIO)
+            };
+          };
+          const blockHeight = (L, list) =>
+            L.titleFont + 80 + L.metaFont + 70 + list.length * L.lineH +
+            90 + L.logoH + 90 + L.catFont;
+
+          let lines = verses;
+          let L = layout();
+          if (measureList(L.fontSize, verses) > availW) lines = clauseLines;
+          for (;;) {
+            L = layout();
+            ctx.font = "600 " + L.titleFont + "px " + FONT;
+            const tw = ctx.measureText(title).width;
+            ctx.font = L.catFont + "px " + FONT;
+            const fw = ctx.measureText(footerText).width;
+            const wMax = Math.max(measureList(L.fontSize, lines), tw, fw, L.logoW);
+            if (wMax <= availW || scale <= 0.35) break;
+            scale *= availW / wMax;
+          }
+          if (blockHeight(L, lines) > availH && scale > 0.35) {
+            scale *= availH / blockHeight(L, lines);
+            L = layout();
+          }
+
+          let y = M + Math.max(0, (availH - blockHeight(L, lines)) / 2);
+          ctx.fillStyle = textColor;
+          ctx.font = "600 " + L.titleFont + "px " + FONT;
+          ctx.fillText(title, W / 2, y + L.titleFont / 2);
+          y += L.titleFont + 80;
+          ctx.fillStyle = metaColor;
+          ctx.font = L.metaFont + "px " + FONT;
+          ctx.fillText(authorMeta, W / 2, y + L.metaFont / 2);
+          y += L.metaFont + 70;
+          ctx.fillStyle = textColor;
+          ctx.font = L.fontSize + "px " + FONT;
+          // 与网页一致：以文字为基准中心对齐，行尾标点悬挂在外不参与居中
+          for (const line of lines) {
+            const last = line.charAt(line.length - 1);
+            if (HANG_PUNCT.includes(last)) {
+              const body = line.slice(0, -1);
+              const bw = ctx.measureText(body).width;
+              ctx.textAlign = "left";
+              ctx.fillText(body, W / 2 - bw / 2, y + L.lineH / 2);
+              ctx.fillText(last, W / 2 + bw / 2, y + L.lineH / 2);
+              ctx.textAlign = "center";
+            } else {
+              ctx.fillText(line, W / 2, y + L.lineH / 2);
+            }
+            y += L.lineH;
+          }
+          y += 90;
+          // 诗海阴刻 logo（印章位）
+          if (logoImg) {
+            ctx.drawImage(logoImg, W / 2 - L.logoW / 2, y, L.logoW, L.logoH);
+          } else {
+            ctx.fillStyle = sealColor;
+            roundRectPath(ctx, W / 2 - L.logoW / 2, y, L.logoW, L.logoH, L.logoH * 0.15);
+            ctx.fill();
+          }
+          y += L.logoH + 90;
+          ctx.fillStyle = catColor;
+          ctx.font = L.catFont + "px " + FONT;
+          ctx.fillText(footerText, W / 2, y + L.catFont / 2);
+        } else {
+          // ---------- 竖排：右标题列 → 诗句列 → 左作者列，竖版 logo 在作者列下方；全部元素不出边框 ----------
+          const ADV = 1.35; // 字距/列距系数（适中，不过松散）
+          const footerH = Math.round(W * 0.05);
+          const availH = H - M * 2 - footerH;
+          const availW = W - M * 2;
+          const maxChars = Math.max(
+            title.length, authorMeta.length,
+            ...verses.map((x) => x.length), 1
+          );
+          // 高：最长列字符跨度 + 印章方框预留；宽：标题列(1.15 间距)+诗句列+作者列+半字余量
+          let charSize = Math.min(
+            Math.floor(availH / (maxChars * ADV + 4.2)),
+            Math.floor(availW / ((verses.length + 1.15) * ADV + 1)),
+            Math.round(W * 0.04)
+          );
+          charSize = Math.max(charSize, 30);
+          // 竖版 logo 放在作者列下方，与内容留出一段距离
+          const vLogoW = Math.round(charSize * 1.6);
+          const vLogoH = Math.round(vLogoW / V_LOGO_RATIO);
+          const vLogoGap = Math.round(charSize * 0.9);
+          const vBoxH = vLogoH;
+          const colGap = Math.round(charSize * ADV);
+          const totalW = colGap * (verses.length + 1.15);
+          // 垂直居中：首字顶部到 logo 底部的总高（含 logo 与内容的间距）
+          const topPad = charSize * 0.55;
+          const totalH = topPad + (maxChars - 1) * colGap + charSize * 0.85 + vLogoGap + vBoxH;
+          const startY = M + Math.max(0, (availH - totalH) / 2) + topPad;
+
+          const drawVCol = (cx, text, size, weight, color) => {
+            ctx.font = weight + " " + size + "px " + FONT;
+            ctx.fillStyle = color;
+            let yy = startY;
+            for (const ch of text) {
+              ctx.fillText(ch, cx, yy);
+              yy += colGap;
+            }
+            return yy;
+          };
+
+          let x = W / 2 + totalW / 2;
+          drawVCol(x, title, Math.round(charSize * 1.1), "600", textColor);
+          x -= Math.round(colGap * 1.15);
+          for (const verse of verses) {
+            drawVCol(x, verse, charSize, "400", textColor);
+            x -= colGap;
+          }
+          drawVCol(x, authorMeta, Math.round(charSize * 0.6), "400", metaColor);
+          // 诗海竖版 logo：竖放在作者列下方，与内容保持间距，不超出边框
+          const lastAuthorY = startY + ((authorMeta.length || maxChars) - 1) * colGap;
+          const vBoxY = Math.min(lastAuthorY + charSize * 0.3 + vLogoGap, H - M - footerH - vLogoH);
+          if (logoImg) {
+            ctx.drawImage(logoImg, x - vLogoW / 2, vBoxY, vLogoW, vLogoH);
+          } else {
+            ctx.fillStyle = sealColor;
+            roundRectPath(ctx, x - vLogoW / 2, vBoxY, vLogoW, vLogoH, vLogoH * 0.15);
+            ctx.fill();
+          }
+          // 页脚：不超出内框——超宽自动缩字号，位置收到内框线以内
+          const fMaxW = W - M * 0.9 - 40;
+          let fSize = Math.round(20 * (W / 750));
+          ctx.fillStyle = catColor;
+          for (;;) {
+            ctx.font = fSize + "px " + FONT;
+            if (ctx.measureText(footerText).width <= fMaxW || fSize <= 28) break;
+            fSize -= 4;
+          }
+          ctx.fillText(footerText, W / 2, H - M * 0.45 - fSize * 0.75);
+        }
+
+        const dataUrl = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = "诗海_" + shareRatio.replace(":", "x") + "_" + Date.now() + ".png";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (e) {
+        showStatus("生成卡片失败：" + (e && e.message ? e.message : e), true);
+      } finally {
+        shareButton.disabled = false;
+        shareButton.textContent = "分享诗词卡片";
+      }
+    });
+
+    // ====== 网络字体（固定：思源宋体，jsDelivr 国内可访问） ======
+    const FONT_CSS_URLS = [
+      "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.css",
+      "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css"
+    ];
+
+    function ensureFonts() {
+      for (const url of FONT_CSS_URLS) {
+        if (document.querySelector('link[data-fontcss="' + url + '"]')) continue;
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = url;
+        link.dataset.fontcss = url;
+        document.head.appendChild(link);
+      }
+    }
+    ensureFonts();
+
+    // ====== 主题定义 ======
+    const THEME_KEY = "poetry-theme-v1";
+
+    const THEMES = {
+      color: {
+        warm: {
+          vars: {
+            "--bg-color": "#f4f1e8", "--text-color": "#2f2a24",
+            "--card-bg": "rgba(255,255,255,.82)", "--card-border": "#ddd4c7",
+            "--card-shadow": "0 8px 26px rgba(70,55,35,.08)",
+            "--accent-color": "#4f5f4a", "--meta-color": "#766d63",
+            "--tip-color": "#756c62", "--label-color": "#665d54",
+            "--input-bg": "#fff", "--input-border": "#cfc4b6",
+            "--subtitle-color": "#746b61", "--category-color": "#958a7e",
+            "--error-color": "#a3382f", "--button-text": "#fff",
+            "--seal-color": "#a3382f"
+          }
+        },
+        ink: {
+          vars: {
+            "--bg-color": "#fafaf8", "--text-color": "#333333",
+            "--card-bg": "rgba(255,255,255,.9)", "--card-border": "#e0e0e0",
+            "--card-shadow": "0 8px 26px rgba(0,0,0,.06)",
+            "--accent-color": "#555555", "--meta-color": "#888888",
+            "--tip-color": "#888888", "--label-color": "#777777",
+            "--input-bg": "#fff", "--input-border": "#d0d0d0",
+            "--subtitle-color": "#999999", "--category-color": "#aaaaaa",
+            "--error-color": "#c0392b", "--button-text": "#fff",
+            "--seal-color": "#a03a30"
+          }
+        },
+        dark: {
+          vars: {
+            "--bg-color": "#1a1a1a", "--text-color": "#e0d9cc",
+            "--card-bg": "rgba(40,38,35,.92)", "--card-border": "#3a3733",
+            "--card-shadow": "0 8px 26px rgba(0,0,0,.3)",
+            "--accent-color": "#8a9a7a", "--meta-color": "#a09888",
+            "--tip-color": "#9a9080", "--label-color": "#a09888",
+            "--input-bg": "#2a2825", "--input-border": "#4a4740",
+            "--subtitle-color": "#a09888", "--category-color": "#8a8076",
+            "--error-color": "#d4645a", "--button-text": "#1a1a1a",
+            "--seal-color": "#8f4a42"
+          }
+        },
+        celadon: {
+          vars: {
+            "--bg-color": "#eef3f0", "--text-color": "#2d3a35",
+            "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#c8d8d0",
+            "--card-shadow": "0 8px 26px rgba(45,58,53,.08)",
+            "--accent-color": "#4a7a6a", "--meta-color": "#6a8a7a",
+            "--tip-color": "#6a8a7a", "--label-color": "#5a7a6a",
+            "--input-bg": "#fff", "--input-border": "#b8c8c0",
+            "--subtitle-color": "#7a9a8a", "--category-color": "#8aaa9a",
+            "--error-color": "#b04a3a", "--button-text": "#fff",
+            "--seal-color": "#a85a4e"
+          }
+        },
+        morandi: {
+          vars: {
+            "--bg-color": "#e5e1da", "--text-color": "#57534b",
+            "--card-bg": "rgba(233,229,222,.88)", "--card-border": "#d3cdc2",
+            "--card-shadow": "0 8px 26px rgba(87,83,75,.08)",
+            "--accent-color": "#8a9a84", "--meta-color": "#7d776c",
+            "--tip-color": "#857f74", "--label-color": "#6e6860",
+            "--input-bg": "#ece8e1", "--input-border": "#c9c2b6",
+            "--subtitle-color": "#8b857a", "--category-color": "#9a9488",
+            "--error-color": "#b56a5e", "--button-text": "#fff",
+            "--seal-color": "#a5756c"
+          }
+        },
+        vivid: {
+          vars: {
+            "--bg-color": "#faf8ff", "--text-color": "#221845",
+            "--card-bg": "rgba(255,255,255,.9)", "--card-border": "#d9d0f5",
+            "--card-shadow": "0 8px 26px rgba(109,40,217,.10)",
+            "--accent-color": "#6d28d9", "--meta-color": "#5b4b9e",
+            "--tip-color": "#6d5fb0", "--label-color": "#4c3f85",
+            "--input-bg": "#fff", "--input-border": "#c7b8f0",
+            "--subtitle-color": "#7a68c2", "--category-color": "#9488c8",
+            "--error-color": "#d61f69", "--button-text": "#fff",
+            "--seal-color": "#b3423a"
+          }
+        },
+        vangogh: {
+          vars: {
+            "--bg-color": "#0e1834", "--text-color": "#e8e6d8",
+            "--card-bg": "rgba(21,33,66,.9)", "--card-border": "#2c3f75",
+            "--card-shadow": "0 8px 26px rgba(0,0,10,.4)",
+            "--accent-color": "#f0c419", "--meta-color": "#a9b4d8",
+            "--tip-color": "#98a3c8", "--label-color": "#a9b4d8",
+            "--input-bg": "#16234a", "--input-border": "#34497f",
+            "--subtitle-color": "#8f9cc4", "--category-color": "#7f8cb4",
+            "--error-color": "#ff8a7a", "--button-text": "#0e1834",
+            "--seal-color": "#a3453c"
+          }
+        },
+        rembrandt: {
+          vars: {
+            "--bg-color": "#1a130d", "--text-color": "#e8dcc0",
+            "--card-bg": "rgba(38,28,18,.92)", "--card-border": "#4a3a26",
+            "--card-shadow": "0 8px 26px rgba(0,0,0,.45)",
+            "--accent-color": "#c9973f", "--meta-color": "#b5a37f",
+            "--tip-color": "#a89470", "--label-color": "#b5a37f",
+            "--input-bg": "#241a10", "--input-border": "#56432c",
+            "--subtitle-color": "#a89470", "--category-color": "#93815f",
+            "--error-color": "#e0705f", "--button-text": "#1a130d",
+            "--seal-color": "#8a4a35"
+          }
+        },
+        rouge: {
+          vars: {
+            "--bg-color": "#fbe8ec", "--text-color": "#4a2730",
+            "--card-bg": "rgba(255,255,255,.82)", "--card-border": "#f0c8d2",
+            "--card-shadow": "0 8px 26px rgba(176,74,100,.08)",
+            "--accent-color": "#b04a64", "--meta-color": "#8a6a72",
+            "--tip-color": "#8a6a72", "--label-color": "#7a5a62",
+            "--input-bg": "#fff", "--input-border": "#e6b8c2",
+            "--subtitle-color": "#9a7a82", "--category-color": "#aa8a92",
+            "--error-color": "#a3382f", "--button-text": "#fff",
+            "--seal-color": "#9a3848"
+          }
+        },
+        daiqing: {
+          vars: {
+            "--bg-color": "#e8edf2", "--text-color": "#2a3548",
+            "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#c8d4e2",
+            "--card-shadow": "0 8px 26px rgba(42,53,72,.08)",
+            "--accent-color": "#3a5a7a", "--meta-color": "#6a7a8a",
+            "--tip-color": "#6a7a8a", "--label-color": "#5a6a7a",
+            "--input-bg": "#fff", "--input-border": "#b8c4d2",
+            "--subtitle-color": "#7a8a9a", "--category-color": "#8a9aaa",
+            "--error-color": "#b04a3a", "--button-text": "#fff",
+            "--seal-color": "#a85a4e"
+          }
+        },
+        moss: {
+          vars: {
+            "--bg-color": "#e8efe6", "--text-color": "#2a3a28",
+            "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#c8d8c0",
+            "--card-shadow": "0 8px 26px rgba(42,58,40,.08)",
+            "--accent-color": "#4a6a3a", "--meta-color": "#6a8a5a",
+            "--tip-color": "#6a8a5a", "--label-color": "#5a7a4a",
+            "--input-bg": "#fff", "--input-border": "#b8c8a8",
+            "--subtitle-color": "#7a9a6a", "--category-color": "#8aaa7a",
+            "--error-color": "#a3382f", "--button-text": "#fff",
+            "--seal-color": "#9a5a3a"
+          }
+        },
+        amber: {
+          vars: {
+            "--bg-color": "#f6ede0", "--text-color": "#4a3920",
+            "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#e8d4b0",
+            "--card-shadow": "0 8px 26px rgba(176,138,58,.08)",
+            "--accent-color": "#b08a3a", "--meta-color": "#8a7a52",
+            "--tip-color": "#8a7a52", "--label-color": "#7a6a42",
+            "--input-bg": "#fff", "--input-border": "#dcc898",
+            "--subtitle-color": "#9a8a62", "--category-color": "#aa9a72",
+            "--error-color": "#a3382f", "--button-text": "#4a3920",
+            "--seal-color": "#9a4a2a"
+          }
+        },
+        indigo: {
+          vars: {
+            "--bg-color": "#1a1f3a", "--text-color": "#d8dcea",
+            "--card-bg": "rgba(30,36,60,.92)", "--card-border": "#34406a",
+            "--card-shadow": "0 8px 26px rgba(0,0,20,.4)",
+            "--accent-color": "#7a8ae8", "--meta-color": "#a0a8c8",
+            "--tip-color": "#98a0c0", "--label-color": "#a0a8c8",
+            "--input-bg": "#242a48", "--input-border": "#3a4a72",
+            "--subtitle-color": "#8a92b8", "--category-color": "#7a82a8",
+            "--error-color": "#e87060", "--button-text": "#1a1f3a",
+            "--seal-color": "#8a5a4a"
+          }
+        },
+        lotus: {
+          vars: {
+            "--bg-color": "#efe8f0", "--text-color": "#3a2a40",
+            "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#d8c8e0",
+            "--card-shadow": "0 8px 26px rgba(122,90,138,.08)",
+            "--accent-color": "#7a5a8a", "--meta-color": "#7a6a82",
+            "--tip-color": "#7a6a82", "--label-color": "#6a5a72",
+            "--input-bg": "#fff", "--input-border": "#c8b8d0",
+            "--subtitle-color": "#8a7a92", "--category-color": "#9a8aa2",
+            "--error-color": "#a3382f", "--button-text": "#fff",
+            "--seal-color": "#9a5a6a"
+          }
+        },
+        pine: {
+          vars: {
+            "--bg-color": "#d8dcd6", "--text-color": "#2a2e28",
+            "--card-bg": "rgba(255,255,255,.7)", "--card-border": "#bcc4b8",
+            "--card-shadow": "0 8px 26px rgba(42,46,40,.08)",
+            "--accent-color": "#4a5a48", "--meta-color": "#6a7a68",
+            "--tip-color": "#6a7a68", "--label-color": "#5a6a58",
+            "--input-bg": "#e8ece6", "--input-border": "#a8b0a4",
+            "--subtitle-color": "#7a8a78", "--category-color": "#8a9a88",
+            "--error-color": "#a3382f", "--button-text": "#fff",
+            "--seal-color": "#9a4a3a"
+          }
+        },
+        qinghua: {
+          vars: {
+            "--bg-color": "#eef2f6", "--text-color": "#1a2a3a",
+            "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#c4d4e0",
+            "--card-shadow": "0 8px 26px rgba(26,42,58,.08)",
+            "--accent-color": "#2a5a8a", "--meta-color": "#5a6a7a",
+            "--tip-color": "#5a6a7a", "--label-color": "#4a5a6a",
+            "--input-bg": "#fff", "--input-border": "#b4c4d4",
+            "--subtitle-color": "#6a7a8a", "--category-color": "#7a8a9a",
+            "--error-color": "#a3382f", "--button-text": "#fff",
+            "--seal-color": "#a05a3a"
+          }
+        }
+      },
+      layout: {
+        centered: {
+          vars: {
+            "--max-width": "900px", "--page-padding": "48px 20px",
+            "--card-padding": "42px 28px"
+          }
+        },
+        wide: {
+          vars: {
+            "--max-width": "1200px", "--page-padding": "48px 20px",
+            "--card-padding": "42px 28px"
+          }
+        },
+        compact: {
+          vars: {
+            "--max-width": "700px", "--page-padding": "32px 16px",
+            "--card-padding": "30px 18px"
+          }
+        }
+      },
+      size: {
+        // 中号：标题 36/作者 23/正文 26/体裁 20；小/大各减/加 20%
+        small: { vars: { "--title-font-size": "29px", "--meta-font-size": "18px", "--content-font-size": "21px", "--category-font-size": "16px" } },
+        medium: { vars: { "--title-font-size": "36px", "--meta-font-size": "23px", "--content-font-size": "26px", "--category-font-size": "20px" } },
+        large: { vars: { "--title-font-size": "43px", "--meta-font-size": "28px", "--content-font-size": "31px", "--category-font-size": "24px" } }
+      }
+    };
+
+    let currentTheme = { color: "warm", layout: "centered", size: "medium", direction: "horizontal" };
+    // 竖排默认紧凑+小字号；切回横排时恢复之前的选择
+    let prevHorzTheme = null;
+
+    function applyTheme() {
+      const root = document.documentElement;
+      for (const group of ["color", "layout", "size"]) {
+        const theme = THEMES[group] && THEMES[group][currentTheme[group]];
+        if (theme) {
+          for (const [prop, value] of Object.entries(theme.vars)) {
+            root.style.setProperty(prop, value);
+          }
+        }
+      }
+      // 文字方向（竖排）
+      document.body.classList.toggle("vertical", currentTheme.direction === "vertical");
+      syncRatioOptions();
+      // 同步面板选中状态
+      document.querySelectorAll(".theme-options").forEach((container) => {
+        const group = container.dataset.group;
+        const value = currentTheme[group];
+        container.querySelectorAll(".theme-opt").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.value === value);
+        });
+      });
+      // 字号/方向变化后重新自适应
+      requestAnimationFrame(fitCardText);
+    }
+
+    function saveTheme() {
+      try { localStorage.setItem(THEME_KEY, JSON.stringify(currentTheme)); } catch (e) {}
+    }
+
+    function loadTheme() {
+      try {
+        const saved = localStorage.getItem(THEME_KEY);
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p.color && THEMES.color[p.color]) currentTheme.color = p.color;
+          if (p.layout && THEMES.layout[p.layout]) currentTheme.layout = p.layout;
+          if (p.size && THEMES.size[p.size]) currentTheme.size = p.size;
+          if (p.direction === "vertical" || p.direction === "horizontal") currentTheme.direction = p.direction;
+          // 竖排分享图默认紧凑排版 + 小字号
+          if (currentTheme.direction === "vertical") {
+            currentTheme.layout = "compact";
+            currentTheme.size = "small";
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 主题面板开关
+    $("themeToggle").addEventListener("click", (e) => {
+      e.stopPropagation();
+      $("themePanel").classList.toggle("open");
+    });
+
+    // 点击页面空白处关闭面板
+    document.addEventListener("click", (e) => {
+      const panel = $("themePanel");
+      if (!panel.classList.contains("open")) return;
+      if (panel.contains(e.target) || $("themeToggle").contains(e.target)) return;
+      panel.classList.remove("open");
+    });
+
+    // 主题选项点击（配色/字体/排版/按钮效果通用）
+    document.querySelectorAll(".theme-opt").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const group = btn.closest(".theme-options").dataset.group;
+        const value = btn.dataset.value;
+        // 切到竖排：默认紧凑排版 + 小字号（竖版分享图按网页卡片自适应生成）；切回横排恢复原选择
+        if (group === "direction" && value !== currentTheme.direction) {
+          if (value === "vertical") {
+            prevHorzTheme = { layout: currentTheme.layout, size: currentTheme.size };
+            currentTheme.layout = "compact";
+            currentTheme.size = "small";
+          } else if (prevHorzTheme) {
+            currentTheme.layout = prevHorzTheme.layout;
+            currentTheme.size = prevHorzTheme.size;
+            prevHorzTheme = null;
+          }
+        }
+        currentTheme[group] = value;
+        applyTheme();
+        saveTheme();
+      });
+    });
+
+    // ====== 开屏动画（每次会话一次，点击可跳过） ======
+    (function initSplash() {
+      const splash = $("splash");
+      if (!splash) return;
+      const hide = () => {
+        splash.classList.add("hide");
+        // 开屏结束后才显示设置按钮
+        const tg = $("themeToggle");
+        if (tg) tg.classList.add("ready");
+        setTimeout(() => splash.remove(), 900);
+      };
+      splash.addEventListener("click", hide);
+      setTimeout(hide, 2600);
+    })();
+
+    // ====== 启动 ======
+    loadTheme();
+    applyTheme();
+
+    (async () => {
+      await loadIndex();
+      if (INDEX) {
+        await loadRandomPoem();
+      }
+    })();
+  </script>
+</body>
+</html>
