@@ -433,6 +433,7 @@
     /* 轻提示 */
     #toast { position: fixed; left: 50%; bottom: 12vh; transform: translateX(-50%); background: rgba(0,0,0,.72); color: #fff; padding: 9px 20px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 2000; }
     #toast.show { opacity: 1; }
+    body.no-scroll { overflow: hidden; }
 
     
     .slogan {
@@ -834,7 +835,7 @@
     <div class="sheet-backdrop" id="noteAskBackdrop"></div>
     <div class="sheet-box">
       <div class="sheet-head">生成批注卡片？</div>
-      <div class="note-ask-tip">批注已保存。批注可以和诗词一起生成分享卡片（批注大、诗词小），方便保存与转发。</div>
+      <div class="note-ask-tip">批注已保存。可将批注与诗词同框生成分享卡片（批注大、诗词小），便于保存与转发。勾选「记住选择」后不再询问；也可在设置 →「批注卡片提醒」中选择关闭。</div>
       <label class="note-ask-remember"><input type="checkbox" id="noteAskRemember"> 记住选择，以后不再询问</label>
       <div class="fav-bar">
         <button class="mini-btn" id="noteAskNo" type="button">暂不</button>
@@ -847,6 +848,7 @@
     <div class="sheet-backdrop" id="noteRatioBackdrop"></div>
     <div class="sheet-box">
       <div class="sheet-head">选择卡片比例</div>
+      <div class="note-ask-tip" id="noteRatioAutoTip" style="display:none">已按你的设置，保存批注后自动生成卡片；如需调整，可在设置 →「批注卡片提醒」中修改。</div>
       <div class="note-ask-tip">将生成「批注大、诗词小」的分享卡片，选一个喜欢的比例吧。</div>
       <div class="ratio-row">
         <span class="ratio-label">卡片比例</span>
@@ -901,6 +903,13 @@
       <div class="theme-options" data-group="direction">
         <button class="theme-opt active" data-value="horizontal">横排</button>
         <button class="theme-opt" data-value="vertical">竖排</button>
+      </div>
+    </div>
+    <div class="theme-section">
+      <div class="theme-label">批注卡片提醒</div>
+      <div class="theme-options" data-group="notePrompt">
+        <button class="theme-opt active" data-value="on">开</button>
+        <button class="theme-opt" data-value="off">关</button>
       </div>
     </div>
   </div>
@@ -2158,6 +2167,7 @@
       // 同步面板选中状态
       document.querySelectorAll(".theme-options").forEach((container) => {
         const group = container.dataset.group;
+        if (group === "notePrompt") return; // 由 syncNotePromptOpts 单独同步
         const value = currentTheme[group];
         container.querySelectorAll(".theme-opt").forEach((btn) => {
           btn.classList.toggle("active", btn.dataset.value === value);
@@ -2517,6 +2527,19 @@
     const NOTE_KEY = "shihai-notes-v1";
     const NOTE_ASK_KEY = "shihai-note-ask";
     const NOTE_RATIO_KEY = "shihai-note-ratio";
+    const NOTE_PROMPT_KEY = "shihai-note-prompt";
+    let notePromptOn = true;
+    try { notePromptOn = localStorage.getItem(NOTE_PROMPT_KEY) !== "0"; } catch (e) {}
+    function syncNotePromptOpts() {
+      document.querySelectorAll('.theme-options[data-group="notePrompt"] .theme-opt').forEach((b) =>
+        b.classList.toggle("active", (b.dataset.value === "on") === notePromptOn));
+    }
+    function setNotePrompt(on) {
+      notePromptOn = on;
+      try { localStorage.setItem(NOTE_PROMPT_KEY, on ? "1" : "0"); } catch (e) {}
+      syncNotePromptOpts();
+    }
+    syncNotePromptOpts();
     let notes = [];
     try { notes = JSON.parse(localStorage.getItem(NOTE_KEY) || "[]") || []; } catch (e) { notes = []; }
     const noteMap = new Map(notes.map((n) => [n.id, n]));
@@ -2605,8 +2628,10 @@
       saveNotes();
       closeNoteEditor();
       updateCardNoteBtn(); syncResultsNote();
+      // 提醒总开关关闭：只保存并告知查看位置
+      if (!notePromptOn) { toast("批注已保存 · 点右上角 ✎ 打开批注本查看"); return; }
       // 「不再询问」记忆：yes=保存后直接生成卡片，no=只保存
-      if (noteAskMode === "yes") { openNoteRatioSheet(id); return; }
+      if (noteAskMode === "yes") { openNoteRatioSheet(id, true); return; }
       if (noteAskMode === "no") { toast("批注已保存 · 点右上角 ✎ 打开批注本查看"); return; }
       $("noteAskRemember").checked = false;
       $("noteAskSheet").dataset.noteId = id;
@@ -2627,8 +2652,9 @@
     $("noteAskBackdrop").addEventListener("click", () => $("noteAskSheet").classList.remove("open"));
 
     // 生成批注卡片前选择比例（编辑器内不再选比例）
-    function openNoteRatioSheet(id) {
+    function openNoteRatioSheet(id, auto) {
       $("noteRatioSheet").dataset.noteId = id;
+      $("noteRatioAutoTip").style.display = auto ? "" : "none";
       moveNoteRatioThumb();
       $("noteRatioSheet").classList.add("open");
     }
@@ -2929,12 +2955,21 @@
       panel.classList.remove("open");
     });
 
+    // 浮层 / 设置面板打开时锁定主页滚动，只允许滚动浮层内部内容
+    const scrollLockSync = () => {
+      const locked = !!document.querySelector('.sheet-overlay.open, .theme-panel.open, #disclaimer:not([style*="none"])');
+      document.body.classList.toggle("no-scroll", locked);
+    };
+    new MutationObserver(scrollLockSync).observe(document.body, { subtree: true, attributeFilter: ["class", "style"] });
+    scrollLockSync();
+
     // 主题选项点击（配色/字体/排版/按钮效果通用）
     document.querySelectorAll(".theme-opt").forEach((btn) => {
       btn.addEventListener("click", () => {
         haptic();
         const group = btn.closest(".theme-options").dataset.group;
         const value = btn.dataset.value;
+        if (group === "notePrompt") { setNotePrompt(value === "on"); return; }
         // 切到竖排：默认紧凑排版（竖版分享图按网页卡片自适应生成）；切回横排恢复原选择
         if (group === "direction" && value !== currentTheme.direction) {
           if (value === "vertical") {

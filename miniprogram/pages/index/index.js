@@ -10,6 +10,7 @@ const FAV_KEY = "shihai-favs-v1";
 const NOTE_KEY = "shihai-notes-v1";
 const NOTE_ASK_KEY = "shihai-note-ask";
 const NOTE_RATIO_KEY = "shihai-note-ratio";
+const NOTE_PROMPT_KEY = "shihai-note-prompt";
 function favId(p) {
   const s = (p.t || "") + "|" + (p.a || "") + "|" + (p.c || "");
   let h = 5381;
@@ -118,6 +119,8 @@ Page({
     noteAskShow: false,
     noteAskRemember: false,
     noteRatioShow: false,
+    noteRatioAuto: false,
+    notePromptOn: true,
     favSelIds: {},
     favSelCount: 0,
     shareBtnLines: ["下载或分享卡片"],
@@ -346,6 +349,15 @@ Page({
     this._noteMap = new Map(this._notes.map((n) => [n.id, n]));
     try { this._noteAskMode = wx.getStorageSync(NOTE_ASK_KEY) || ""; } catch (e) { this._noteAskMode = ""; }
     try { this._noteRatio = wx.getStorageSync(NOTE_RATIO_KEY) || "3:4"; } catch (e) { this._noteRatio = "3:4"; }
+    try { this._notePromptOn = wx.getStorageSync(NOTE_PROMPT_KEY) !== "0"; } catch (e) { this._notePromptOn = true; }
+    this.setData({ notePromptOn: this._notePromptOn });
+  },
+  onNotePromptTap(e) {
+    this.haptic();
+    const on = e.currentTarget.dataset.value === "on";
+    this._notePromptOn = on;
+    try { wx.setStorageSync(NOTE_PROMPT_KEY, on ? "1" : "0"); } catch (err) {}
+    this.setData({ notePromptOn: on });
   },
   saveNotes() {
     try { wx.setStorageSync(NOTE_KEY, this._notes); } catch (e) {}
@@ -436,8 +448,10 @@ Page({
     this.setData({ noteEditShow: false });
     if (this.currentPoem && (this.currentPoem.id || favId(this.currentPoem)) === id) this.setData({ currentNote: true });
     this._syncResultsNote();
+    // 提醒总开关关闭：只保存并告知查看位置
+    if (!this._notePromptOn) { wx.showToast({ title: "批注已保存 · 右上角批注本可查看", icon: "none", duration: 2200 }); return; }
     // 「不再询问」记忆：yes=保存后直接生成卡片，no=只保存
-    if (this._noteAskMode === "yes") { this.openNoteRatioSheet(id); return; }
+    if (this._noteAskMode === "yes") { this.openNoteRatioSheet(id, true); return; }
     if (this._noteAskMode === "no") { wx.showToast({ title: "批注已保存 · 右上角批注本可查看", icon: "none", duration: 2200 }); return; }
     this._noteAskId = id;
     this.setData({ noteAskShow: true, noteAskRemember: false });
@@ -487,11 +501,12 @@ Page({
     this.openNoteRatioSheet(rec.id);
   },
   // 生成批注卡片前选择比例（编辑器内不再选比例）
-  openNoteRatioSheet(id) {
+  openNoteRatioSheet(id, auto) {
     this._noteRatioId = id;
     const r = this._noteRatio;
     this.setData({
       noteRatioShow: true,
+      noteRatioAuto: !!auto,
       noteRatioIndex: RATIO_OPTIONS.findIndex((o) => o.value === r),
       noteRatioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === r }))
     });
