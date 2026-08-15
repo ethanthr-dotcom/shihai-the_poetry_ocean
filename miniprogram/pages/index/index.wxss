@@ -40,7 +40,7 @@
 }
 
 /* ====== 头部 logo ====== */
-.header { text-align: center; margin-bottom: 16rpx; }
+.header { text-align: center; margin-bottom: 32rpx; }
 .site-logo { height: 104rpx; width: 190rpx; }
 .subtitle {
   text-align: center;
@@ -197,7 +197,7 @@
 .site-footer { margin: 84rpx auto 24rpx; text-align: center; }
 .footer-logo { height: 88rpx; width: 160rpx; }
 .slogan {
-  margin-top: 28rpx;
+  margin-top: 40rpx;
   font-size: 24rpx;
   letter-spacing: 4rpx;
   color: var(--category-color);
@@ -444,7 +444,7 @@
 
 /* ====== 卡片内收藏符号 ====== */
 .card-body { position: relative; }
-.card-fav { position: absolute; top: 36rpx; right: 48rpx; z-index: 3; width: 64rpx; height: 64rpx; padding: 8rpx; box-sizing: border-box; }
+.card-fav { position: absolute; top: 36rpx; right: 48rpx; z-index: 3; width: 52rpx; height: 52rpx; padding: 6rpx; box-sizing: border-box; }
 
 /* ====== 搜索结果就地列表（替换卡片） ====== */
 .results-panel { margin-top: 40rpx; }
@@ -454,7 +454,7 @@
 .results-title { font-size: 30rpx; }
 .result-head { display: flex; align-items: center; gap: 16rpx; padding-right: 56rpx; }
 .result-hm { flex: 1; min-width: 0; }
-.result-fav { flex: none; position: relative; width: 52rpx; height: 52rpx; padding: 8rpx; margin-right: 12rpx; box-sizing: border-box; }
+.result-fav { flex: none; position: relative; width: 44rpx; height: 44rpx; padding: 6rpx; margin-right: 12rpx; box-sizing: border-box; }
 
 /* 复选框 / 迷你操作按钮 */
 .chk { flex: none; width: 40rpx; height: 40rpx; border: 3rpx solid var(--meta-color); border-radius: 12rpx; display: flex; align-items: center; justify-content: center; font-size: 26rpx; color: transparent; }
@@ -497,6 +497,7 @@ button[disabled]:active { transform: none; }
 .guide-list { margin: 12rpx 0 30rpx; max-height: 58vh; overflow-y: auto; }
 .guide-item { font-size: 26rpx; line-height: 1.85; color: var(--text-color); opacity: .88; padding: 12rpx 0; border-bottom: 1rpx dashed var(--card-border); text-align: left; }
 .guide-k { display: inline-block; color: var(--seal-color, #a3382f); font-weight: bold; margin-right: 14rpx; }
+.guide-b { font-weight: 600; }
 .guide-ok { margin-top: 8rpx; }
 
 /* 查询结果：□ 现象说明（显眼内联提示，非弹窗） */

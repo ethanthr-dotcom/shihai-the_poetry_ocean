@@ -240,15 +240,16 @@
     <view class="guide-box" catchtap="noop">
       <view class="sheet-head">使用指南</view>
       <view class="guide-list">
-        <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「今日与诗相逢」随机推荐一首。</view>
-        <view class="guide-item"><text class="guide-k">条件搜索</text>填写作者 / 朝代 / 体裁任意组合；体裁点输入框展开选择，首项「无」表示不限。</view>
-        <view class="guide-item"><text class="guide-k">列表浏览</text>点击标题行展开全诗，一次只展开一首；上滑自动加载更多。</view>
-        <view class="guide-item"><text class="guide-k">批量收藏</text>列表中点「批量收藏」，勾选后一键加入收藏夹。</view>
-        <view class="guide-item"><text class="guide-k">收藏</text>点诗词旁的星星收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持批量管理与删除。</view>
-        <view class="guide-item"><text class="guide-k">批注</text>点诗词旁的纸笔图标写下感悟；右上角纸笔按钮打开批注本，支持批量管理与删除；批注还能生成「批注大、诗词小」的分享卡片。</view>
-        <view class="guide-item"><text class="guide-k">分享卡片</text>在卡片内选择比例后点「下载或分享卡片」，生成高清图片保存或转发。</view>
-        <view class="guide-item"><text class="guide-k">主题排版</text>右上角齿轮可切换主题配色、横竖排版与字号版式。</view>
-        <view class="guide-item"><text class="guide-k">温馨提示</text>收藏与批注仅保存在本机本地缓存（相当于 cookie），清除缓存或卸载后会丢失，心仪的诗词与感悟请及时生成卡片保存。</view>
+        <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「今日与诗相逢」<text class="guide-b">随机推荐一首</text>。</view>
+        <view class="guide-item"><text class="guide-k">条件搜索</text>填写作者 / 朝代 / 体裁<text class="guide-b">任意组合</text>；体裁点输入框展开选择，首项「无」表示不限。</view>
+        <view class="guide-item"><text class="guide-k">列表浏览</text>点击标题行<text class="guide-b">展开全诗</text>，一次只展开一首；<text class="guide-b">上滑自动加载更多</text>。</view>
+        <view class="guide-item"><text class="guide-k">批量收藏</text>列表中点「批量收藏」，勾选后<text class="guide-b">一键加入收藏夹</text>。</view>
+        <view class="guide-item"><text class="guide-k">收藏</text>点诗词旁的<text class="guide-b">星星</text>收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持<text class="guide-b">批量管理与删除</text>。</view>
+        <view class="guide-item"><text class="guide-k">批注</text>点诗词旁的<text class="guide-b">纸笔图标</text>写下感悟；右上角纸笔按钮打开批注本，支持<text class="guide-b">批量管理与删除</text>；批注可生成「批注大、诗词小」的分享卡片，<text class="guide-b">生成时再选比例</text>。</view>
+        <view class="guide-item"><text class="guide-k">分享卡片</text>在卡片内选择比例后点<text class="guide-b">「下载或分享卡片」</text>，生成高清图片保存或转发。</view>
+        <view class="guide-item"><text class="guide-k">主题排版</text>右上角<text class="guide-b">齿轮</text>可切换主题配色、横竖排版与字号版式。</view>
+        <view class="guide-item"><text class="guide-k">缺字说明</text>个别文字显示为<text class="guide-b">「□」</text>，是原始古籍数据缺损或字体未收录所致，<text class="guide-b">属正常现象，并非程序错误</text>。</view>
+        <view class="guide-item"><text class="guide-k">温馨提示</text>收藏与批注仅保存在本机<text class="guide-b">本地缓存</text>（相当于 cookie），清除缓存或卸载后会丢失，心仪的诗词与感悟请<text class="guide-b">及时生成卡片保存</text>。</view>
       </view>
       <button class="btn primary guide-ok" bindtap="onGuideClose">我知道了</button>
     </view>
@@ -284,14 +285,6 @@
       <view class="sheet-head">{{noteEditTitle}}</view>
       <view class="note-edit-meta">{{noteEditMeta}}</view>
       <textarea class="note-textarea" value="{{noteText}}" maxlength="120" placeholder="写下此刻的感悟……（120 字以内）" bindinput="onNoteInput" auto-height></textarea>
-      <view class="ratio-row">
-        <text class="ratio-label">卡片比例</text>
-        <view class="ratio-seg">
-          <view class="ratio-thumb" style="left: calc({{noteRatioIndex * 25}}% + 4rpx)"></view>
-          <view wx:for="{{noteRatioOptions}}" wx:key="value" class="ratio-seg-item {{item.active ? 'active' : ''}}"
-            data-value="{{item.value}}" bindtap="onNoteRatioTap">{{item.label}}</view>
-        </view>
-      </view>
       <view class="note-edit-bar">
         <view wx:if="{{noteEditHas}}" class="mini-btn danger" bindtap="onNoteRemove">删除批注</view>
         <view class="note-edit-spacer"></view>
@@ -339,6 +332,23 @@
       <view class="note-ask-bar">
         <view class="mini-btn" bindtap="onNoteAskNo">暂不</view>
         <view class="mini-btn solid" bindtap="onNoteAskYes">生成卡片</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 生成批注卡片前：选择比例（编辑器内不再选比例） -->
+  <view wx:if="{{noteRatioShow}}" class="picker-mask" bindtap="onNoteRatioClose">
+    <view class="note-ask-box" catchtap="noop">
+      <view class="sheet-head">选择卡片比例</view>
+      <view class="note-ask-tip">将生成「批注大、诗词小」的分享卡片，选一个喜欢的比例吧。</view>
+      <view class="ratio-seg">
+        <view class="ratio-thumb" style="left: calc({{noteRatioIndex * 25}}% + 4rpx)"></view>
+        <view wx:for="{{noteRatioOptions}}" wx:key="value" class="ratio-seg-item {{item.active ? 'active' : ''}}"
+          data-value="{{item.value}}" bindtap="onNoteRatioTap">{{item.label}}</view>
+      </view>
+      <view class="note-ask-bar">
+        <view class="mini-btn" bindtap="onNoteRatioClose">取消</view>
+        <view class="mini-btn solid" bindtap="onNoteRatioConfirm">生成卡片</view>
       </view>
     </view>
   </view>

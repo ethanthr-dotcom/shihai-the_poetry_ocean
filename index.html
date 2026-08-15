@@ -89,7 +89,7 @@
     }
     h1 {
       text-align: center;
-      margin: 0 0 8px;
+      margin: 0 0 18px;
       line-height: 0;
     }
     /* SVG logo：顶部阳刻 / 页脚阴刻 */
@@ -339,7 +339,7 @@
 
     /* 卡片内收藏符号 */
     .card-body { position: relative; }
-    .card-fav { position: absolute; top: 10px; right: 14px; z-index: 3; background: none; border: 0; width: 32px; height: 32px; padding: 3px; cursor: pointer; color: var(--meta-color); opacity: .55; transition: opacity .2s, color .2s; font-family: inherit; box-sizing: border-box; }
+    .card-fav { position: absolute; top: 10px; right: 14px; z-index: 3; background: none; border: 0; width: 26px; height: 26px; padding: 2px; cursor: pointer; color: var(--meta-color); opacity: .55; transition: opacity .2s, color .2s; font-family: inherit; box-sizing: border-box; }
     .card-fav:hover { opacity: .95; }
     .card-fav.on { color: var(--seal-color, #a3382f); opacity: 1; }
 
@@ -349,7 +349,7 @@
     .results-head-r { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .result-head { display: flex; align-items: center; gap: 10px; }
     .result-hm { flex: 1; min-width: 0; }
-    .result-fav { flex: none; position: relative; width: 28px; height: 28px; padding: 3px; margin: 0 8px 0 16px; cursor: pointer; color: var(--meta-color); opacity: .5; box-sizing: border-box; }
+    .result-fav { flex: none; position: relative; width: 24px; height: 24px; padding: 2px; margin: 0 8px 0 16px; cursor: pointer; color: var(--meta-color); opacity: .5; box-sizing: border-box; }
     .result-fav:hover { opacity: .95; }
     .result-fav.on { color: var(--seal-color, #a3382f); opacity: 1; }
 
@@ -411,6 +411,7 @@
     .guide-list { margin: 8px 0 16px; max-height: 58vh; overflow-y: auto; text-align: left; }
     .guide-item { font-size: 13px; line-height: 1.9; opacity: .88; padding: 7px 0; border-bottom: 1px dashed var(--card-border); }
     .guide-k { color: var(--seal-color, #a3382f); font-weight: bold; margin-right: 8px; }
+    .guide-b { font-weight: 600; }
     .guide-ok { width: 100%; margin-top: 6px; }
     input { font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; }
 
@@ -435,7 +436,7 @@
 
     
     .slogan {
-      margin-top: 14px;
+      margin-top: 24px;
       font-size: 12px;
       letter-spacing: 2px;
       color: var(--category-color);
@@ -714,6 +715,7 @@
         <button id="randomButton" type="button">今日与诗相逢</button>
       </div>
       <div class="random-tip">读到心动的一首，可在下方生成卡片保存或分享</div>
+      <div class="random-tip">读到会心处，可点诗词旁的 ✎ 纸笔图标写下你的感悟</div>
     </section>
 
     <section class="card" id="card">
@@ -769,15 +771,16 @@
     <div class="sheet-box">
       <div class="sheet-head">使用指南</div>
       <div class="guide-list">
-        <div class="guide-item"><span class="guide-k">随机邂逅</span>不填任何条件，点「今日与诗相逢」随机推荐一首。</div>
-        <div class="guide-item"><span class="guide-k">条件搜索</span>填写作者 / 朝代 / 体裁任意组合；体裁点输入框展开选择，首项「无」表示不限。</div>
-        <div class="guide-item"><span class="guide-k">列表浏览</span>点击标题行展开全诗，一次只展开一首；上滑自动加载更多。</div>
-        <div class="guide-item"><span class="guide-k">批量收藏</span>列表中点「批量收藏」，勾选后一键加入收藏夹。</div>
-        <div class="guide-item"><span class="guide-k">收藏</span>点诗词旁的星星收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持批量管理与删除。</div>
-        <div class="guide-item"><span class="guide-k">批注</span>点诗词旁的纸笔图标写下感悟；右上角纸笔按钮打开批注本，支持批量管理与删除；批注还能生成「批注大、诗词小」的分享卡片。</div>
-        <div class="guide-item"><span class="guide-k">分享卡片</span>在卡片内选择比例后点「下载或分享卡片」，生成高清图片保存或转发。</div>
-        <div class="guide-item"><span class="guide-k">主题排版</span>右上角齿轮可切换主题配色、横竖排版与字号版式。</div>
-        <div class="guide-item"><span class="guide-k">温馨提示</span>收藏与批注仅保存在本机本地缓存（相当于 cookie），清除缓存后会丢失，心仪的诗词与感悟请及时生成卡片保存。</div>
+        <div class="guide-item"><span class="guide-k">随机邂逅</span>不填任何条件，点「今日与诗相逢」<b class="guide-b">随机推荐一首</b>。</div>
+        <div class="guide-item"><span class="guide-k">条件搜索</span>填写作者 / 朝代 / 体裁<b class="guide-b">任意组合</b>；体裁点输入框展开选择，首项「无」表示不限。</div>
+        <div class="guide-item"><span class="guide-k">列表浏览</span>点击标题行<b class="guide-b">展开全诗</b>，一次只展开一首；<b class="guide-b">上滑自动加载更多</b>。</div>
+        <div class="guide-item"><span class="guide-k">批量收藏</span>列表中点「批量收藏」，勾选后<b class="guide-b">一键加入收藏夹</b>。</div>
+        <div class="guide-item"><span class="guide-k">收藏</span>点诗词旁的<b class="guide-b">星星</b>收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持<b class="guide-b">批量管理与删除</b>。</div>
+        <div class="guide-item"><span class="guide-k">批注</span>点诗词旁的<b class="guide-b">纸笔图标</b>写下感悟；右上角纸笔按钮打开批注本，支持<b class="guide-b">批量管理与删除</b>；批注可生成「批注大、诗词小」的分享卡片，<b class="guide-b">生成时再选比例</b>。</div>
+        <div class="guide-item"><span class="guide-k">分享卡片</span>在卡片内选择比例后点<b class="guide-b">「下载或分享卡片」</b>，生成高清图片保存或转发。</div>
+        <div class="guide-item"><span class="guide-k">主题排版</span>右上角<b class="guide-b">齿轮</b>可切换主题配色、横竖排版与字号版式。</div>
+        <div class="guide-item"><span class="guide-k">缺字说明</span>个别文字显示为<b class="guide-b">「□」</b>，是原始古籍数据缺损或字体未收录所致，<b class="guide-b">属正常现象，并非程序错误</b>。</div>
+        <div class="guide-item"><span class="guide-k">温馨提示</span>收藏与批注仅保存在本机<b class="guide-b">本地缓存</b>（相当于 cookie），清除缓存后会丢失，心仪的诗词与感悟请<b class="guide-b">及时生成卡片保存</b>。</div>
       </div>
       <button class="btn guide-ok" id="guideOk" type="button">我知道了</button>
     </div>
@@ -818,16 +821,6 @@
       <div class="sheet-head" id="noteEditHead">写批注</div>
       <div class="note-edit-meta" id="noteEditMeta"></div>
       <textarea id="noteText" maxlength="120" placeholder="写下此刻的感悟……（120 字以内）"></textarea>
-      <div class="ratio-row">
-        <span class="ratio-label">卡片比例</span>
-        <div class="ratio-seg" id="noteRatioSeg">
-          <div class="ratio-thumb" id="noteRatioThumb"></div>
-          <button class="nratio-opt" data-nratio="1:1" type="button">1:1</button>
-          <button class="nratio-opt" data-nratio="3:4" type="button">3:4</button>
-          <button class="nratio-opt" data-nratio="9:16" type="button">9:16</button>
-          <button class="nratio-opt" data-nratio="auto" type="button">自动</button>
-        </div>
-      </div>
       <div class="fav-bar">
         <button class="mini-btn danger" id="noteRemove" type="button" style="display:none">删除批注</button>
         <span class="note-edit-spacer"></span>
@@ -846,6 +839,28 @@
       <div class="fav-bar">
         <button class="mini-btn" id="noteAskNo" type="button">暂不</button>
         <button class="mini-btn solid" id="noteAskYes" type="button">生成卡片</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="noteRatioSheet" class="sheet-overlay">
+    <div class="sheet-backdrop" id="noteRatioBackdrop"></div>
+    <div class="sheet-box">
+      <div class="sheet-head">选择卡片比例</div>
+      <div class="note-ask-tip">将生成「批注大、诗词小」的分享卡片，选一个喜欢的比例吧。</div>
+      <div class="ratio-row">
+        <span class="ratio-label">卡片比例</span>
+        <div class="ratio-seg" id="noteRatioSeg">
+          <div class="ratio-thumb" id="noteRatioThumb"></div>
+          <button class="nratio-opt" data-nratio="1:1" type="button">1:1</button>
+          <button class="nratio-opt" data-nratio="3:4" type="button">3:4</button>
+          <button class="nratio-opt" data-nratio="9:16" type="button">9:16</button>
+          <button class="nratio-opt" data-nratio="auto" type="button">自动</button>
+        </div>
+      </div>
+      <div class="fav-bar">
+        <button class="mini-btn" id="noteRatioCancel" type="button">取消</button>
+        <button class="mini-btn solid" id="noteRatioGo" type="button">生成卡片</button>
       </div>
     </div>
   </div>
@@ -2549,7 +2564,6 @@
       $("noteEditMeta").textContent = "《" + (poem.t || "无题") + "》" + [poem.d, poem.a].filter(Boolean).join(" · ");
       $("noteText").value = ex ? ex.n : "";
       $("noteRemove").style.display = ex ? "" : "none";
-      moveNoteRatioThumb();
       $("noteEditSheet").classList.add("open");
     }
     function closeNoteEditor() { $("noteEditSheet").classList.remove("open"); }
@@ -2592,7 +2606,7 @@
       closeNoteEditor();
       updateCardNoteBtn(); syncResultsNote();
       // 「不再询问」记忆：yes=保存后直接生成卡片，no=只保存
-      if (noteAskMode === "yes") { generateNoteCard(noteMap.get(id)); return; }
+      if (noteAskMode === "yes") { openNoteRatioSheet(id); return; }
       if (noteAskMode === "no") { showStatus("批注已保存", false); return; }
       $("noteAskRemember").checked = false;
       $("noteAskSheet").dataset.noteId = id;
@@ -2605,11 +2619,26 @@
       }
       const id = $("noteAskSheet").dataset.noteId;
       $("noteAskSheet").classList.remove("open");
-      if (action === "yes") generateNoteCard(noteMap.get(id));
+      if (action === "yes") openNoteRatioSheet(id);
     }
     $("noteAskYes").addEventListener("click", () => { haptic(); noteAskFinish("yes"); });
     $("noteAskNo").addEventListener("click", () => { haptic(); noteAskFinish("no"); });
     $("noteAskBackdrop").addEventListener("click", () => $("noteAskSheet").classList.remove("open"));
+
+    // 生成批注卡片前选择比例（编辑器内不再选比例）
+    function openNoteRatioSheet(id) {
+      $("noteRatioSheet").dataset.noteId = id;
+      moveNoteRatioThumb();
+      $("noteRatioSheet").classList.add("open");
+    }
+    $("noteRatioGo").addEventListener("click", () => {
+      haptic();
+      const id = $("noteRatioSheet").dataset.noteId;
+      $("noteRatioSheet").classList.remove("open");
+      generateNoteCard(noteMap.get(id));
+    });
+    $("noteRatioCancel").addEventListener("click", () => { haptic(); $("noteRatioSheet").classList.remove("open"); });
+    $("noteRatioBackdrop").addEventListener("click", () => $("noteRatioSheet").classList.remove("open"));
 
     function updateNoteBar() {
       $("noteSelAll").style.display = noteSelMode ? "" : "none";
@@ -2676,7 +2705,7 @@
           ev.stopPropagation();
           haptic();
           $("noteSheet").classList.remove("open");
-          generateNoteCard(n);
+          openNoteRatioSheet(n.id);
         });
         acts.appendChild(cardBtn);
         item.append(chk, body, acts);

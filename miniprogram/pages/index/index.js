@@ -77,7 +77,7 @@ Page({
     devRows: [],
     shareImg: "",
     randomBtnLines: ["今日与诗相逢"],
-    randomTip: "读到心动的一首，可在下方生成卡片保存或分享",
+    randomTip: "读到心动的一首，可在下方生成卡片保存或分享 · 点诗词旁 ✎ 可写下感悟",
     typeOptions: [],
     typeQuery: "",
     typeOptionsShown: [],
@@ -117,6 +117,7 @@ Page({
     ],
     noteAskShow: false,
     noteAskRemember: false,
+    noteRatioShow: false,
     favSelIds: {},
     favSelCount: 0,
     shareBtnLines: ["下载或分享卡片"],
@@ -436,7 +437,7 @@ Page({
     if (this.currentPoem && (this.currentPoem.id || favId(this.currentPoem)) === id) this.setData({ currentNote: true });
     this._syncResultsNote();
     // 「不再询问」记忆：yes=保存后直接生成卡片，no=只保存
-    if (this._noteAskMode === "yes") { this.generateNoteShare(id); return; }
+    if (this._noteAskMode === "yes") { this.openNoteRatioSheet(id); return; }
     if (this._noteAskMode === "no") { wx.showToast({ title: "批注已保存", icon: "none" }); return; }
     this._noteAskId = id;
     this.setData({ noteAskShow: true, noteAskRemember: false });
@@ -449,7 +450,7 @@ Page({
     }
     const id = this._noteAskId;
     this.setData({ noteAskShow: false });
-    if (action === "yes") this.generateNoteShare(id);
+    if (action === "yes") this.openNoteRatioSheet(id);
   },
   onNoteAskYes() { this.haptic(); this._noteAskFinish("yes"); },
   onNoteAskNo() { this.haptic(); this._noteAskFinish("no"); },
@@ -482,7 +483,24 @@ Page({
     if (!rec) return;
     this.haptic();
     this.setData({ noteSheetShow: false });
-    this.generateNoteShare(rec.id);
+    this.openNoteRatioSheet(rec.id);
+  },
+  // 生成批注卡片前选择比例（编辑器内不再选比例）
+  openNoteRatioSheet(id) {
+    this._noteRatioId = id;
+    const r = this._noteRatio;
+    this.setData({
+      noteRatioShow: true,
+      noteRatioIndex: RATIO_OPTIONS.findIndex((o) => o.value === r),
+      noteRatioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === r }))
+    });
+  },
+  onNoteRatioClose() { this.setData({ noteRatioShow: false }); },
+  onNoteRatioConfirm() {
+    this.haptic();
+    const id = this._noteRatioId;
+    this.setData({ noteRatioShow: false });
+    this.generateNoteShare(id);
   },
   onNoteManage() {
     this.haptic();
