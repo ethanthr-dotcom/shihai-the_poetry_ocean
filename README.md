@@ -107,3 +107,13 @@ https://github.com/chinese-poetry/chinese-poetry
 第三方内容的许可证仍以其原始项目声明为准。
 
 详见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+
+## License
+
+The source code of this project is licensed under the MIT License.
+
+Third-party data and resources are licensed under their respective licenses.
+
+See:
+- LICENSE
+- THIRD-PARTY-NOTICES.md
