@@ -287,4 +287,149 @@ async function drawShare(opts) {
   }
 }
 
-module.exports = { drawShare };
+// 批注卡片：批注大字居上、全诗小字在下；边框/水印/印章 logo/页脚与诗词卡片同风格
+// opts: { canvas, ctx, note, ratio, cardW, cardH, colors, logoPath }
+async function drawNoteShare(opts) {
+  const { canvas, ctx, note, ratio, cardW, cardH, colors, logoPath } = opts;
+  const bg = colors.bg || "#f4f1e8";
+  const textColor = colors.text || "#2f2a24";
+  const metaColor = colors.meta || "#766d63";
+  const accent = colors.accent || "#4f5f4a";
+  const catColor = colors.category || "#958a7e";
+  const sealColor = colors.seal || "#a3382f";
+  const HANG = "\uff0c\u3001\u3002\uff01\uff1f\uff1b\uff1a";
+
+  const title = note.t || "\u65e0\u9898";
+  const authorMeta = [note.d, note.a].filter(Boolean).join(" \u00b7 ");
+  const verses = verse.splitVerses(note.c || "");
+
+  const W = 3000;
+  let H;
+  if (ratio === "auto") {
+    const cw = cardW || 1;
+    const ch = cardH || cw;
+    H = Math.round((W * ch) / cw);
+  } else {
+    const parts = String(ratio).split(":");
+    H = Math.round((W * Number(parts[1])) / Number(parts[0]));
+  }
+  H = Math.min(Math.max(H, 1000), 8000);
+  canvas.width = W;
+  canvas.height = H;
+  const M = Math.round(W * 0.115);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  // 内框装饰线
+  ctx.strokeStyle = accent;
+  ctx.globalAlpha = 0.25;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(M * 0.45, M * 0.45, W - M * 0.9, H - M * 0.9);
+  ctx.globalAlpha = 1;
+
+  // 水印「詩」
+  ctx.save();
+  ctx.globalAlpha = 0.045;
+  ctx.fillStyle = textColor;
+  ctx.font = "600 " + Math.round(W * 0.38) + "px " + FONT;
+  ctx.fillText("\u8a69", W * 0.8, H * 0.87);
+  ctx.restore();
+
+  const footerText = "\u8bd7\u6d77 \u00b7 \u975e\u8425\u5229\u53e4\u8bd7\u8bcd\u5171\u4eab\u9879\u76ee";
+  const logoImg = await loadImage(canvas, logoPath);
+
+  const SC = W / 750;
+  const availW = W - M * 2 - 100;
+  const availH = H - M * 2;
+  let scale = 1, L, noteLines;
+  const layout = () => {
+    const noteFont = Math.round(40 * SC * scale);
+    const verseFont = Math.round(23 * SC * scale);
+    return {
+      noteFont, noteLH: Math.round(noteFont * 1.75),
+      titleFont: Math.round(26 * SC * scale), metaFont: Math.round(20 * SC * scale),
+      verseFont, verseLH: Math.round(verseFont * 1.85),
+      logoH: Math.round(verseFont * 1.5), logoW: Math.round(verseFont * 1.5 * LOGO_RATIO),
+      catFont: Math.round(20 * SC * scale)
+    };
+  };
+  const wrapNote = (size) => {
+    ctx.font = "600 " + size + "px " + FONT;
+    const lines = [];
+    let cur = "";
+    for (const ch of note.n) {
+      if (cur && ctx.measureText(cur + ch).width > availW) { lines.push(cur); cur = ch; }
+      else cur += ch;
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  };
+  const blockH = () =>
+    noteLines.length * L.noteLH + 90 + 4 + 90 +
+    L.titleFont + 50 + L.metaFont + 60 +
+    verses.length * L.verseLH + 80 + L.logoH + 70 + L.catFont;
+  for (;;) {
+    L = layout();
+    noteLines = wrapNote(L.noteFont);
+    ctx.font = "600 " + L.noteFont + "px " + FONT;
+    let wMax = noteLines.reduce((mx, s) => Math.max(mx, ctx.measureText(s).width), 0);
+    ctx.font = "600 " + L.titleFont + "px " + FONT;
+    wMax = Math.max(wMax, ctx.measureText(title).width, L.logoW);
+    if ((wMax <= availW && blockH() <= availH) || scale <= 0.3) break;
+    scale *= Math.max(0.6, Math.min(availW / Math.max(wMax, 1), availH / Math.max(blockH(), 1)));
+  }
+  let y = M + Math.max(0, (availH - blockH()) / 2);
+  ctx.fillStyle = textColor;
+  ctx.font = "600 " + L.noteFont + "px " + FONT;
+  for (const line of noteLines) {
+    ctx.fillText(line, W / 2, y + L.noteLH / 2);
+    y += L.noteLH;
+  }
+  y += 90;
+  ctx.save();
+  ctx.fillStyle = accent;
+  ctx.globalAlpha = 0.55;
+  ctx.fillRect(W / 2 - 60, y, 120, 4);
+  ctx.restore();
+  y += 4 + 90;
+  ctx.fillStyle = textColor;
+  ctx.font = "600 " + L.titleFont + "px " + FONT;
+  ctx.fillText(title, W / 2, y + L.titleFont / 2);
+  y += L.titleFont + 50;
+  ctx.fillStyle = metaColor;
+  ctx.font = L.metaFont + "px " + FONT;
+  ctx.fillText(authorMeta, W / 2, y + L.metaFont / 2);
+  y += L.metaFont + 60;
+  ctx.fillStyle = textColor;
+  ctx.font = L.verseFont + "px " + FONT;
+  for (const line of verses) {
+    const last = line.charAt(line.length - 1);
+    if (HANG.includes(last)) {
+      const body = line.slice(0, -1);
+      const bw = ctx.measureText(body).width;
+      ctx.textAlign = "left";
+      ctx.fillText(body, W / 2 - bw / 2, y + L.verseLH / 2);
+      ctx.fillText(last, W / 2 + bw / 2, y + L.verseLH / 2);
+      ctx.textAlign = "center";
+    } else {
+      ctx.fillText(line, W / 2, y + L.verseLH / 2);
+    }
+    y += L.verseLH;
+  }
+  y += 80;
+  if (logoImg) {
+    ctx.drawImage(logoImg, W / 2 - L.logoW / 2, y, L.logoW, L.logoH);
+  } else {
+    ctx.fillStyle = sealColor;
+    roundRectPath(ctx, W / 2 - L.logoW / 2, y, L.logoW, L.logoH, L.logoH * 0.15);
+    ctx.fill();
+  }
+  y += L.logoH + 70;
+  ctx.fillStyle = catColor;
+  ctx.font = L.catFont + "px " + FONT;
+  ctx.fillText(footerText, W / 2, y + L.catFont / 2);
+}
+
+module.exports = { drawShare, drawNoteShare };

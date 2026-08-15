@@ -3,10 +3,13 @@ const cfg = require("../../utils/config");
 const data = require("../../utils/data");
 const verse = require("../../utils/verse");
 const themes = require("../../utils/themes");
-const { drawShare } = require("../../utils/share-canvas");
+const { drawShare, drawNoteShare } = require("../../utils/share-canvas");
 
 // ====== 收藏：仅存本机本地缓存（等同浏览器 cookie/storage），清缓存即丢失 ======
 const FAV_KEY = "shihai-favs-v1";
+const NOTE_KEY = "shihai-notes-v1";
+const NOTE_ASK_KEY = "shihai-note-ask";
+const NOTE_RATIO_KEY = "shihai-note-ratio";
 function favId(p) {
   const s = (p.t || "") + "|" + (p.a || "") + "|" + (p.c || "");
   let h = 5381;
@@ -93,18 +96,33 @@ Page({
     guideShow: false,
     favList: [],
     favSelMode: false,
+    currentNote: false,
+    noteSheetShow: false,
+    noteListData: [],
+    noteSelMode: false,
+    noteSelIds: {},
+    noteSelCount: 0,
+    noteEditShow: false,
+    noteEditTitle: "写批注",
+    noteEditMeta: "",
+    noteEditHas: false,
+    noteText: "",
+    noteRatio: "3:4",
+    noteRatioIndex: 1,
+    noteRatioOptions: [
+      { value: "1:1", label: "1:1", active: false },
+      { value: "3:4", label: "3:4", active: true },
+      { value: "9:16", label: "9:16", active: false },
+      { value: "auto", label: "自动", active: false }
+    ],
+    noteAskShow: false,
+    noteAskRemember: false,
     favSelIds: {},
     favSelCount: 0,
     shareBtnLines: ["下载或分享卡片"],
     mottoChars: "掬古人之诗·养今时之心".split(""),
     ratioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === "1:1", disabled: false })),
     ratioActiveIndex: 0,
-    thumbDragTransform: "",
-    liquidGlass: true,
-    fxOptions: [
-      { label: "液态玻璃", value: "on", active: true },
-      { label: "关闭特效", value: "off", active: false }
-    ],
     shareRatio: "1:1",
     progressState: "", // "" | run | done
     splashShow: true,
@@ -120,14 +138,6 @@ Page({
 
   onLoad() {
     this.currentTheme = themes.loadTheme();
-    // 液态玻璃特效开关（设置 > 特效；关闭后滑块拖动一并停用）
-    let lgOn = true;
-    try { lgOn = wx.getStorageSync("shihai-lg") !== "0"; } catch (e) {}
-    this._lgOn = lgOn;
-    this.setData({
-      liquidGlass: lgOn,
-      fxOptions: this.data.fxOptions.map((o) => ({ ...o, active: (o.value === "on") === lgOn }))
-    });
     this.applyTheme();
     // 首次使用提示：确认过则照常开屏；首次只展示提示抽屉，同意后直进主页（不再播开屏动画）
     let agreed = "";
@@ -138,6 +148,7 @@ Page({
       this.startSplash();
     }
     this.loadFavs();
+    this.loadNotes();
     this.boot();
     this.fitBtnLabels();
   },
@@ -326,6 +337,254 @@ Page({
     });
     if (Object.keys(updates).length) this.setData(updates);
   },
+  // ====== 批注：纸笔图标写感悟，存本机本地缓存；批注本支持批量管理；批注卡片（批注大、诗词小） ======
+  loadNotes() {
+    let list = [];
+    try { list = wx.getStorageSync(NOTE_KEY) || []; } catch (e) {}
+    this._notes = Array.isArray(list) ? list : [];
+    this._noteMap = new Map(this._notes.map((n) => [n.id, n]));
+    try { this._noteAskMode = wx.getStorageSync(NOTE_ASK_KEY) || ""; } catch (e) { this._noteAskMode = ""; }
+    try { this._noteRatio = wx.getStorageSync(NOTE_RATIO_KEY) || "3:4"; } catch (e) { this._noteRatio = "3:4"; }
+  },
+  saveNotes() {
+    try { wx.setStorageSync(NOTE_KEY, this._notes); } catch (e) {}
+  },
+  _noteDate(ts) {
+    const dt = new Date(ts || Date.now());
+    return dt.getFullYear() + "/" + (dt.getMonth() + 1) + "/" + dt.getDate();
+  },
+  _syncResultsNote() {
+    const updates = {};
+    this.data.resultsList.forEach((it, i) => {
+      const h = this._noteMap.has(it.id);
+      if (h !== it.hasNote) updates["resultsList[" + i + "].hasNote"] = h;
+    });
+    if (Object.keys(updates).length) this.setData(updates);
+  },
+  openNoteEditor(poem) {
+    this._noteEditPoem = poem;
+    const id = poem.id || favId(poem);
+    const ex = this._noteMap.get(id);
+    const r = this._noteRatio;
+    this.setData({
+      noteEditShow: true,
+      noteEditTitle: ex ? "编辑批注" : "写批注",
+      noteEditMeta: "《" + (poem.t || "无题") + "》" + [poem.d, poem.a].filter(Boolean).join(" · "),
+      noteEditHas: !!ex,
+      noteText: ex ? ex.n : "",
+      noteRatio: r,
+      noteRatioIndex: RATIO_OPTIONS.findIndex((o) => o.value === r),
+      noteRatioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === r })),
+      themePanelOpen: false,
+      typeDropdownShow: false
+    });
+  },
+  onCardNoteTap() {
+    if (!this.currentPoem) return;
+    this.haptic();
+    this.openNoteEditor(this.currentPoem);
+  },
+  onResultNoteTap(e) {
+    const idx = e.currentTarget.dataset.index;
+    const item = this.data.resultsList[idx];
+    if (!item) return;
+    this.haptic();
+    this.openNoteEditor(item);
+  },
+  onNoteInput(e) { this.setData({ noteText: e.detail.value }); },
+  onNoteRatioTap(e) {
+    this.haptic();
+    const value = e.currentTarget.dataset.value;
+    this._noteRatio = value;
+    try { wx.setStorageSync(NOTE_RATIO_KEY, value); } catch (err) {}
+    this.setData({
+      noteRatio: value,
+      noteRatioIndex: RATIO_OPTIONS.findIndex((o) => o.value === value),
+      noteRatioOptions: this.data.noteRatioOptions.map((o) => ({ ...o, active: o.value === value }))
+    });
+  },
+  onNoteEditClose() { this.setData({ noteEditShow: false }); },
+  onNoteRemove() {
+    const poem = this._noteEditPoem;
+    if (!poem) return;
+    this.haptic();
+    const id = poem.id || favId(poem);
+    this._notes = this._notes.filter((n) => n.id !== id);
+    this._noteMap.delete(id);
+    this.saveNotes();
+    this.setData({ noteEditShow: false });
+    if (this.currentPoem && (this.currentPoem.id || favId(this.currentPoem)) === id) this.setData({ currentNote: false });
+    this._syncResultsNote();
+    wx.showToast({ title: "批注已删除", icon: "none" });
+  },
+  onNoteSave() {
+    const poem = this._noteEditPoem;
+    if (!poem) return;
+    const text = (this.data.noteText || "").trim();
+    if (!text) { wx.showToast({ title: "批注内容不能为空", icon: "none" }); return; }
+    this.haptic();
+    const id = poem.id || favId(poem);
+    const ex = this._noteMap.get(id);
+    if (ex) { ex.n = text; ex.ts = Date.now(); }
+    else {
+      const rec = { id, t: poem.t || "", a: poem.a || "", d: poem.d || "", y: poem.y || "", c: poem.c || "", n: text, ts: Date.now() };
+      this._notes.unshift(rec);
+      this._noteMap.set(id, rec);
+    }
+    this.saveNotes();
+    this.setData({ noteEditShow: false });
+    if (this.currentPoem && (this.currentPoem.id || favId(this.currentPoem)) === id) this.setData({ currentNote: true });
+    this._syncResultsNote();
+    // 「不再询问」记忆：yes=保存后直接生成卡片，no=只保存
+    if (this._noteAskMode === "yes") { this.generateNoteShare(id); return; }
+    if (this._noteAskMode === "no") { wx.showToast({ title: "批注已保存", icon: "none" }); return; }
+    this._noteAskId = id;
+    this.setData({ noteAskShow: true, noteAskRemember: false });
+  },
+  onNoteAskRememberToggle() { this.setData({ noteAskRemember: !this.data.noteAskRemember }); },
+  _noteAskFinish(action) {
+    if (this.data.noteAskRemember) {
+      this._noteAskMode = action;
+      try { wx.setStorageSync(NOTE_ASK_KEY, action); } catch (e) {}
+    }
+    const id = this._noteAskId;
+    this.setData({ noteAskShow: false });
+    if (action === "yes") this.generateNoteShare(id);
+  },
+  onNoteAskYes() { this.haptic(); this._noteAskFinish("yes"); },
+  onNoteAskNo() { this.haptic(); this._noteAskFinish("no"); },
+  onNoteToggle() {
+    this.haptic();
+    if (this.data.noteSheetShow) { this.setData({ noteSheetShow: false }); return; }
+    this.openNoteSheet();
+  },
+  openNoteSheet() {
+    this.setData({
+      noteSheetShow: true,
+      noteListData: this._notes.map((n) => ({ ...n, date: this._noteDate(n.ts) })),
+      noteSelMode: false, noteSelIds: {}, noteSelCount: 0,
+      themePanelOpen: false, typeDropdownShow: false
+    });
+  },
+  onNoteSheetClose() { this.setData({ noteSheetShow: false }); },
+  onNoteItemTap(e) {
+    if (this.data.noteSelMode) { this.onNoteSelToggle(e); return; }
+    const idx = e.currentTarget.dataset.index;
+    const rec = this._notes[idx];
+    if (!rec) return;
+    this.haptic();
+    this.setData({ noteSheetShow: false });
+    this.openNoteEditor(rec);
+  },
+  onNoteItemCard(e) {
+    const idx = e.currentTarget.dataset.index;
+    const rec = this._notes[idx];
+    if (!rec) return;
+    this.haptic();
+    this.setData({ noteSheetShow: false });
+    this.generateNoteShare(rec.id);
+  },
+  onNoteManage() {
+    this.haptic();
+    if (this.data.noteSelMode) { this.setData({ noteSelMode: false, noteSelIds: {}, noteSelCount: 0 }); return; }
+    this.setData({ noteSelMode: true, noteSelIds: {}, noteSelCount: 0 });
+  },
+  onNoteSelToggle(e) {
+    const idx = e.currentTarget.dataset.index;
+    const item = this.data.noteListData[idx];
+    if (!item) return;
+    this.haptic();
+    const selIds = { ...this.data.noteSelIds };
+    if (selIds[item.id]) delete selIds[item.id]; else selIds[item.id] = true;
+    this.setData({ noteSelIds: selIds, noteSelCount: Object.keys(selIds).length });
+  },
+  onNoteSelAll() {
+    this.haptic();
+    const selIds = {};
+    if (!(this.data.noteSelCount >= this.data.noteListData.length && this.data.noteListData.length)) {
+      this.data.noteListData.forEach((n) => { selIds[n.id] = true; });
+    }
+    this.setData({ noteSelIds: selIds, noteSelCount: Object.keys(selIds).length });
+  },
+  onNoteDelete() {
+    const ids = this.data.noteSelIds;
+    const targets = this._notes.filter((n) => ids[n.id]);
+    if (!targets.length) return;
+    wx.showModal({
+      title: "删除批注",
+      content: "确定删除选中的 " + targets.length + " 条批注？",
+      success: (r) => {
+        if (!r.confirm) return;
+        targets.forEach((n) => this._noteMap.delete(n.id));
+        this._notes = this._notes.filter((n) => !ids[n.id]);
+        this.saveNotes();
+        this._syncResultsNote();
+        if (this.currentPoem && !this._noteMap.has(this.currentPoem.id || favId(this.currentPoem))) this.setData({ currentNote: false });
+        this.openNoteSheet();
+        wx.showToast({ title: "已删除", icon: "none" });
+      }
+    });
+  },
+  // 批注卡片生成：复用分享画布与预览/保存浮层
+  async generateNoteShare(id) {
+    const note = this._noteMap.get(id);
+    if (!note) return;
+    if (this.data.shareLoading) return;
+    this.setData({ shareLoading: true });
+    try {
+      const t = this.currentTheme;
+      const colors = themes.THEMES.color[t.color].vars;
+      let rect = this._cardRect;
+      if (!rect) {
+        rect = await new Promise((resolve) => {
+          wx.createSelectorQuery().select(".card-body").boundingClientRect().exec((r) => resolve(r && r[0]));
+        });
+      }
+      const filePath = await new Promise((resolve, reject) => {
+        wx.createSelectorQuery()
+          .select("#shareCanvas")
+          .fields({ node: true, size: true })
+          .exec(async (res) => {
+            if (!res || !res[0] || !res[0].node) return reject(new Error("画布初始化失败"));
+            const canvas = res[0].node;
+            const ctx = canvas.getContext("2d");
+            try {
+              await drawNoteShare({
+                canvas, ctx, note,
+                ratio: this._noteRatio,
+                cardW: rect ? rect.width : 300,
+                cardH: rect ? rect.height : 300,
+                colors: {
+                  bg: colors["--bg-color"], text: colors["--text-color"],
+                  meta: colors["--meta-color"], accent: colors["--accent-color"],
+                  category: colors["--category-color"], seal: colors["--seal-color"]
+                },
+                logoPath: "/assets/logo-yin.png"
+              });
+            } catch (e) {
+              return reject(e);
+            }
+            const out = wx.env.USER_DATA_PATH + "/shihai_note_" + String(this._noteRatio).replace(":", "x") + "_" + Date.now() + ".png";
+            wx.canvasToTempFilePath({
+              canvas,
+              fileType: "png",
+              destWidth: canvas.width,
+              destHeight: canvas.height,
+              filePath: out,
+              success: (r) => resolve(r.tempFilePath),
+              fail: (e) => reject(new Error("导出图片失败：" + (e.errMsg || "")))
+            });
+          });
+      });
+      this._sharePath = filePath;
+      this.setData({ shareImg: filePath, shareSheetShow: true });
+    } catch (e) {
+      this.showStatus("生成批注卡片失败：" + (e && e.message ? e.message : e), true);
+    } finally {
+      this.setData({ shareLoading: false });
+    }
+  },
+
   onCardFavTap() {
     if (!this.currentPoem) return;
     this.haptic();
@@ -463,7 +722,7 @@ Page({
         if (matched.length) {
           const items = matched.map((p) => {
             const id = favId(p);
-            return { id, t: p.t, a: p.a, d: p.d, y: p.y, c: p.c, open: false, fav: this._favSet.has(id) };
+            return { id, t: p.t, a: p.a, d: p.d, y: p.y, c: p.c, open: false, fav: this._favSet.has(id), hasNote: !!(this._noteMap && this._noteMap.has(id)) };
           });
           this.setData({ resultsList: this.data.resultsList.concat(items) });
           added += items.length;
@@ -592,6 +851,7 @@ Page({
     this.setData({
       hasPoem: true,
       currentFav: !!(this._favSet && this._favSet.has(favId(poem))),
+      currentNote: !!(this._noteMap && this._noteMap.has(favId(poem))),
       statusText: "",
       statusError: false,
       poem: { t: poem.t || "无题", meta, type: poem.y || "" },
@@ -876,7 +1136,6 @@ Page({
   },
 
   onRatioTap(e) {
-    if (this._justDragged) return;
     this.haptic();
     const value = e.currentTarget.dataset.value;
     if (this.currentTheme.direction === "vertical" && value !== "auto") return;
@@ -885,70 +1144,6 @@ Page({
       ratioOptions: this.data.ratioOptions.map((o) => ({ ...o, active: o.value === value })),
       ratioActiveIndex: RATIO_OPTIONS.findIndex((o) => o.value === value)
     });
-  },
-
-  // ====== 特效开关（液态玻璃；关闭后恢复原样式并停用滑块拖动） ======
-  onFxOptTap(e) {
-    const on = e.currentTarget.dataset.value === "on";
-    if (this._lgOn === on) return;
-    this.haptic();
-    this._lgOn = on;
-    try { wx.setStorageSync("shihai-lg", on ? "1" : "0"); } catch (err) {}
-    this.setData({
-      liquidGlass: on,
-      fxOptions: this.data.fxOptions.map((o) => ({ ...o, active: (o.value === "on") === on }))
-    });
-  },
-
-  // ====== 液态玻璃滑块：按住横向拖动选比例（苹果式拉伸；仅特效开启时，rAF 级节流防卡顿） ======
-  onSegTouchStart(e) {
-    if (!this._lgOn || this.currentTheme.direction === "vertical") return;
-    const t = e.touches[0];
-    this._segDrag = { startX: t.clientX, moved: false };
-    // in(this) + currentTarget：卡片与列表两处滑块各查自身，且把 px→rpx 系数一并带回
-    const id = e.currentTarget.id;
-    if (!id) return;
-    this.createSelectorQuery().in(this).select("#" + id + " .ratio-thumb").boundingClientRect().exec((r) => {
-      if (this._segDrag && r && r[0]) {
-        this._segDrag.rect = r[0];
-        this._segDrag.itemW = r[0].width + 2; // thumb 宽 = 25% - 4rpx，补回 4rpx 间隙即单格宽
-      }
-    });
-  },
-  onSegTouchMove(e) {
-    const d = this._segDrag;
-    if (!d || !d.rect) return;
-    const t = e.touches[0];
-    const now = Date.now();
-    if (now - (d.last || 0) < 16) return;
-    d.last = now;
-    const rect = d.rect;
-    const itemW = d.itemW || rect.width / 4, pad = 2;
-    const base = this.data.ratioActiveIndex * itemW + pad;
-    const target0 = base + (t.clientX - d.startX);
-    let target = target0;
-    const max = rect.width - itemW + 2;
-    target = Math.max(pad, Math.min(max, target));
-    const dx = target - base;
-    if (Math.abs(dx) > 3) d.moved = true;
-    d.target = target;
-    const sx = 1 + Math.min(0.18, Math.abs(dx) / rect.width);
-    this.setData({ thumbDragTransform: "transition:none; left:" + target.toFixed(1) + "px; transform:scaleX(" + sx.toFixed(3) + ");" });
-  },
-  onSegTouchEnd() {
-    const d = this._segDrag;
-    this._segDrag = null;
-    if (!d) return;
-    if (!d.moved || d.target == null) { this.setData({ thumbDragTransform: "" }); return; }
-    const itemW = d.itemW || d.rect.width / 4, pad = 2;
-    let idx = Math.round((d.target - pad) / itemW);
-    idx = Math.max(0, Math.min(RATIO_OPTIONS.length - 1, idx));
-    const value = RATIO_OPTIONS[idx].value;
-    this.setData({ thumbDragTransform: "" });
-    // 先应用再置位：避免自身守卫拦截；随后 400ms 内的合成 tap 不再重复触发
-    if (value !== this.data.shareRatio) this.onRatioTap({ currentTarget: { dataset: { value } } });
-    this._justDragged = true;
-    setTimeout(() => { this._justDragged = false; }, 400);
   },
 
   // ====== 分享卡片（canvas 2d 手绘 → 预览/保存，等价网页版下载） ======

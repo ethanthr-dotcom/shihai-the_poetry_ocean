@@ -170,6 +170,8 @@
       transition: color .2s, opacity .2s;
     }
     .ratio-opt.active { background: transparent; color: var(--button-text); opacity: 1; }
+    .nratio-opt { position: relative; flex: 1; width: auto; margin: 0; padding: 0; border: 0; background: transparent; font-size: 13px; color: var(--text-color); opacity: .75; cursor: pointer; font-family: inherit; transition: color .2s, opacity .2s; }
+    .nratio-opt.active { background: transparent; color: var(--button-text); opacity: 1; }
     /* 字体加载完成前隐藏卡片内容，加载完同时淡入，避免跳动 */
     .title, .meta, .content, .category { transition: opacity .4s ease; }
     .title.pending, .meta.pending, .content.pending, .category.pending { opacity: 0; }
@@ -359,7 +361,7 @@
     .mini-btn.accent { border-color: var(--accent-color); color: var(--accent-color); }
     .mini-btn.danger { border-color: var(--seal-color, #a3382f); color: var(--seal-color, #a3382f); }
     .mini-btn.solid { background: var(--button-bg, #8b2c2c); border-color: var(--button-bg, #8b2c2c); color: var(--button-text, #fff); opacity: 1; }
-    .search-tip { font-size: 11px; opacity: .6; text-align: center; margin: 6px 0 14px; line-height: 1.7; }
+    .search-tip { font-size: 11px; opacity: .6; text-align: center; margin: 4px 0 6px; line-height: 1.7; }
     .card-fav, .result-fav, .fav-heart { font-style: normal; flex: none; line-height: 1; }
     .card-fav .star-svg, .result-fav .star-svg, .fav-heart .star-svg { width: 100%; height: 100%; display: block; }
     /* 收藏瞬间：星星绽放 + 迸溅粒子 */
@@ -370,29 +372,35 @@
     .card-fav.burst::before, .result-fav.burst::before { content: ""; position: absolute; left: 50%; top: 50%; width: 130%; height: 130%; margin: -65% 0 0 -65%; border: 1.5px solid var(--seal-color, #a3382f); border-radius: 50%; animation: burstRing .5s ease-out forwards; pointer-events: none; }
     .card-fav.burst::after, .result-fav.burst::after { content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: var(--seal-color, #a3382f); box-shadow: 0 -17px 0 var(--seal-color, #a3382f), 15px -8px 0 var(--seal-color, #a3382f), 15px 8px 0 var(--seal-color, #a3382f), 0 17px 0 var(--seal-color, #a3382f), -15px 8px 0 var(--seal-color, #a3382f), -15px -8px 0 var(--seal-color, #a3382f); animation: burstDots .55s ease-out forwards; pointer-events: none; }
     /* 按钮按压缩放回弹（iOS 风格；toggle 类在各自规则里合并 transition） */
-    button:not(.fav-toggle):not(.theme-toggle):not(.guide-toggle), .mini-btn, .type-tag, .ratio-opt { transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
-    button:active, .mini-btn:active, .type-tag:active, .ratio-opt:active, .fav-toggle:active, .theme-toggle:active, .guide-toggle:active { transform: scale(.92); }
+    button:not(.fav-toggle):not(.theme-toggle):not(.guide-toggle):not(.note-toggle), .mini-btn, .type-tag, .ratio-opt, .nratio-opt { transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
+    button:active, .mini-btn:active, .type-tag:active, .ratio-opt:active, .nratio-opt:active, .fav-toggle:active, .theme-toggle:active, .guide-toggle:active, .note-toggle:active { transform: scale(.92); }
 
-    /* ===== 液态玻璃（设置 > 特效 可关闭；关闭后滑块拖动一并停用，恢复原样式） ===== */
-    .lg-on button:not(.ratio-opt):not(.fav-toggle):not(.theme-toggle):not(.guide-toggle), .lg-on .mini-btn, .lg-on input, .lg-on .ratio-seg, .lg-on .type-panel, .lg-on .theme-panel, .lg-on .sheet-box {
-      background: color-mix(in srgb, var(--bg-color) 62%, transparent);
-      backdrop-filter: blur(12px) saturate(1.6) brightness(1.04);
-      -webkit-backdrop-filter: blur(12px) saturate(1.6) brightness(1.04);
-      border-color: color-mix(in srgb, var(--text-color) 22%, transparent);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.32), inset 0 -1px 0 rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.10);
-    }
-    .lg-on button.secondary, .lg-on .mini-btn.accent { background: color-mix(in srgb, var(--accent-color) 42%, transparent); }
-    .lg-on .mini-btn.solid { background: color-mix(in srgb, var(--accent-color) 78%, transparent); }
-    .lg-on .ratio-thumb {
-      background: color-mix(in srgb, var(--accent-color) 80%, transparent);
-      backdrop-filter: blur(6px) saturate(1.4);
-      -webkit-backdrop-filter: blur(6px) saturate(1.4);
-      box-shadow: inset 0 1px 3px rgba(255,255,255,.45), inset 0 -1px 3px rgba(0,0,0,.12), 0 3px 10px rgba(0,0,0,.18);
-      will-change: transform, left;
-    }
     /* 查询结果 / 查询区：□ 现象说明（显眼内联提示，非弹窗） */
-    .results-note { margin: 10px 0 4px; padding: 8px 11px; font-size: 11.5px; line-height: 1.65; color: var(--seal-color); border: 1px dashed var(--seal-color); border-radius: 7px; }
-    .data-note { margin: 0 0 12px; padding: 7px 10px; font-size: 11px; line-height: 1.65; color: var(--seal-color); border: 1px dashed var(--seal-color); border-radius: 7px; text-align: left; }
+    .results-note { margin: 6px 0 4px; padding: 8px 11px; font-size: 11.5px; line-height: 1.65; color: var(--seal-color); border: 1px dashed var(--seal-color); border-radius: 7px; }
+    .data-note { margin: 0 0 8px; padding: 7px 10px; font-size: 11px; line-height: 1.65; color: var(--seal-color); border: 1px dashed var(--seal-color); border-radius: 7px; text-align: left; }
+
+    /* ===== 批注：纸笔图标 / 批注本（批量管理）/ 批注卡片（批注大诗词小） ===== */
+    .note-toggle { position: absolute; top: 18px; right: 94px; width: 26px; height: 26px; background: transparent; border: 0; color: var(--text-color); cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; opacity: 0; pointer-events: none; transition: opacity .5s ease, transform .18s cubic-bezier(.34,1.56,.64,1); }
+    .note-toggle.ready { opacity: .7; pointer-events: auto; }
+    .note-toggle.ready:hover { opacity: 1; }
+    .note-toggle svg { width: 100%; height: 100%; }
+    .card-note { position: absolute; top: 10px; right: 52px; z-index: 3; background: none; border: 0; width: 32px; height: 32px; padding: 4px; cursor: pointer; color: var(--meta-color); opacity: .55; transition: opacity .2s, color .2s; font-family: inherit; box-sizing: border-box; }
+    .card-note:hover { opacity: .95; }
+    .card-note.on { color: var(--seal-color, #a3382f); opacity: 1; }
+    .result-note { position: relative; width: 23px; height: 23px; margin: 0 2px 0 12px; color: var(--meta-color); opacity: .5; flex: none; cursor: pointer; }
+    .result-note.on { color: var(--seal-color, #a3382f); opacity: 1; }
+    .card-note .note-svg, .result-note .note-svg { width: 100%; height: 100%; display: block; }
+    .note-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 4px; border-bottom: 1px dashed var(--card-border); cursor: pointer; }
+    .note-body { flex: 1; min-width: 0; }
+    .note-text { font-size: 14px; line-height: 1.7; color: var(--text-color); word-break: break-all; }
+    .note-date { margin-top: 3px; }
+    .note-acts { display: flex; gap: 6px; flex: none; align-items: center; }
+    .note-card-btn { font-size: 11.5px; padding: 5px 10px; border: 1px solid var(--accent-color); color: var(--accent-color); border-radius: 999px; background: none; cursor: pointer; font-family: inherit; flex: none; line-height: 1.4; }
+    #noteText { width: 100%; box-sizing: border-box; min-height: 96px; margin: 10px 0; padding: 10px; font-family: inherit; font-size: 14px; line-height: 1.8; color: var(--text-color); background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 10px; resize: vertical; }
+    .note-edit-meta { font-size: 12px; opacity: .6; margin-top: 2px; }
+    .note-edit-spacer { flex: 1; }
+    .note-ask-tip { font-size: 13px; line-height: 1.8; opacity: .85; margin: 6px 0 12px; }
+    .note-ask-remember { display: flex; gap: 8px; align-items: center; font-size: 12.5px; opacity: .75; margin-bottom: 12px; cursor: pointer; }
     button:disabled:active { transform: none; }
     /* 顶部灯泡：使用指南入口 */
     .guide-toggle { position: absolute; top: 18px; left: 18px; width: 26px; height: 26px; background: transparent; border: 0; color: var(--text-color); cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; opacity: 0; pointer-events: none; transition: opacity .5s ease, transform .18s cubic-bezier(.34,1.56,.64,1); }
@@ -754,6 +762,7 @@
 
 
   <button id="guideToggle" class="guide-toggle" title="使用指南" aria-label="使用指南"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg></button>
+  <button id="noteToggle" class="note-toggle" title="批注本" aria-label="批注本"><svg class="note-svg" viewBox="0 0 24 24" fill="currentColor"><path opacity=".4" d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z"/><path d="M14 2l6 6h-6V2z"/><path d="M2.5 17.5L13 7l3.5 3.5L6 21H2.5v-3.5z"/></svg></button>
   <button id="favToggle" class="fav-toggle" title="收藏夹" aria-label="收藏夹"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
   <div id="guideSheet" class="sheet-overlay">
     <div class="sheet-backdrop" id="guideSheetBackdrop"></div>
@@ -765,9 +774,10 @@
         <div class="guide-item"><span class="guide-k">列表浏览</span>点击标题行展开全诗，一次只展开一首；上滑自动加载更多。</div>
         <div class="guide-item"><span class="guide-k">批量收藏</span>列表中点「批量收藏」，勾选后一键加入收藏夹。</div>
         <div class="guide-item"><span class="guide-k">收藏</span>点诗词旁的星星收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持批量管理与删除。</div>
+        <div class="guide-item"><span class="guide-k">批注</span>点诗词旁的纸笔图标写下感悟；右上角纸笔按钮打开批注本，支持批量管理与删除；批注还能生成「批注大、诗词小」的分享卡片。</div>
         <div class="guide-item"><span class="guide-k">分享卡片</span>在卡片内选择比例后点「下载或分享卡片」，生成高清图片保存或转发。</div>
         <div class="guide-item"><span class="guide-k">主题排版</span>右上角齿轮可切换主题配色、横竖排版与字号版式。</div>
-        <div class="guide-item"><span class="guide-k">温馨提示</span>收藏保存在本机本地缓存（相当于 cookie），清除浏览器缓存后会丢失，心仪的诗词请及时保存分享卡片。</div>
+        <div class="guide-item"><span class="guide-k">温馨提示</span>收藏与批注仅保存在本机本地缓存（相当于 cookie），清除缓存后会丢失，心仪的诗词与感悟请及时生成卡片保存。</div>
       </div>
       <button class="btn guide-ok" id="guideOk" type="button">我知道了</button>
     </div>
@@ -784,6 +794,59 @@
         <button class="mini-btn" id="favManageDone" type="button" style="display:none">完成</button>
       </div>
       <div id="favList" class="fav-list"></div>
+    </div>
+  </div>
+
+  <div id="noteSheet" class="sheet-overlay">
+    <div class="sheet-backdrop" id="noteSheetBackdrop"></div>
+    <div class="sheet-box">
+      <div class="sheet-head">批注本<span id="noteCount" class="results-count"></span></div>
+      <div class="fav-tip">✎ 批注仅保存在本浏览器本地缓存（cookie / localStorage）中，清除浏览器缓存后会丢失</div>
+      <div class="fav-bar">
+        <button class="mini-btn" id="noteManage" type="button">批量管理</button>
+        <button class="mini-btn" id="noteSelAll" type="button" style="display:none">全选</button>
+        <button class="mini-btn danger" id="noteDelete" type="button" style="display:none">删除所选(0)</button>
+        <button class="mini-btn" id="noteManageDone" type="button" style="display:none">完成</button>
+      </div>
+      <div id="noteList" class="fav-list"></div>
+    </div>
+  </div>
+
+  <div id="noteEditSheet" class="sheet-overlay">
+    <div class="sheet-backdrop" id="noteEditBackdrop"></div>
+    <div class="sheet-box">
+      <div class="sheet-head" id="noteEditHead">写批注</div>
+      <div class="note-edit-meta" id="noteEditMeta"></div>
+      <textarea id="noteText" maxlength="120" placeholder="写下此刻的感悟……（120 字以内）"></textarea>
+      <div class="ratio-row">
+        <span class="ratio-label">卡片比例</span>
+        <div class="ratio-seg" id="noteRatioSeg">
+          <div class="ratio-thumb" id="noteRatioThumb"></div>
+          <button class="nratio-opt" data-nratio="1:1" type="button">1:1</button>
+          <button class="nratio-opt" data-nratio="3:4" type="button">3:4</button>
+          <button class="nratio-opt" data-nratio="9:16" type="button">9:16</button>
+          <button class="nratio-opt" data-nratio="auto" type="button">自动</button>
+        </div>
+      </div>
+      <div class="fav-bar">
+        <button class="mini-btn danger" id="noteRemove" type="button" style="display:none">删除批注</button>
+        <span class="note-edit-spacer"></span>
+        <button class="mini-btn" id="noteCancel" type="button">取消</button>
+        <button class="mini-btn solid" id="noteSave" type="button">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="noteAskSheet" class="sheet-overlay">
+    <div class="sheet-backdrop" id="noteAskBackdrop"></div>
+    <div class="sheet-box">
+      <div class="sheet-head">生成批注卡片？</div>
+      <div class="note-ask-tip">批注已保存。批注可以和诗词一起生成分享卡片（批注大、诗词小），方便保存与转发。</div>
+      <label class="note-ask-remember"><input type="checkbox" id="noteAskRemember"> 记住选择，以后不再询问</label>
+      <div class="fav-bar">
+        <button class="mini-btn" id="noteAskNo" type="button">暂不</button>
+        <button class="mini-btn solid" id="noteAskYes" type="button">生成卡片</button>
+      </div>
     </div>
   </div>
 
@@ -823,13 +886,6 @@
       <div class="theme-options" data-group="direction">
         <button class="theme-opt active" data-value="horizontal">横排</button>
         <button class="theme-opt" data-value="vertical">竖排</button>
-      </div>
-    </div>
-    <div class="theme-section">
-      <div class="theme-label">特效</div>
-      <div class="theme-options" data-group="fx">
-        <button class="theme-opt active" data-value="on">液态玻璃</button>
-        <button class="theme-opt" data-value="off">关闭特效</button>
       </div>
     </div>
   </div>
@@ -1201,7 +1257,9 @@
         ? verses.map((x) => '<div class="verse-line">' + verseHtml(x) + "</div>").join("")
         : "未找到正文";
       const isFav = favSet.has(favId(poem));
+      const hasNote = noteMap.has(favId(poem));
       card.innerHTML =
+        '<button id="cardNote" class="card-note' + (hasNote ? " on" : "") + '" type="button" title="批注">' + noteSVG() + "</button>" +
         '<button id="cardFav" class="card-fav' + (isFav ? " on" : "") + '" type="button" title="收藏">' + starSVG(isFav) + "</button>" +
         '<div class="card-body">' +
         '<div class="title">' + escapeHtml(title || "无题") + "</div>" +
@@ -1241,6 +1299,14 @@
       btn.innerHTML = starSVG(fav);
       if (fav) burst(btn);
       syncResultsFav();
+    });
+
+    // 卡片右上角批注入口（纸笔图标）
+    card.addEventListener("click", (e) => {
+      const btn = e.target.closest("#cardNote");
+      if (!btn || !currentPoem) return;
+      haptic();
+      openNoteEditor(currentPoem);
     });
 
     function weightedRandom(items) {
@@ -1466,59 +1532,6 @@
         moveRatioThumb();
       });
     });
-    // 液态玻璃滑块：按住横向拖动选比例（苹果式拉伸；仅特效开启时生效，rAF 节流防卡顿）
-    let segDrag = null, segRaf = 0;
-    const ratioSeg = ratioThumb ? ratioThumb.parentElement : null;
-    if (ratioSeg) {
-      ratioSeg.addEventListener("pointerdown", (e) => {
-        if (!document.body.classList.contains("lg-on")) return;
-        if (currentTheme.direction === "vertical") return;
-        const idx = Array.from(document.querySelectorAll(".ratio-opt")).findIndex((b) => b.classList.contains("active"));
-        segDrag = { startX: e.clientX, x: e.clientX, idx: Math.max(0, idx), rect: ratioSeg.getBoundingClientRect(), moved: false, target: null };
-      });
-      window.addEventListener("pointermove", (e) => {
-        if (!segDrag) return;
-        segDrag.x = e.clientX;
-        if (segRaf) return;
-        segRaf = requestAnimationFrame(() => {
-          segRaf = 0;
-          const d = segDrag;
-          if (!d) return;
-          const rect = d.rect, itemW = rect.width / 4, pad = 2;
-          const base = d.idx * itemW + pad;
-          let target = base + (d.x - d.startX);
-          target = Math.max(pad, Math.min(rect.width - itemW - pad, target));
-          if (Math.abs(target - base) > 3) d.moved = true;
-          d.target = target;
-          const sx = 1 + Math.min(0.18, Math.abs(target - base) / rect.width);
-          ratioThumb.style.transition = "none";
-          ratioThumb.style.left = target.toFixed(1) + "px";
-          ratioThumb.style.transform = "scaleX(" + sx.toFixed(3) + ")";
-        });
-      });
-      const segEnd = () => {
-        if (!segDrag) return;
-        const d = segDrag;
-        segDrag = null;
-        if (segRaf) { cancelAnimationFrame(segRaf); segRaf = 0; }
-        ratioThumb.style.transition = "";
-        ratioThumb.style.transform = "";
-        if (!d.moved || d.target == null) { moveRatioThumb(); return; }
-        const itemW = d.rect.width / 4, pad = 2;
-        let idx = Math.round((d.target - pad) / itemW);
-        idx = Math.max(0, Math.min(3, idx));
-        const btns = document.querySelectorAll(".ratio-opt");
-        const btn = btns[idx];
-        if (btn && !btn.disabled && !btn.classList.contains("active")) {
-          haptic();
-          shareRatio = btn.dataset.ratio;
-          btns.forEach((b) => b.classList.toggle("active", b === btn));
-        }
-        moveRatioThumb();
-      };
-      window.addEventListener("pointerup", segEnd);
-      window.addEventListener("pointercancel", segEnd);
-    }
     // 竖排显示时强制使用自适应比例（按浏览器卡片实际宽高比）
     function syncRatioOptions() {
       const forceAuto = currentTheme.direction === "vertical";
@@ -2110,7 +2123,7 @@
       }
     };
 
-    let currentTheme = { color: "warm", layout: "centered", size: "large", direction: "horizontal", fx: "on" };
+    let currentTheme = { color: "warm", layout: "centered", size: "large", direction: "horizontal" };
     // 竖排默认紧凑排版；切回横排时恢复之前的选择
     let prevHorzTheme = null;
 
@@ -2135,8 +2148,6 @@
           btn.classList.toggle("active", btn.dataset.value === value);
         });
       });
-      // 液态玻璃特效开关（关闭后滑块拖动一并停用，恢复原样式）
-      document.body.classList.toggle("lg-on", currentTheme.fx !== "off");
       // 字号/方向变化后重新自适应
       requestAnimationFrame(fitCardText);
     }
@@ -2153,7 +2164,6 @@
           if (p.color && THEMES.color[p.color]) currentTheme.color = p.color;
           if (p.layout && THEMES.layout[p.layout]) currentTheme.layout = p.layout;
           if (p.direction === "vertical" || p.direction === "horizontal") currentTheme.direction = p.direction;
-          if (p.fx === "off") currentTheme.fx = "off";
           // 竖排分享图默认紧凑排版
           if (currentTheme.direction === "vertical") {
             currentTheme.layout = "compact";
@@ -2273,6 +2283,16 @@
       m.className = "result-m";
       m.textContent = (p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : "");
       hm.append(t, m);
+      const noteIc = document.createElement("div");
+      noteIc.className = "result-note" + (noteMap.has(p.id) ? " on" : "");
+      noteIc.dataset.id = p.id;
+      noteIc.innerHTML = noteSVG();
+      noteIc.title = "批注";
+      noteIc.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        haptic();
+        openNoteEditor(p);
+      });
       const star = document.createElement("div");
       star.className = "result-fav" + (favSet.has(p.id) ? " on" : "");
       star.dataset.id = p.id;
@@ -2290,7 +2310,7 @@
       const arrow = document.createElement("div");
       arrow.className = "result-arrow";
       arrow.textContent = "▾";
-      head.append(chk, hm, star, arrow);
+      head.append(chk, hm, noteIc, star, arrow);
       const body = document.createElement("div");
       body.className = "result-body";
       const verse = document.createElement("div");
@@ -2478,6 +2498,355 @@
     });
     $("favSheetBackdrop").addEventListener("click", () => $("favSheet").classList.remove("open"));
 
+    // ====== 批注：纸笔图标写感悟，存本机本地缓存；批注本支持批量管理；批注卡片（批注大、诗词小） ======
+    const NOTE_KEY = "shihai-notes-v1";
+    const NOTE_ASK_KEY = "shihai-note-ask";
+    const NOTE_RATIO_KEY = "shihai-note-ratio";
+    let notes = [];
+    try { notes = JSON.parse(localStorage.getItem(NOTE_KEY) || "[]") || []; } catch (e) { notes = []; }
+    const noteMap = new Map(notes.map((n) => [n.id, n]));
+    let noteSelMode = false;
+    const noteSelIds = new Set();
+    let noteRatio = "3:4";
+    try { noteRatio = localStorage.getItem(NOTE_RATIO_KEY) || "3:4"; } catch (e) {}
+    let noteAskMode = "";
+    try { noteAskMode = localStorage.getItem(NOTE_ASK_KEY) || ""; } catch (e) {}
+    let editingNotePoem = null;
+
+    function saveNotes() { try { localStorage.setItem(NOTE_KEY, JSON.stringify(notes)); } catch (e) {} }
+    function noteSVG() {
+      return '<svg class="note-svg" viewBox="0 0 24 24" fill="currentColor"><path opacity=".4" d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z"/><path d="M14 2l6 6h-6V2z"/><path d="M2.5 17.5L13 7l3.5 3.5L6 21H2.5v-3.5z"/></svg>';
+    }
+    function updateCardNoteBtn() {
+      const btn = $("cardNote");
+      if (!btn || !currentPoem) return;
+      btn.classList.toggle("on", noteMap.has(favId(currentPoem)));
+    }
+    function syncResultsNote() {
+      document.querySelectorAll("#resultsList .result-note").forEach((el) => el.classList.toggle("on", noteMap.has(el.dataset.id)));
+    }
+    function moveNoteRatioThumb() {
+      const opts = Array.from(document.querySelectorAll("#noteRatioSeg .nratio-opt"));
+      const idx = opts.findIndex((b) => b.dataset.nratio === noteRatio);
+      const th = $("noteRatioThumb");
+      if (idx >= 0 && th) th.style.left = "calc(" + idx * 25 + "% + 2px)";
+    }
+    document.querySelectorAll("#noteRatioSeg .nratio-opt").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.nratio === noteRatio);
+      btn.addEventListener("click", () => {
+        haptic();
+        noteRatio = btn.dataset.nratio;
+        try { localStorage.setItem(NOTE_RATIO_KEY, noteRatio); } catch (e) {}
+        document.querySelectorAll("#noteRatioSeg .nratio-opt").forEach((b) => b.classList.toggle("active", b === btn));
+        moveNoteRatioThumb();
+      });
+    });
+
+    function openNoteEditor(poem) {
+      editingNotePoem = poem;
+      const ex = noteMap.get(favId(poem));
+      $("noteEditHead").textContent = ex ? "编辑批注" : "写批注";
+      $("noteEditMeta").textContent = "《" + (poem.t || "无题") + "》" + [poem.d, poem.a].filter(Boolean).join(" · ");
+      $("noteText").value = ex ? ex.n : "";
+      $("noteRemove").style.display = ex ? "" : "none";
+      moveNoteRatioThumb();
+      $("noteEditSheet").classList.add("open");
+    }
+    function closeNoteEditor() { $("noteEditSheet").classList.remove("open"); }
+
+    $("noteToggle").addEventListener("click", () => {
+      haptic();
+      noteSelMode = false; noteSelIds.clear();
+      renderNoteList(); updateNoteBar();
+      $("noteSheet").classList.add("open");
+    });
+    $("noteSheetBackdrop").addEventListener("click", () => $("noteSheet").classList.remove("open"));
+    $("noteEditBackdrop").addEventListener("click", closeNoteEditor);
+    $("noteCancel").addEventListener("click", () => { haptic(); closeNoteEditor(); });
+    $("noteRemove").addEventListener("click", () => {
+      if (!editingNotePoem) return;
+      haptic();
+      const id = favId(editingNotePoem);
+      notes = notes.filter((n) => n.id !== id);
+      noteMap.delete(id);
+      saveNotes();
+      closeNoteEditor();
+      updateCardNoteBtn(); syncResultsNote();
+      renderNoteList(); updateNoteBar();
+      showStatus("批注已删除", false);
+    });
+    $("noteSave").addEventListener("click", () => {
+      if (!editingNotePoem) return;
+      const text = $("noteText").value.trim();
+      if (!text) { showStatus("批注内容不能为空", true); return; }
+      haptic();
+      const poem = editingNotePoem;
+      const id = favId(poem);
+      const ex = noteMap.get(id);
+      if (ex) { ex.n = text; ex.ts = Date.now(); }
+      else {
+        const rec = { id, t: poem.t || "", a: poem.a || "", d: poem.d || "", y: poem.y || "", c: poem.c || "", n: text, ts: Date.now() };
+        notes.unshift(rec); noteMap.set(id, rec);
+      }
+      saveNotes();
+      closeNoteEditor();
+      updateCardNoteBtn(); syncResultsNote();
+      // 「不再询问」记忆：yes=保存后直接生成卡片，no=只保存
+      if (noteAskMode === "yes") { generateNoteCard(noteMap.get(id)); return; }
+      if (noteAskMode === "no") { showStatus("批注已保存", false); return; }
+      $("noteAskRemember").checked = false;
+      $("noteAskSheet").dataset.noteId = id;
+      $("noteAskSheet").classList.add("open");
+    });
+    function noteAskFinish(action) {
+      if ($("noteAskRemember").checked) {
+        noteAskMode = action;
+        try { localStorage.setItem(NOTE_ASK_KEY, action); } catch (e) {}
+      }
+      const id = $("noteAskSheet").dataset.noteId;
+      $("noteAskSheet").classList.remove("open");
+      if (action === "yes") generateNoteCard(noteMap.get(id));
+    }
+    $("noteAskYes").addEventListener("click", () => { haptic(); noteAskFinish("yes"); });
+    $("noteAskNo").addEventListener("click", () => { haptic(); noteAskFinish("no"); });
+    $("noteAskBackdrop").addEventListener("click", () => $("noteAskSheet").classList.remove("open"));
+
+    function updateNoteBar() {
+      $("noteSelAll").style.display = noteSelMode ? "" : "none";
+      $("noteDelete").style.display = noteSelMode ? "" : "none";
+      $("noteManageDone").style.display = noteSelMode ? "" : "none";
+      $("noteManage").style.display = noteSelMode ? "none" : "";
+      $("noteDelete").textContent = "删除所选(" + noteSelIds.size + ")";
+      $("noteSelAll").textContent = noteSelIds.size >= notes.length && notes.length ? "取消全选" : "全选";
+    }
+    $("noteManage").addEventListener("click", () => { haptic(); noteSelMode = true; noteSelIds.clear(); renderNoteList(); updateNoteBar(); });
+    $("noteManageDone").addEventListener("click", () => { haptic(); noteSelMode = false; noteSelIds.clear(); renderNoteList(); updateNoteBar(); });
+    $("noteSelAll").addEventListener("click", () => {
+      haptic();
+      if (noteSelIds.size >= notes.length) noteSelIds.clear(); else notes.forEach((n) => noteSelIds.add(n.id));
+      renderNoteList(); updateNoteBar();
+    });
+    $("noteDelete").addEventListener("click", () => {
+      if (!noteSelIds.size) return;
+      haptic();
+      notes = notes.filter((n) => !noteSelIds.has(n.id));
+      noteSelIds.forEach((id) => noteMap.delete(id));
+      noteSelIds.clear();
+      noteSelMode = false;
+      saveNotes();
+      renderNoteList(); updateNoteBar();
+      updateCardNoteBtn(); syncResultsNote();
+      showStatus("已删除", false);
+    });
+    const fmtNoteDate = (ts) => {
+      const dt = new Date(ts || Date.now());
+      return dt.getFullYear() + "年" + (dt.getMonth() + 1) + "月" + dt.getDate() + "日";
+    };
+    function renderNoteList() {
+      const list = $("noteList");
+      list.innerHTML = "";
+      $("noteCount").textContent = " · " + notes.length + " 条";
+      if (!notes.length) {
+        list.innerHTML = '<div class="sheet-empty">还没有批注 · 在诗词右上角点 ✎ 即可写下感悟</div>';
+        return;
+      }
+      notes.forEach((n) => {
+        const item = document.createElement("div");
+        item.className = "note-item";
+        const chk = document.createElement("div");
+        chk.className = "chk" + (noteSelIds.has(n.id) ? " on" : "");
+        chk.textContent = "✓";
+        chk.style.display = noteSelMode ? "" : "none";
+        const body = document.createElement("div");
+        body.className = "note-body";
+        const tx = document.createElement("div");
+        tx.className = "note-text";
+        tx.textContent = n.n;
+        const m = document.createElement("div");
+        m.className = "result-m note-date";
+        m.textContent = "《" + (n.t || "无题") + "》" + [n.d, n.a].filter(Boolean).join(" · ") + " · " + fmtNoteDate(n.ts);
+        body.append(tx, m);
+        const acts = document.createElement("div");
+        acts.className = "note-acts";
+        const cardBtn = document.createElement("button");
+        cardBtn.type = "button";
+        cardBtn.className = "note-card-btn";
+        cardBtn.textContent = "生成卡片";
+        cardBtn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          haptic();
+          $("noteSheet").classList.remove("open");
+          generateNoteCard(n);
+        });
+        acts.appendChild(cardBtn);
+        item.append(chk, body, acts);
+        item.addEventListener("click", () => {
+          if (noteSelMode) {
+            haptic();
+            if (noteSelIds.has(n.id)) noteSelIds.delete(n.id); else noteSelIds.add(n.id);
+            chk.classList.toggle("on", noteSelIds.has(n.id));
+            updateNoteBar();
+            return;
+          }
+          haptic();
+          $("noteSheet").classList.remove("open");
+          openNoteEditor(n);
+        });
+        list.appendChild(item);
+      });
+    }
+
+    // 批注卡片：批注大字居上、全诗小字在下；边框/水印/印章 logo/页脚与诗词卡片同风格
+    async function generateNoteCard(note) {
+      if (!note) return;
+      try {
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        const css = getComputedStyle(document.documentElement);
+        const v = (name, fb) => css.getPropertyValue(name).trim() || fb;
+        const bg = v("--bg-color", "#f4f1e8");
+        const textColor = v("--text-color", "#2f2a24");
+        const metaColor = v("--meta-color", "#766d63");
+        const accent = v("--accent-color", "#4f5f4a");
+        const catColor = v("--category-color", "#958a7e");
+        const sealColor = v("--seal-color", "#a3382f");
+        const FONT = '"Noto Serif SC", "Songti SC", "SimSun", serif';
+        const W = 3000;
+        let H;
+        if (noteRatio === "auto") {
+          const bodyEl = card.querySelector(".card-body") || card;
+          const cw = bodyEl.clientWidth || 1;
+          const ch = bodyEl.clientHeight || cw;
+          H = Math.round((W * ch) / cw);
+        } else {
+          const [rw, rh] = noteRatio.split(":").map(Number);
+          H = Math.round((W * rh) / rw);
+        }
+        H = Math.min(Math.max(H, 1000), 8000);
+        const M = Math.round(W * 0.115);
+        const canvas = document.createElement("canvas");
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.strokeStyle = accent; ctx.globalAlpha = 0.25; ctx.lineWidth = 3;
+        ctx.strokeRect(M * 0.45, M * 0.45, W - M * 0.9, H - M * 0.9);
+        ctx.globalAlpha = 1;
+        ctx.save();
+        ctx.globalAlpha = 0.045; ctx.fillStyle = textColor;
+        ctx.font = "600 " + Math.round(W * 0.38) + "px " + FONT;
+        ctx.fillText("詩", W * 0.8, H * 0.87);
+        ctx.restore();
+        const footerText = "诗海 · 非营利古诗词共享项目";
+        const logoImg = await new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = "assets/logo-yin.svg";
+        });
+        const N_LOGO_RATIO = 222 / 126;
+        const SC = W / 750;
+        const availW = W - M * 2 - 100;
+        const availH = H - M * 2;
+        const title = note.t || "无题";
+        const authorMeta = [note.d, note.a].filter(Boolean).join(" · ");
+        const verses = splitVerses(note.c || "");
+        let scale = 1, L, noteLines;
+        const layout = () => {
+          const noteFont = Math.round(40 * SC * scale);
+          const verseFont = Math.round(23 * SC * scale);
+          return {
+            noteFont, noteLH: Math.round(noteFont * 1.75),
+            titleFont: Math.round(26 * SC * scale), metaFont: Math.round(20 * SC * scale),
+            verseFont, verseLH: Math.round(verseFont * 1.85),
+            logoH: Math.round(verseFont * 1.5), logoW: Math.round(verseFont * 1.5 * N_LOGO_RATIO),
+            catFont: Math.round(20 * SC * scale)
+          };
+        };
+        const wrapNote = (size) => {
+          ctx.font = "600 " + size + "px " + FONT;
+          const lines = []; let cur = "";
+          for (const ch of note.n) {
+            if (cur && ctx.measureText(cur + ch).width > availW) { lines.push(cur); cur = ch; }
+            else cur += ch;
+          }
+          if (cur) lines.push(cur);
+          return lines;
+        };
+        const blockH = () =>
+          noteLines.length * L.noteLH + 90 + 4 + 90 +
+          L.titleFont + 50 + L.metaFont + 60 +
+          verses.length * L.verseLH + 80 + L.logoH + 70 + L.catFont;
+        for (;;) {
+          L = layout();
+          noteLines = wrapNote(L.noteFont);
+          ctx.font = "600 " + L.noteFont + "px " + FONT;
+          let wMax = noteLines.reduce((mx, s) => Math.max(mx, ctx.measureText(s).width), 0);
+          ctx.font = "600 " + L.titleFont + "px " + FONT;
+          wMax = Math.max(wMax, ctx.measureText(title).width, L.logoW);
+          if ((wMax <= availW && blockH() <= availH) || scale <= 0.3) break;
+          scale *= Math.max(0.6, Math.min(availW / Math.max(wMax, 1), availH / Math.max(blockH(), 1)));
+        }
+        let y = M + Math.max(0, (availH - blockH()) / 2);
+        ctx.fillStyle = textColor;
+        ctx.font = "600 " + L.noteFont + "px " + FONT;
+        for (const line of noteLines) {
+          ctx.fillText(line, W / 2, y + L.noteLH / 2);
+          y += L.noteLH;
+        }
+        y += 90;
+        ctx.save();
+        ctx.fillStyle = accent; ctx.globalAlpha = 0.55;
+        ctx.fillRect(W / 2 - 60, y, 120, 4);
+        ctx.restore();
+        y += 4 + 90;
+        ctx.fillStyle = textColor;
+        ctx.font = "600 " + L.titleFont + "px " + FONT;
+        ctx.fillText(title, W / 2, y + L.titleFont / 2);
+        y += L.titleFont + 50;
+        ctx.fillStyle = metaColor;
+        ctx.font = L.metaFont + "px " + FONT;
+        ctx.fillText(authorMeta, W / 2, y + L.metaFont / 2);
+        y += L.metaFont + 60;
+        ctx.fillStyle = textColor;
+        ctx.font = L.verseFont + "px " + FONT;
+        for (const line of verses) {
+          const last = line.charAt(line.length - 1);
+          if (HANG_PUNCT.includes(last)) {
+            const body = line.slice(0, -1);
+            const bw = ctx.measureText(body).width;
+            ctx.textAlign = "left";
+            ctx.fillText(body, W / 2 - bw / 2, y + L.verseLH / 2);
+            ctx.fillText(last, W / 2 + bw / 2, y + L.verseLH / 2);
+            ctx.textAlign = "center";
+          } else {
+            ctx.fillText(line, W / 2, y + L.verseLH / 2);
+          }
+          y += L.verseLH;
+        }
+        y += 80;
+        if (logoImg) ctx.drawImage(logoImg, W / 2 - L.logoW / 2, y, L.logoW, L.logoH);
+        else {
+          ctx.fillStyle = sealColor;
+          roundRectPath(ctx, W / 2 - L.logoW / 2, y, L.logoW, L.logoH, L.logoH * 0.15);
+          ctx.fill();
+        }
+        y += L.logoH + 70;
+        ctx.fillStyle = catColor;
+        ctx.font = L.catFont + "px " + FONT;
+        ctx.fillText(footerText, W / 2, y + L.catFont / 2);
+        const dataUrl = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = "诗海_批注_" + noteRatio.replace(":", "x") + "_" + Date.now() + ".png";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showStatus("批注卡片已生成并开始下载", false);
+      } catch (e) {
+        showStatus("生成批注卡片失败：" + (e && e.message ? e.message : e), true);
+      }
+    }
+
     // ====== 使用指南（顶部灯泡呼出） ======
     $("guideToggle").addEventListener("click", () => {
       haptic();
@@ -2575,6 +2944,8 @@
           if (tg) tg.classList.add("ready");
           const fv = $("favToggle");
           if (fv) fv.classList.add("ready");
+          const nt = $("noteToggle");
+          if (nt) nt.classList.add("ready");
           const gd = $("guideToggle");
           if (gd) gd.classList.add("ready");
           const splash = $("splash");
@@ -2597,6 +2968,8 @@
         if (tg) tg.classList.add("ready");
         const fv = $("favToggle");
         if (fv) fv.classList.add("ready");
+        const nt = $("noteToggle");
+        if (nt) nt.classList.add("ready");
         const gd = $("guideToggle");
         if (gd) gd.classList.add("ready");
         setTimeout(() => splash.remove(), 900);

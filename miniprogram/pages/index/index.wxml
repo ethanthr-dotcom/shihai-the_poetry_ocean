@@ -1,4 +1,4 @@
-<view class="app {{liquidGlass ? 'lg-on' : ''}}" style="{{varsStyle}}" bindtap="onPageTap">
+<view class="app" style="{{varsStyle}}" bindtap="onPageTap">
   <!-- 顶部加载进度条 -->
   <view class="progress {{progressState}}"></view>
 
@@ -71,6 +71,7 @@
       <text class="card-watermark">詩</text>
       <block wx:if="{{hasPoem}}">
         <view class="card-fav {{currentFav ? 'on' : ''}} {{favBurst ? 'burst' : ''}}" catchtap="onCardFavTap"><view class="star-glyph"></view></view>
+        <view class="card-note {{currentNote ? 'on' : ''}}" catchtap="onCardNoteTap"><view class="note-glyph"></view></view>
         <view class="card-body">
           <view class="title" style="{{titleStyle}}">
             <view wx:for="{{titleLines}}" wx:key="index" class="title-line">{{item}}</view>
@@ -90,8 +91,8 @@
           </button>
           <view class="ratio-row">
             <text class="ratio-label">卡片比例</text>
-            <view id="cardSeg" class="ratio-seg" catchtouchstart="onSegTouchStart" catchtouchmove="onSegTouchMove" catchtouchend="onSegTouchEnd">
-              <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx); {{thumbDragTransform}}"></view>
+            <view class="ratio-seg">
+              <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx)"></view>
               <view wx:for="{{ratioOptions}}" wx:key="value"
                 class="ratio-seg-item {{item.active ? 'active' : ''}} {{item.disabled ? 'disabled' : ''}}"
                 data-value="{{item.value}}" bindtap="onRatioTap">{{item.label}}</view>
@@ -129,6 +130,7 @@
             <view class="result-t">{{item.t || '无题'}}</view>
             <view class="result-m">{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</view>
           </view>
+          <view wx:if="{{!selMode}}" class="result-note {{item.hasNote ? 'on' : ''}}" data-index="{{index}}" catchtap="onResultNoteTap"><view class="note-glyph"></view></view>
           <view wx:if="{{!selMode}}" class="result-fav {{item.fav ? 'on' : ''}} {{item.burst ? 'burst' : ''}}" data-index="{{index}}" catchtap="onResultFavTap"><view class="star-glyph"></view></view>
           <view class="result-arrow {{item.open ? 'open' : ''}}">▾</view>
         </view>
@@ -138,8 +140,8 @@
           <view class="result-tools">
             <view class="ratio-row">
               <text class="ratio-label">卡片比例</text>
-              <view id="listSeg" class="ratio-seg" catchtouchstart="onSegTouchStart" catchtouchmove="onSegTouchMove" catchtouchend="onSegTouchEnd">
-                <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx); {{thumbDragTransform}}"></view>
+              <view class="ratio-seg">
+                <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx)"></view>
                 <view wx:for="{{ratioOptions}}" wx:for-item="r" wx:key="value"
                   class="ratio-seg-item {{r.active ? 'active' : ''}} {{r.disabled ? 'disabled' : ''}}"
                   data-value="{{r.value}}" bindtap="onRatioTap">{{r.label}}</view>
@@ -175,6 +177,9 @@
   <view class="fav-toggle {{uiReady ? 'ready' : ''}}" catchtap="onFavToggle">
     <view class="fav-icon"></view>
   </view>
+  <view class="note-toggle {{uiReady ? 'ready' : ''}}" catchtap="onNoteToggle">
+    <view class="note-icon"></view>
+  </view>
 
   <!-- 主题设置按钮 -->
   <!-- 设置图标：纯色齿轮（跟随主题文字色），点击绕中心旋转 -->
@@ -197,13 +202,6 @@
       <view class="theme-options">
         <view wx:for="{{directionOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
           data-group="direction" data-value="{{item.value}}" bindtap="onThemeOptTap">{{item.label}}</view>
-      </view>
-    </view>
-    <view class="theme-section">
-      <view class="theme-label">特效</view>
-      <view class="theme-options">
-        <view wx:for="{{fxOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
-          data-value="{{item.value}}" bindtap="onFxOptTap">{{item.label}}</view>
       </view>
     </view>
     <view class="panel-hint">点击页面空白处即可关闭</view>
@@ -247,9 +245,10 @@
         <view class="guide-item"><text class="guide-k">列表浏览</text>点击标题行展开全诗，一次只展开一首；上滑自动加载更多。</view>
         <view class="guide-item"><text class="guide-k">批量收藏</text>列表中点「批量收藏」，勾选后一键加入收藏夹。</view>
         <view class="guide-item"><text class="guide-k">收藏</text>点诗词旁的星星收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持批量管理与删除。</view>
+        <view class="guide-item"><text class="guide-k">批注</text>点诗词旁的纸笔图标写下感悟；右上角纸笔按钮打开批注本，支持批量管理与删除；批注还能生成「批注大、诗词小」的分享卡片。</view>
         <view class="guide-item"><text class="guide-k">分享卡片</text>在卡片内选择比例后点「下载或分享卡片」，生成高清图片保存或转发。</view>
         <view class="guide-item"><text class="guide-k">主题排版</text>右上角齿轮可切换主题配色、横竖排版与字号版式。</view>
-        <view class="guide-item"><text class="guide-k">温馨提示</text>收藏保存在本机本地缓存（相当于 cookie），清除缓存或卸载后会丢失，心仪的诗词请及时保存分享卡片。</view>
+        <view class="guide-item"><text class="guide-k">温馨提示</text>收藏与批注仅保存在本机本地缓存（相当于 cookie），清除缓存或卸载后会丢失，心仪的诗词与感悟请及时生成卡片保存。</view>
       </view>
       <button class="btn primary guide-ok" bindtap="onGuideClose">我知道了</button>
     </view>
@@ -276,6 +275,71 @@
           <view class="fav-heart"><view class="star-glyph"></view></view>
         </view>
       </scroll-view>
+    </view>
+  </view>
+
+  <!-- 批注编辑器（纸笔图标；批注卡片比例四档可选） -->
+  <view wx:if="{{noteEditShow}}" class="picker-mask" bindtap="onNoteEditClose">
+    <view class="note-edit-box" catchtap="noop">
+      <view class="sheet-head">{{noteEditTitle}}</view>
+      <view class="note-edit-meta">{{noteEditMeta}}</view>
+      <textarea class="note-textarea" value="{{noteText}}" maxlength="120" placeholder="写下此刻的感悟……（120 字以内）" bindinput="onNoteInput" auto-height></textarea>
+      <view class="ratio-row">
+        <text class="ratio-label">卡片比例</text>
+        <view class="ratio-seg">
+          <view class="ratio-thumb" style="left: calc({{noteRatioIndex * 25}}% + 4rpx)"></view>
+          <view wx:for="{{noteRatioOptions}}" wx:key="value" class="ratio-seg-item {{item.active ? 'active' : ''}}"
+            data-value="{{item.value}}" bindtap="onNoteRatioTap">{{item.label}}</view>
+        </view>
+      </view>
+      <view class="note-edit-bar">
+        <view wx:if="{{noteEditHas}}" class="mini-btn danger" bindtap="onNoteRemove">删除批注</view>
+        <view class="note-edit-spacer"></view>
+        <view class="mini-btn" bindtap="onNoteEditClose">取消</view>
+        <view class="mini-btn solid" bindtap="onNoteSave">保存</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 批注本：批量管理 / 生成卡片 -->
+  <view wx:if="{{noteSheetShow}}" class="picker-mask" bindtap="onNoteSheetClose">
+    <view class="fav-sheet" catchtap="noop">
+      <view class="sheet-head">批注本<text class="results-count"> · {{noteListData.length}} 条</text></view>
+      <view class="fav-tip">✎ 批注仅保存在本机本地缓存（相当于 cookie），清除缓存或卸载小程序后会丢失</view>
+      <view class="fav-bar">
+        <view class="mini-btn" bindtap="onNoteManage">{{noteSelMode ? '完成' : '批量管理'}}</view>
+        <block wx:if="{{noteSelMode}}">
+          <view class="mini-btn" bindtap="onNoteSelAll">{{noteSelCount >= noteListData.length && noteListData.length ? '取消全选' : '全选'}}</view>
+          <view class="mini-btn danger {{noteSelCount ? '' : 'disabled'}}" bindtap="onNoteDelete">删除所选({{noteSelCount}})</view>
+        </block>
+      </view>
+      <scroll-view class="fav-list" scroll-y>
+        <view wx:if="{{!noteListData.length}}" class="sheet-empty">还没有批注 · 在诗词右上角点 ✎ 即可写下感悟</view>
+        <view wx:for="{{noteListData}}" wx:key="id" class="note-item" data-index="{{index}}" bindtap="onNoteItemTap">
+          <view wx:if="{{noteSelMode}}" class="chk {{noteSelIds[item.id] ? 'on' : ''}}">✓</view>
+          <view class="note-body">
+            <view class="note-text">{{item.n}}</view>
+            <view class="result-m note-date">《{{item.t || '无题'}}》{{item.d}} · {{item.a}} · {{item.date}}</view>
+          </view>
+          <view wx:if="{{!noteSelMode}}" class="note-card-btn" data-index="{{index}}" catchtap="onNoteItemCard">卡片</view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 保存批注后：询问是否生成卡片（可勾选「不再询问」） -->
+  <view wx:if="{{noteAskShow}}" class="picker-mask" bindtap="onNoteAskNo">
+    <view class="note-ask-box" catchtap="noop">
+      <view class="sheet-head">生成批注卡片？</view>
+      <view class="note-ask-tip">批注已保存。批注可以和诗词一起生成分享卡片（批注大、诗词小），方便保存与转发。</view>
+      <view class="note-ask-remember" bindtap="onNoteAskRememberToggle">
+        <view class="chk {{noteAskRemember ? 'on' : ''}}">✓</view>
+        <text>记住选择，以后不再询问</text>
+      </view>
+      <view class="note-ask-bar">
+        <view class="mini-btn" bindtap="onNoteAskNo">暂不</view>
+        <view class="mini-btn solid" bindtap="onNoteAskYes">生成卡片</view>
+      </view>
     </view>
   </view>
 

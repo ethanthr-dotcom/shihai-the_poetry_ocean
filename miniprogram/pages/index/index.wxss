@@ -437,7 +437,7 @@
 .type-panel { margin-top: 8rpx; border: 2rpx solid var(--card-border); background: var(--sheet-bg, var(--bg-color)); border-radius: 20rpx; padding: 20rpx; }
 .dd-search { margin-bottom: 16rpx; }
 .dd-list { max-height: 46vh; }
-.search-tip { font-size: 22rpx; color: var(--label-color); opacity: .75; text-align: center; margin: 12rpx 0 28rpx; line-height: 1.7; }
+.search-tip { font-size: 22rpx; color: var(--label-color); opacity: .75; text-align: center; margin: 10rpx 0 10rpx; line-height: 1.7; }
 .mini-btn.solid { background: var(--button-bg, #8b2c2c); border-color: var(--button-bg, #8b2c2c); color: var(--button-text, #fff); opacity: 1; font-size: 26rpx; padding: 12rpx 32rpx; }
 .card-fav, .result-fav, .fav-heart { font-style: normal; flex: none; line-height: 1; }
 .input { font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; }
@@ -484,7 +484,7 @@
 
 /* 按钮按压缩放回弹（iOS 风格；toggle 类在各自规则里合并 transition） */
 button, .mini-btn, .type-tag, .ratio-seg-item { transition: transform .18s cubic-bezier(.34, 1.56, .64, 1); }
-button:active, .mini-btn:active, .type-tag:active, .ratio-seg-item:active, .fav-toggle:active, .theme-toggle:active, .guide-toggle:active { transform: scale(.92); }
+button:active, .mini-btn:active, .type-tag:active, .ratio-seg-item:active, .fav-toggle:active, .theme-toggle:active, .guide-toggle:active, .note-toggle:active { transform: scale(.92); }
 button[disabled]:active { transform: none; }
 
 /* 顶部灯泡：使用指南入口 */
@@ -499,29 +499,34 @@ button[disabled]:active { transform: none; }
 .guide-k { display: inline-block; color: var(--seal-color, #a3382f); font-weight: bold; margin-right: 14rpx; }
 .guide-ok { margin-top: 8rpx; }
 
-/* ===== 液态玻璃（设置 > 特效 可关闭；关闭后滑块拖动一并停用，恢复原样式） ===== */
-.lg-on .btn, .lg-on .mini-btn, .lg-on .input, .lg-on .ratio-seg, .lg-on .type-panel, .lg-on .theme-panel, .lg-on .guide-box, .lg-on .fav-sheet, .lg-on .share-sheet {
-  background: color-mix(in srgb, var(--sheet-bg, var(--bg-color)) 62%, transparent);
-  backdrop-filter: blur(12px) saturate(1.6) brightness(1.04);
-  -webkit-backdrop-filter: blur(12px) saturate(1.6) brightness(1.04);
-  border-color: color-mix(in srgb, var(--text-color) 22%, transparent);
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, .32), inset 0 -1rpx 0 rgba(0, 0, 0, .06), 0 8rpx 24rpx rgba(0, 0, 0, .10);
-}
-.lg-on .btn.primary, .lg-on .mini-btn.solid { background: color-mix(in srgb, var(--button-bg, #8b2c2c) 76%, transparent); }
-.lg-on .btn.secondary { background: color-mix(in srgb, var(--button-bg, #8b2c2c) 42%, transparent); }
-.lg-on .ratio-thumb {
-  background: color-mix(in srgb, var(--accent-color) 80%, transparent);
-  backdrop-filter: blur(6px) saturate(1.4);
-  -webkit-backdrop-filter: blur(6px) saturate(1.4);
-  box-shadow: inset 0 2rpx 4rpx rgba(255, 255, 255, .45), inset 0 -2rpx 4rpx rgba(0, 0, 0, .12), 0 4rpx 12rpx rgba(0, 0, 0, .18);
-}
-.lg-on .ratio-thumb { will-change: transform, left; }
-
 /* 查询结果：□ 现象说明（显眼内联提示，非弹窗） */
-.results-note { margin: 20rpx 0 8rpx; padding: 16rpx 22rpx; font-size: 23rpx; line-height: 1.65; color: var(--seal-color, #a3382f); border: 2rpx dashed var(--seal-color, #a3382f); border-radius: 14rpx; }
+.results-note { margin: 12rpx 0 8rpx; padding: 16rpx 22rpx; font-size: 23rpx; line-height: 1.65; color: var(--seal-color, #a3382f); border: 2rpx dashed var(--seal-color, #a3382f); border-radius: 14rpx; }
 
 /* 查询区常驻提示 */
-.data-note { margin: 0 12rpx 24rpx; padding: 14rpx 20rpx; font-size: 22rpx; line-height: 1.65; color: var(--seal-color, #a3382f); border: 2rpx dashed var(--seal-color, #a3382f); border-radius: 12rpx; }
+.data-note { margin: 0 12rpx 14rpx; padding: 14rpx 20rpx; font-size: 22rpx; line-height: 1.65; color: var(--seal-color, #a3382f); border: 2rpx dashed var(--seal-color, #a3382f); border-radius: 12rpx; }
+
+/* ===== 批注：纸笔图标 / 批注本 / 编辑器 / 批注卡片 ===== */
+.note-toggle { position: absolute; top: 36rpx; right: 188rpx; width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; color: var(--text-color); z-index: 1200; opacity: 0; transition: opacity .5s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1); }
+.note-toggle.ready { opacity: .8; }
+.note-icon { width: 42rpx; height: 42rpx; background: var(--text-color); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath opacity='.4' d='M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z' fill='%23000'/%3E%3Cpath d='M14 2l6 6h-6V2z' fill='%23000'/%3E%3Cpath d='M2.5 17.5L13 7l3.5 3.5L6 21H2.5v-3.5z' fill='%23000'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath opacity='.4' d='M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z' fill='%23000'/%3E%3Cpath d='M14 2l6 6h-6V2z' fill='%23000'/%3E%3Cpath d='M2.5 17.5L13 7l3.5 3.5L6 21H2.5v-3.5z' fill='%23000'/%3E%3C/svg%3E") no-repeat center / contain; }
+.card-note { position: absolute; top: 36rpx; right: 128rpx; width: 64rpx; height: 64rpx; display: flex; align-items: center; justify-content: center; z-index: 5; }
+.result-note { position: relative; width: 48rpx; height: 48rpx; margin-right: 4rpx; display: flex; align-items: center; justify-content: center; flex: none; }
+.note-glyph { width: 40rpx; height: 40rpx; background: var(--meta-color); opacity: .55; transition: opacity .2s ease; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath opacity='.4' d='M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z' fill='%23000'/%3E%3Cpath d='M14 2l6 6h-6V2z' fill='%23000'/%3E%3Cpath d='M2.5 17.5L13 7l3.5 3.5L6 21H2.5v-3.5z' fill='%23000'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath opacity='.4' d='M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z' fill='%23000'/%3E%3Cpath d='M14 2l6 6h-6V2z' fill='%23000'/%3E%3Cpath d='M2.5 17.5L13 7l3.5 3.5L6 21H2.5v-3.5z' fill='%23000'/%3E%3C/svg%3E") no-repeat center / contain; }
+.result-note .note-glyph { width: 36rpx; height: 36rpx; }
+.card-note.on .note-glyph, .result-note.on .note-glyph { background: var(--seal-color, #a3382f); opacity: 1; }
+.note-edit-box, .note-ask-box { width: 100%; background: var(--sheet-bg, var(--bg-color)); border-radius: 36rpx 36rpx 0 0; padding: 36rpx 40rpx calc(28rpx + env(safe-area-inset-bottom)); animation: sheetUp .28s ease-out; }
+.note-edit-meta { font-size: 24rpx; color: var(--label-color); opacity: .7; margin-top: 4rpx; }
+.note-textarea { width: 100%; box-sizing: border-box; min-height: 160rpx; margin: 20rpx 0; padding: 20rpx; font-size: 28rpx; line-height: 1.8; color: var(--text-color); background: var(--input-bg); border: 2rpx solid var(--input-border); border-radius: 16rpx; font-family: inherit; }
+.note-edit-bar, .note-ask-bar { display: flex; gap: 16rpx; align-items: center; margin-top: 24rpx; }
+.note-edit-spacer { flex: 1; }
+.note-ask-tip { font-size: 26rpx; line-height: 1.8; color: var(--text-color); opacity: .85; margin: 12rpx 0 20rpx; }
+.note-ask-remember { display: flex; gap: 12rpx; align-items: center; font-size: 25rpx; color: var(--label-color); }
+.note-item { display: flex; align-items: flex-start; padding: 24rpx 8rpx; border-bottom: 2rpx dashed var(--card-border); }
+.note-body { flex: 1; min-width: 0; }
+.note-text { font-size: 28rpx; line-height: 1.7; color: var(--text-color); word-break: break-all; }
+.note-date { margin-top: 6rpx; }
+.note-card-btn { flex: none; margin-left: 16rpx; font-size: 23rpx; padding: 10rpx 22rpx; border: 2rpx solid var(--accent-color); color: var(--accent-color); border-radius: 999rpx; }
+.note-item:active { opacity: .6; }
 .fav-icon { width: 42rpx; height: 42rpx; background: var(--text-color); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; }
 
 /* ====== 收藏夹抽屉 ====== */
