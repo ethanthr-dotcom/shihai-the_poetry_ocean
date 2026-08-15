@@ -141,11 +141,17 @@ async function findRandomPoem(author, dynasty, type, maxLen) {
   throw new Error("未找到匹配条件的诗");
 }
 
+// 开发者调试：内存分块缓存统计
+function cacheStats() {
+  return { count: chunkCache.size, chunks: Array.from(chunkCache.keys()) };
+}
+
 module.exports = {
   loadIndex,
   ensureFullIndex,
   loadChunk,
   filterChunks,
   matchPoem,
-  findRandomPoem
+  findRandomPoem,
+  cacheStats
 };

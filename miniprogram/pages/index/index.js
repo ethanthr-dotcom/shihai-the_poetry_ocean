@@ -1,4 +1,5 @@
 // 诗海单页：行为与网页版 index.html 对齐（抽取→渲染→主题→分享图）
+const cfg = require("../../utils/config");
 const data = require("../../utils/data");
 const verse = require("../../utils/verse");
 const themes = require("../../utils/themes");
@@ -47,7 +48,7 @@ Page({
     author: "",
     dynasty: "",
     type: "",
-    libTip: "共收录 34 万余首古诗词",
+    libTip: "收录 34 万余首古诗词",
     statusText: "正在加载诗词库……",
     statusError: false,
     hasPoem: false,
@@ -60,9 +61,12 @@ Page({
     randomLoading: false,
     shareLoading: false,
     shareSheetShow: false,
+    devShow: false,
+    devRows: [],
     shareImg: "",
-    randomBtnLines: ["随机显示诗/词"],
-    shareBtnLines: ["下载或分享诗卡"],
+    randomBtnLines: ["今日与诗相逢"],
+    shareBtnLines: ["下载或分享卡片"],
+    mottoChars: "掬古人之诗·养今时之心".split(""),
     ratioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === "1:1", disabled: false })),
     ratioActiveIndex: 0,
     shareRatio: "1:1",
@@ -81,11 +85,11 @@ Page({
   onLoad() {
     this.currentTheme = themes.loadTheme();
     this.applyTheme();
-    // 首次使用提示：确认过则照常开屏，否则先展示提示、暂缓开屏
+    // 首次使用提示：确认过则照常开屏；首次只展示提示抽屉，同意后直进主页（不再播开屏动画）
     let agreed = "";
     try { agreed = wx.getStorageSync("shihai-disclaimer-v1"); } catch (e) {}
     if (!agreed) {
-      this.setData({ disclaimerShow: true });
+      this.setData({ disclaimerShow: true, splashShow: false, uiReady: true });
     } else {
       this.startSplash();
     }
@@ -105,8 +109,8 @@ Page({
     const avail = winW - 32 - 36 * scale + 16 * scale - 32 * scale;
     const fontPx = 16 * scale;
     this.setData({
-      randomBtnLines: this._splitBtnLabel("随机显示诗/词", avail, fontPx),
-      shareBtnLines: this._splitBtnLabel("下载或分享诗卡", avail, fontPx)
+      randomBtnLines: this._splitBtnLabel("今日与诗相逢", avail, fontPx),
+      shareBtnLines: this._splitBtnLabel("下载或分享卡片", avail, fontPx)
     });
   },
 
@@ -125,18 +129,19 @@ Page({
   },
 
   onDismissDisclaimer() {
+    this.haptic();
     try { wx.setStorageSync("shihai-disclaimer-v1", "1"); } catch (e) {}
     clearTimeout(this.splashTimer);
     this.setData({ disclaimerShow: false, splashShow: false, uiReady: true });
   },
 
-  // ====== 开屏动画（与网页版一致：2.6s 自动消失，点击可跳过） ======
+  // ====== 开屏动画（与网页版一致：3.2s 自动消失，点击可跳过） ======
   startSplash() {
     const hide = () => {
       if (!this.data.splashShow) return;
       this.setData({ splashShow: false, uiReady: true });
     };
-    this.splashTimer = setTimeout(hide, 2600);
+    this.splashTimer = setTimeout(hide, 3200);
   },
   onTapSplash() {
     clearTimeout(this.splashTimer);
@@ -161,11 +166,11 @@ Page({
       const total = (index && index.total) || 0;
       if (total) {
         this.setData({
-          libTip: "共收录 " + Math.floor(total / 10000) + " 万余首古诗词"
+          libTip: "收录 " + Math.floor(total / 10000) + " 万余首古诗词"
         });
       }
       this.setData({
-        statusText: "共收录 " + total.toLocaleString("zh-CN") + " 首诗词，点击下方按钮随机抽取",
+        statusText: "收录 " + total.toLocaleString("zh-CN") + " 首诗词，点击下方按钮随机抽取",
         statusError: false
       });
       await this.loadRandomPoem(false);
@@ -363,6 +368,8 @@ Page({
 
   // ====== 主题面板（对齐网页版 themePanel） ======
   onThemeToggle() {
+    // 长按已触发开发者面板：吃掉松手后随之而来的 tap，避免设置面板误开
+    if (this._devLongPressFired) { this._devLongPressFired = false; return; }
     this.haptic();
     // 齿轮绕中心整周旋转（650ms 后复位类，供下次触发）
     this.setData({ gearSpin: true });
@@ -372,6 +379,80 @@ Page({
   },
   onPageTap() {
     if (this.data.themePanelOpen) this.setData({ themePanelOpen: false });
+  },
+  // ====== 开发者入口：长按设置齿轮 5s ======
+  onGearTouchStart(e) {
+    const t = e.touches && e.touches[0];
+    this._gearStart = t ? { x: t.clientX, y: t.clientY } : null;
+    clearTimeout(this._devTimer);
+    this._devTimer = setTimeout(() => {
+      this._devTimer = null;
+      this._devLongPressFired = true;
+      this.openDevPanel();
+    }, 5000);
+  },
+  onGearTouchEnd() {
+    if (this._devTimer) { clearTimeout(this._devTimer); this._devTimer = null; }
+  },
+  onGearTouchMove(e) {
+    // 手指轻微抖动不取消（位移阈值 12px），明显移动才视为放弃长按
+    const t = e.touches && e.touches[0];
+    if (t && this._gearStart) {
+      const dx = t.clientX - this._gearStart.x, dy = t.clientY - this._gearStart.y;
+      if (dx * dx + dy * dy <= 144) return;
+    }
+    if (this._devTimer) { clearTimeout(this._devTimer); this._devTimer = null; }
+  },
+  // 隐藏开发者入口：页脚版权行长按（原生 longpress，真机可靠；齿轮 5s 长按保留为备用）
+  onDevEntry() {
+    this.openDevPanel();
+  },
+  openDevPanel() {
+    // 强触感提示长按已到位
+    try { wx.vibrateShort({ type: "heavy" }); } catch (e) { try { wx.vibrateShort(); } catch (e2) {} }
+    this.refreshDevRows();
+    this.setData({ devShow: true, themePanelOpen: false });
+    // 面板打开期间每秒刷新实时状态
+    clearInterval(this._devInterval);
+    this._devInterval = setInterval(() => this.refreshDevRows(), 1000);
+  },
+  refreshDevRows() {
+    const app = getApp() || { globalData: {} };
+    const g = app.globalData || {};
+    let win = {}, acct = "";
+    try { win = wx.getWindowInfo(); } catch (e) {}
+    try { acct = wx.getAccountInfoSync().miniProgram.appId; } catch (e) {}
+    try { wx.getNetworkType({ success: (r) => this._updateDevRow("网络", r.networkType) }); } catch (e) {}
+    const cache = data.cacheStats();
+    const t = this.currentTheme || {};
+    const rows = [
+      { k: "应用名称", v: "诗海 · The Poetry Ocean" },
+      { k: "AppID", v: acct || "不可用" },
+      { k: "基础库", v: (win.SDKVersion || "-") + (typeof __wxConfig !== "undefined" && __wxConfig.envVersion ? "（" + __wxConfig.envVersion + "）" : "") },
+      { k: "网络", v: "检测中…" },
+      { k: "诗词总数", v: (g.total || 0).toLocaleString() + " 首" },
+      { k: "数据模式", v: cfg.DATA_MODE + (cfg.DATA_MODE === "cloudbase" ? "（" + cfg.CLOUDBASE_ENV + "）" : "") },
+      { k: "内存缓存分块", v: cache.count + " 个" + (cache.count ? "：" + cache.chunks.slice(0, 8).join(", ") + (cache.chunks.length > 8 ? "…" : "") : "") },
+      { k: "思源宋体", v: g.fontOk ? "✓ 已加载（" + (g.fontSrc || "") + "）" : "加载中/回退（" + (g.fontLoaded || []).length + "/2 字重）" },
+      { k: "当前主题", v: (t.color || "-") + " · " + (t.layout || "-") + " · " + (t.direction || "-") },
+      { k: "窗口尺寸", v: (win.windowWidth || "-") + "×" + (win.windowHeight || "-") + (win.pixelRatio ? " @" + win.pixelRatio + "x" : "") }
+    ];
+    this._devRowsCache = rows;
+    this.setData({ devRows: rows });
+  },
+  _updateDevRow(k, v) {
+    if (!this.data.devShow) return;
+    const rows = this.data.devRows.map((r) => (r.k === k ? { k, v } : r));
+    this.setData({ devRows: rows });
+  },
+  onDevReshowDisclaimer() {
+    this.haptic();
+    clearInterval(this._devInterval);
+    this.setData({ devShow: false, disclaimerShow: true });
+  },
+  onDevClose() {
+    clearInterval(this._devInterval);
+    this.setData({ devShow: false });
   },
   noop() {},
   onThemeOptTap(e) {
