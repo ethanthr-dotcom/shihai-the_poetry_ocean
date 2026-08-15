@@ -40,7 +40,7 @@
         </view>
       </view>
       <button class="btn primary" disabled="{{randomLoading}}" bindtap="onRandomTap">{{randomLoading ? "正在读取……" : "随机显示一首诗/词"}}</button>
-      <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">{{shareLoading ? "生成中……" : "分享诗词卡片"}}</button>
+      <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">{{shareLoading ? "生成中……" : "点击可下载或分享"}}</button>
       <view class="ratio-row">
         <text class="ratio-label">卡片比例</text>
         <view wx:for="{{ratioOptions}}" wx:key="value"
@@ -112,6 +112,18 @@
         <view>由于古籍版本、整理方式及数据处理可能存在差异，部分内容可能与其他版本有所不同，相关内容仅供阅读、学习与研究参考。</view>
       </view>
       <button class="btn primary disclaimer-ok" catchtap="onDismissDisclaimer">我已阅读，继续使用</button>
+    </view>
+  </view>
+
+  <!-- 分享浮层：生成图上浮预览（圆角），下方三选项 -->
+  <view wx:if="{{shareSheetShow}}" class="share-mask" bindtap="closeShareSheet">
+    <view class="share-sheet" catchtap="noop">
+      <image class="share-preview" src="{{shareImg}}" mode="widthFix" bindtap="previewShareImg" />
+      <view class="share-actions">
+        <button class="share-opt" open-type="share"><text class="opt-ico">💬</text>分享给朋友</button>
+        <button class="share-opt" bindtap="saveShare"><text class="opt-ico">🖼️</text>保存到相册</button>
+      </view>
+      <view class="share-tip">点图片可全屏预览 · 点空白处关闭</view>
     </view>
   </view>
 

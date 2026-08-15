@@ -534,7 +534,7 @@
         </div>
       </div>
       <button id="randomButton" type="button">随机显示一首诗/词</button>
-      <button id="shareButton" type="button" class="secondary">分享诗词卡片</button>
+      <button id="shareButton" type="button" class="secondary">点击可下载或分享</button>
       <div class="ratio-row">
         <span class="ratio-label">卡片比例</span>
         <button class="ratio-opt active" data-ratio="1:1" type="button">1:1</button>
@@ -1396,7 +1396,7 @@
         showStatus("生成卡片失败：" + (e && e.message ? e.message : e), true);
       } finally {
         shareButton.disabled = false;
-        shareButton.textContent = "分享诗词卡片";
+        shareButton.textContent = "点击可下载或分享";
       }
     });
 

@@ -7,7 +7,7 @@ const THEMES = {
       label: "暖纸",
       vars: {
         "--bg-color": "#f4f1e8", "--text-color": "#2f2a24",
-        "--card-bg": "rgba(255,255,255,.82)", "--card-border": "#ddd4c7",
+        "--card-bg": "rgba(255,255,255,.82)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#ddd4c7",
         "--card-shadow": "0 8px 26px rgba(70,55,35,.08)",
         "--accent-color": "#4f5f4a", "--meta-color": "#766d63",
         "--tip-color": "#756c62", "--label-color": "#665d54",
@@ -21,7 +21,7 @@ const THEMES = {
       label: "水墨",
       vars: {
         "--bg-color": "#fafaf8", "--text-color": "#333333",
-        "--card-bg": "rgba(255,255,255,.9)", "--card-border": "#e0e0e0",
+        "--card-bg": "rgba(255,255,255,.9)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#e0e0e0",
         "--card-shadow": "0 8px 26px rgba(0,0,0,.06)",
         "--accent-color": "#555555", "--meta-color": "#888888",
         "--tip-color": "#888888", "--label-color": "#777777",
@@ -35,7 +35,7 @@ const THEMES = {
       label: "暗夜",
       vars: {
         "--bg-color": "#1a1a1a", "--text-color": "#e0d9cc",
-        "--card-bg": "rgba(40,38,35,.92)", "--card-border": "#3a3733",
+        "--card-bg": "rgba(40,38,35,.92)", "--sheet-bg": "rgb(40,38,35)", "--card-border": "#3a3733",
         "--card-shadow": "0 8px 26px rgba(0,0,0,.3)",
         "--accent-color": "#8a9a7a", "--meta-color": "#a09888",
         "--tip-color": "#9a9080", "--label-color": "#a09888",
@@ -49,7 +49,7 @@ const THEMES = {
       label: "青瓷",
       vars: {
         "--bg-color": "#eef3f0", "--text-color": "#2d3a35",
-        "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#c8d8d0",
+        "--card-bg": "rgba(255,255,255,.85)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#c8d8d0",
         "--card-shadow": "0 8px 26px rgba(45,58,53,.08)",
         "--accent-color": "#4a7a6a", "--meta-color": "#6a8a7a",
         "--tip-color": "#6a8a7a", "--label-color": "#5a7a6a",
@@ -63,7 +63,7 @@ const THEMES = {
       label: "莫兰迪",
       vars: {
         "--bg-color": "#e5e1da", "--text-color": "#57534b",
-        "--card-bg": "rgba(233,229,222,.88)", "--card-border": "#d3cdc2",
+        "--card-bg": "rgba(233,229,222,.88)", "--sheet-bg": "rgb(233,229,222)", "--card-border": "#d3cdc2",
         "--card-shadow": "0 8px 26px rgba(87,83,75,.08)",
         "--accent-color": "#8a9a84", "--meta-color": "#7d776c",
         "--tip-color": "#857f74", "--label-color": "#6e6860",
@@ -77,7 +77,7 @@ const THEMES = {
       label: "炽烈",
       vars: {
         "--bg-color": "#faf8ff", "--text-color": "#221845",
-        "--card-bg": "rgba(255,255,255,.9)", "--card-border": "#d9d0f5",
+        "--card-bg": "rgba(255,255,255,.9)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#d9d0f5",
         "--card-shadow": "0 8px 26px rgba(109,40,217,.10)",
         "--accent-color": "#6d28d9", "--meta-color": "#5b4b9e",
         "--tip-color": "#6d5fb0", "--label-color": "#4c3f85",
@@ -91,7 +91,7 @@ const THEMES = {
       label: "星夜",
       vars: {
         "--bg-color": "#0e1834", "--text-color": "#e8e6d8",
-        "--card-bg": "rgba(21,33,66,.9)", "--card-border": "#2c3f75",
+        "--card-bg": "rgba(21,33,66,.9)", "--sheet-bg": "rgb(21,33,66)", "--card-border": "#2c3f75",
         "--card-shadow": "0 8px 26px rgba(0,0,10,.4)",
         "--accent-color": "#f0c419", "--meta-color": "#a9b4d8",
         "--tip-color": "#98a3c8", "--label-color": "#a9b4d8",
@@ -105,7 +105,7 @@ const THEMES = {
       label: "伦勃朗",
       vars: {
         "--bg-color": "#1a130d", "--text-color": "#e8dcc0",
-        "--card-bg": "rgba(38,28,18,.92)", "--card-border": "#4a3a26",
+        "--card-bg": "rgba(38,28,18,.92)", "--sheet-bg": "rgb(38,28,18)", "--card-border": "#4a3a26",
         "--card-shadow": "0 8px 26px rgba(0,0,0,.45)",
         "--accent-color": "#c9973f", "--meta-color": "#b5a37f",
         "--tip-color": "#a89470", "--label-color": "#b5a37f",
@@ -119,7 +119,7 @@ const THEMES = {
       label: "胭脂",
       vars: {
         "--bg-color": "#fbe8ec", "--text-color": "#4a2730",
-        "--card-bg": "rgba(255,255,255,.82)", "--card-border": "#f0c8d2",
+        "--card-bg": "rgba(255,255,255,.82)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#f0c8d2",
         "--card-shadow": "0 8px 26px rgba(176,74,100,.08)",
         "--accent-color": "#b04a64", "--meta-color": "#8a6a72",
         "--tip-color": "#8a6a72", "--label-color": "#7a5a62",
@@ -133,7 +133,7 @@ const THEMES = {
       label: "黛青",
       vars: {
         "--bg-color": "#e8edf2", "--text-color": "#2a3548",
-        "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#c8d4e2",
+        "--card-bg": "rgba(255,255,255,.85)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#c8d4e2",
         "--card-shadow": "0 8px 26px rgba(42,53,72,.08)",
         "--accent-color": "#3a5a7a", "--meta-color": "#6a7a8a",
         "--tip-color": "#6a7a8a", "--label-color": "#5a6a7a",
@@ -147,7 +147,7 @@ const THEMES = {
       label: "苔绿",
       vars: {
         "--bg-color": "#e8efe6", "--text-color": "#2a3a28",
-        "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#c8d8c0",
+        "--card-bg": "rgba(255,255,255,.85)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#c8d8c0",
         "--card-shadow": "0 8px 26px rgba(42,58,40,.08)",
         "--accent-color": "#4a6a3a", "--meta-color": "#6a8a5a",
         "--tip-color": "#6a8a5a", "--label-color": "#5a7a4a",
@@ -161,7 +161,7 @@ const THEMES = {
       label: "琥珀",
       vars: {
         "--bg-color": "#f6ede0", "--text-color": "#4a3920",
-        "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#e8d4b0",
+        "--card-bg": "rgba(255,255,255,.85)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#e8d4b0",
         "--card-shadow": "0 8px 26px rgba(176,138,58,.08)",
         "--accent-color": "#b08a3a", "--meta-color": "#8a7a52",
         "--tip-color": "#8a7a52", "--label-color": "#7a6a42",
@@ -175,7 +175,7 @@ const THEMES = {
       label: "靛蓝",
       vars: {
         "--bg-color": "#1a1f3a", "--text-color": "#d8dcea",
-        "--card-bg": "rgba(30,36,60,.92)", "--card-border": "#34406a",
+        "--card-bg": "rgba(30,36,60,.92)", "--sheet-bg": "rgb(30,36,60)", "--card-border": "#34406a",
         "--card-shadow": "0 8px 26px rgba(0,0,20,.4)",
         "--accent-color": "#7a8ae8", "--meta-color": "#a0a8c8",
         "--tip-color": "#98a0c0", "--label-color": "#a0a8c8",
@@ -189,7 +189,7 @@ const THEMES = {
       label: "藕荷",
       vars: {
         "--bg-color": "#efe8f0", "--text-color": "#3a2a40",
-        "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#d8c8e0",
+        "--card-bg": "rgba(255,255,255,.85)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#d8c8e0",
         "--card-shadow": "0 8px 26px rgba(122,90,138,.08)",
         "--accent-color": "#7a5a8a", "--meta-color": "#7a6a82",
         "--tip-color": "#7a6a82", "--label-color": "#6a5a72",
@@ -203,7 +203,7 @@ const THEMES = {
       label: "松烟",
       vars: {
         "--bg-color": "#d8dcd6", "--text-color": "#2a2e28",
-        "--card-bg": "rgba(255,255,255,.7)", "--card-border": "#bcc4b8",
+        "--card-bg": "rgba(255,255,255,.7)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#bcc4b8",
         "--card-shadow": "0 8px 26px rgba(42,46,40,.08)",
         "--accent-color": "#4a5a48", "--meta-color": "#6a7a68",
         "--tip-color": "#6a7a68", "--label-color": "#5a6a58",
@@ -217,7 +217,7 @@ const THEMES = {
       label: "青花",
       vars: {
         "--bg-color": "#eef2f6", "--text-color": "#1a2a3a",
-        "--card-bg": "rgba(255,255,255,.85)", "--card-border": "#c4d4e0",
+        "--card-bg": "rgba(255,255,255,.85)", "--sheet-bg": "rgb(255,255,255)", "--card-border": "#c4d4e0",
         "--card-shadow": "0 8px 26px rgba(26,42,58,.08)",
         "--accent-color": "#2a5a8a", "--meta-color": "#5a6a7a",
         "--tip-color": "#5a6a7a", "--label-color": "#4a5a6a",

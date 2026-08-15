@@ -7,6 +7,18 @@
   <img src="docs/screenshots/share-card.png" width="46%" alt="诗海分享卡片" />
 </p>
 
+## 🚀 Online Demo
+
+**网页端**：https://ethanthr-dotcom.github.io/poetry-site/
+
+**小程序 / 多端应用**：微信扫码体验
+
+<p align="center">
+  <img src="docs/screenshots/mp-qrcode.jpg" width="220" alt="诗海小程序码" />
+</p>
+
+> 线上数据经 jsDelivr CDN 分发，国内访问友好。
+
 ## 📖 Story Behind The Poetry Ocean
 
 在信息快速流动的今天，我们每天接触大量文字，却越来越少停下来阅读那些跨越千年的诗句。
@@ -144,12 +156,6 @@ data/
 pip3 install zhconv   # 仅首次
 python3 tools/convert_chinese_poetry.py
 ```
-
-## 🚀 Online Demo
-
-**https://ethanthr-dotcom.github.io/poetry-site/**
-
-> 线上数据经 jsDelivr CDN 分发，国内访问友好；小程序与多端应用请在微信内搜索体验。
 
 ## 📜 License
 

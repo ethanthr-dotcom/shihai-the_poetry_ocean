@@ -59,6 +59,8 @@ Page({
     categoryStyle: "",
     randomLoading: false,
     shareLoading: false,
+    shareSheetShow: false,
+    shareImg: "",
     ratioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === "1:1", disabled: false })),
     shareRatio: "1:1",
     progressState: "", // "" | run | done
@@ -454,7 +456,8 @@ Page({
           });
       });
       this._sharePath = filePath;
-      this.previewShare();
+      // 弹出分享浮层：预览图上浮，下方三选项（朋友圈/朋友/相册）
+      this.setData({ shareImg: filePath, shareSheetShow: true });
     } catch (e) {
       this.showStatus("生成卡片失败：" + (e && e.message ? e.message : e), true);
     } finally {
@@ -462,16 +465,16 @@ Page({
     }
   },
 
-  // 生成后先预览（长按可保存/转发），并询问是否存入相册
-  previewShare() {
-    wx.previewImage({ urls: [this._sharePath] });
-    wx.showModal({
-      title: "保存分享卡片",
-      content: "是否将卡片图片保存到相册？",
-      confirmText: "保存",
-      cancelText: "不用",
-      success: (res) => { if (res.confirm) this.saveShare(); }
-    });
+  // 关闭分享浮层
+  closeShareSheet() {
+    this.setData({ shareSheetShow: false });
+  },
+
+  noop() {},
+
+  // 点预览图 → 全屏预览
+  previewShareImg() {
+    if (this._sharePath) wx.previewImage({ urls: [this._sharePath] });
   },
 
   saveShare() {
@@ -499,7 +502,8 @@ Page({
     const p = this.currentPoem;
     return {
       title: p ? "诗海 · " + (p.t || "无题") + " — " + [p.d, p.a].filter(Boolean).join("·") : "诗海 · 古诗词浏览器",
-      path: "/pages/index/index"
+      path: "/pages/index/index",
+      imageUrl: this.data.shareImg || undefined
     };
   }
 });
