@@ -68,7 +68,7 @@
 ```
 .
 ├── index.html          # 网站本体（单文件，含全部 CSS/JS）
-├── project.config.json # 微信开发者工具项目配置（appid 需替换为自己的）
+├── project.config.example.json # 开发者工具配置模板（复制为 project.config.json 后填自己的 appid）
 ├── data/               # 345 个数据分块 + 两级索引（约 90MB）
 ├── assets/             # logo / 图标
 ├── tools/              # 语料转换脚本
@@ -96,7 +96,7 @@ python3 -m http.server 8080
 前置：微信开发者工具、自己的小程序 AppID、已开通云开发环境。
 
 1. 在开发者工具中新建一个「云开发」模板项目；
-2. 直接用开发者工具「导入项目」选择本仓库根目录（`project.config.json` 已配置好 `miniprogramRoot` / `cloudfunctionRoot`），并把其中的 `appid` 换成你自己的；
+2. 把 `project.config.example.json` 复制为 `project.config.json`（该文件含个人 appid，已被 .gitignore 忽略、不入库），再用开发者工具「导入项目」选择本仓库根目录，并把配置里的 `appid` 换成你自己的；
 3. 打开「云开发」控制台 → 设置 → 环境：
    - 记下**环境 ID**，填入 `miniprogram/utils/config.js` 的 `CLOUDBASE_ENV`；
    - 在「环境访问权限」中添加你的 AppID；
