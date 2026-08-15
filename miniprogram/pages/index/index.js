@@ -89,6 +89,8 @@ Page({
     currentFav: false,
     typeDropdownShow: false,
     favSheetShow: false,
+    favBurst: false,
+    guideShow: false,
     favList: [],
     favSelMode: false,
     favSelIds: {},
@@ -313,7 +315,13 @@ Page({
   onCardFavTap() {
     if (!this.currentPoem) return;
     this.haptic();
-    this.setData({ currentFav: this.toggleFav(this.currentPoem) });
+    const fav = this.toggleFav(this.currentPoem);
+    this.setData({ currentFav: fav });
+    if (fav) {
+      this.setData({ favBurst: true });
+      clearTimeout(this._burstT);
+      this._burstT = setTimeout(() => this.setData({ favBurst: false }), 650);
+    }
   },
   onResultFavTap(e) {
     const idx = e.currentTarget.dataset.index;
@@ -322,7 +330,19 @@ Page({
     this.haptic();
     const fav = this.toggleFav(item);
     this.setData({ ["resultsList[" + idx + "].fav"]: fav });
+    if (fav) {
+      this.setData({ ["resultsList[" + idx + "].burst"]: true });
+      clearTimeout(this._burstT2);
+      this._burstT2 = setTimeout(() => this.setData({ ["resultsList[" + idx + "].burst"]: false }), 650);
+    }
     if (this.currentPoem && this.currentPoem.id === item.id) this.setData({ currentFav: fav });
+  },
+  onGuideOpen() {
+    this.haptic();
+    this.setData({ guideShow: true });
+  },
+  onGuideClose() {
+    this.setData({ guideShow: false });
   },
 
   // ====== 收藏夹面板（设置图标旁入口；批量管理/删除） ======

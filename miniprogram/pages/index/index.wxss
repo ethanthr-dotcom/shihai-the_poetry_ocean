@@ -261,7 +261,7 @@
   color: var(--text-color);
   z-index: 1200;
   opacity: 0;
-  transition: opacity .5s ease;
+  transition: opacity .5s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1);
 }
 .theme-toggle.ready { opacity: .8; }
 /* 纯色齿轮设置图标：mask 着色跟随主题文字色；点击绕图标中心整周旋转 */
@@ -418,7 +418,11 @@
 .result-m { font-size: 22rpx; opacity: .55; margin-top: 6rpx; }
 .result-arrow { position: absolute; right: 8rpx; top: 50%; transform: translateY(-50%); opacity: .4; font-size: 24rpx; transition: transform .2s; }
 .result-arrow.open { transform: translateY(-50%) rotate(180deg); }
-.result-body { padding: 4rpx 4rpx 28rpx; }
+.result-body-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s cubic-bezier(.4, 0, .2, 1); }
+.result-body-wrap.open { grid-template-rows: 1fr; }
+.result-body { overflow: hidden; min-height: 0; padding: 0 4rpx; }
+.result-body .result-verse { margin-top: 4rpx; }
+.result-body .result-tools { margin-bottom: 28rpx; }
 .result-verse { font-size: 27rpx; line-height: 2; white-space: pre-wrap; word-break: break-all; padding: 8rpx 16rpx 20rpx; border-left: 4rpx solid var(--card-border); }
 .result-tools { margin-top: 8rpx; }
 .result-share { width: 100%; margin-top: 18rpx; }
@@ -440,8 +444,7 @@
 
 /* ====== 卡片内收藏符号 ====== */
 .card-body { position: relative; }
-.card-fav { position: absolute; top: 28rpx; right: 36rpx; z-index: 3; font-size: 44rpx; line-height: 1; padding: 8rpx; color: var(--meta-color); opacity: .55; }
-.card-fav.on { color: var(--seal-color, #a3382f); opacity: 1; }
+.card-fav { position: absolute; top: 36rpx; right: 48rpx; z-index: 3; width: 64rpx; height: 64rpx; padding: 8rpx; box-sizing: border-box; }
 
 /* ====== 搜索结果就地列表（替换卡片） ====== */
 .results-panel { margin-top: 40rpx; }
@@ -451,8 +454,7 @@
 .results-title { font-size: 30rpx; }
 .result-head { display: flex; align-items: center; gap: 16rpx; padding-right: 56rpx; }
 .result-hm { flex: 1; min-width: 0; }
-.result-fav { flex: none; font-size: 36rpx; line-height: 1; color: var(--meta-color); opacity: .5; padding: 8rpx; }
-.result-fav.on { color: var(--seal-color, #a3382f); opacity: 1; }
+.result-fav { flex: none; position: relative; width: 52rpx; height: 52rpx; padding: 8rpx; margin-right: 12rpx; box-sizing: border-box; }
 
 /* 复选框 / 迷你操作按钮 */
 .chk { flex: none; width: 40rpx; height: 40rpx; border: 3rpx solid var(--meta-color); border-radius: 12rpx; display: flex; align-items: center; justify-content: center; font-size: 26rpx; color: transparent; }
@@ -464,9 +466,39 @@
 .mini-btn.disabled { opacity: .35; }
 
 /* ====== 收藏夹入口图标（设置齿轮旁） ====== */
-.fav-toggle { position: absolute; top: 36rpx; right: 112rpx; width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; color: var(--text-color); z-index: 1200; opacity: 0; transition: opacity .5s ease; }
+.fav-toggle { position: absolute; top: 36rpx; right: 112rpx; width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; color: var(--text-color); z-index: 1200; opacity: 0; transition: opacity .5s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1); }
 .fav-toggle.ready { opacity: .8; }
-.fav-icon { width: 42rpx; height: 42rpx; background: var(--text-color); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'/%3E%3C/svg%3E") no-repeat center / contain; }
+
+/* ===== 圆润星形（SVG 圆角描边 mask） ===== */
+.star-glyph { width: 100%; height: 100%; background: var(--meta-color); opacity: .55; transition: opacity .2s ease; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' fill='none' stroke='%23000' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' fill='none' stroke='%23000' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / contain; }
+.card-fav.on .star-glyph, .result-fav.on .star-glyph { background: var(--seal-color, #a3382f); opacity: 1; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; }
+.fav-heart .star-glyph { background: var(--seal-color, #a3382f); opacity: 1; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; }
+
+/* 收藏瞬间：星星绽放 + 迸溅粒子 */
+@keyframes starPop { 0% { transform: scale(.4); } 45% { transform: scale(1.35); } 100% { transform: scale(1); } }
+@keyframes burstRing { 0% { opacity: .85; transform: scale(.3); } 100% { opacity: 0; transform: scale(1.7); } }
+@keyframes burstDots { 0% { opacity: 1; transform: scale(.2); } 100% { opacity: 0; transform: scale(1.15); } }
+.card-fav.burst .star-glyph, .result-fav.burst .star-glyph { animation: starPop .55s cubic-bezier(.22, 1.4, .36, 1); }
+.card-fav.burst::before, .result-fav.burst::before { content: ""; position: absolute; left: 50%; top: 50%; width: 130%; height: 130%; margin: -65% 0 0 -65%; border: 3rpx solid var(--seal-color, #a3382f); border-radius: 50%; animation: burstRing .5s ease-out forwards; pointer-events: none; }
+.card-fav.burst::after, .result-fav.burst::after { content: ""; position: absolute; left: 50%; top: 50%; width: 6rpx; height: 6rpx; margin: -3rpx 0 0 -3rpx; border-radius: 50%; background: var(--seal-color, #a3382f); box-shadow: 0 -36rpx 0 var(--seal-color, #a3382f), 32rpx -18rpx 0 var(--seal-color, #a3382f), 32rpx 18rpx 0 var(--seal-color, #a3382f), 0 36rpx 0 var(--seal-color, #a3382f), -32rpx 18rpx 0 var(--seal-color, #a3382f), -32rpx -18rpx 0 var(--seal-color, #a3382f); animation: burstDots .55s ease-out forwards; pointer-events: none; }
+
+/* 按钮按压缩放回弹（iOS 风格；toggle 类在各自规则里合并 transition） */
+button, .mini-btn, .type-tag, .ratio-seg-item { transition: transform .18s cubic-bezier(.34, 1.56, .64, 1); }
+button:active, .mini-btn:active, .type-tag:active, .ratio-seg-item:active, .fav-toggle:active, .theme-toggle:active, .guide-toggle:active { transform: scale(.92); }
+button[disabled]:active { transform: none; }
+
+/* 顶部灯泡：使用指南入口 */
+.guide-toggle { position: absolute; top: 36rpx; left: 36rpx; width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; z-index: 1200; opacity: 0; transition: opacity .5s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1); }
+.guide-toggle.ready { opacity: .8; }
+.guide-icon { width: 40rpx; height: 40rpx; background: var(--text-color); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z'/%3E%3C/svg%3E") no-repeat center / contain; }
+
+/* 使用指南弹层 */
+.guide-box { width: 100%; background: var(--sheet-bg, var(--bg-color)); border-radius: 36rpx 36rpx 0 0; padding: 36rpx 40rpx calc(28rpx + env(safe-area-inset-bottom)); animation: sheetUp .28s ease-out; }
+.guide-list { margin: 12rpx 0 30rpx; max-height: 58vh; overflow-y: auto; }
+.guide-item { font-size: 26rpx; line-height: 1.85; color: var(--text-color); opacity: .88; padding: 12rpx 0; border-bottom: 1rpx dashed var(--card-border); text-align: left; }
+.guide-k { display: inline-block; color: var(--seal-color, #a3382f); font-weight: bold; margin-right: 14rpx; }
+.guide-ok { margin-top: 8rpx; }
+.fav-icon { width: 42rpx; height: 42rpx; background: var(--text-color); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; }
 
 /* ====== 收藏夹抽屉 ====== */
 .fav-sheet { width: 100%; background: var(--sheet-bg, var(--bg-color)); border-radius: 36rpx 36rpx 0 0; padding: 36rpx 40rpx calc(24rpx + env(safe-area-inset-bottom)); animation: sheetUp .28s ease-out; }
@@ -475,4 +507,4 @@
 .fav-list { max-height: 52vh; }
 .fav-item { display: flex; align-items: center; gap: 20rpx; padding: 20rpx 4rpx; border-bottom: 2rpx solid var(--card-border); }
 .fav-item:active { opacity: .6; }
-.fav-heart { flex: none; color: var(--seal-color, #a3382f); font-size: 32rpx; }
+.fav-heart { flex: none; width: 40rpx; height: 40rpx; }

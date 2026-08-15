@@ -316,8 +316,11 @@
     .result-m { font-size: 11px; opacity: .55; margin-top: 3px; }
     .result-arrow { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); opacity: .4; font-size: 12px; transition: transform .2s; }
     .result-item.open .result-arrow { transform: translateY(-50%) rotate(180deg); }
-    .result-body { display: none; padding: 2px 2px 14px; }
-    .result-item.open .result-body { display: block; }
+    .result-body-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s cubic-bezier(.4,0,.2,1); }
+    .result-item.open .result-body-wrap { grid-template-rows: 1fr; }
+    .result-body { overflow: hidden; min-height: 0; }
+    .result-body .result-verse { margin-top: 2px; }
+    .result-body .result-tools { margin-bottom: 14px; }
     .result-verse { font-size: 13px; line-height: 2; white-space: pre-wrap; word-break: break-all; padding: 4px 10px 10px; border-left: 2px solid var(--card-border); }
     .result-tools { margin-top: 6px; }
     .result-tools .ratio-row { justify-content: flex-start; margin: 0 0 8px; }
@@ -334,7 +337,7 @@
 
     /* 卡片内收藏符号 */
     .card-body { position: relative; }
-    .card-fav { position: absolute; top: -8px; right: -6px; z-index: 3; background: none; border: 0; font-size: 21px; line-height: 1; padding: 6px; cursor: pointer; color: var(--meta-color); opacity: .55; transition: opacity .2s, color .2s; font-family: inherit; }
+    .card-fav { position: absolute; top: 10px; right: 14px; z-index: 3; background: none; border: 0; width: 32px; height: 32px; padding: 3px; cursor: pointer; color: var(--meta-color); opacity: .55; transition: opacity .2s, color .2s; font-family: inherit; box-sizing: border-box; }
     .card-fav:hover { opacity: .95; }
     .card-fav.on { color: var(--seal-color, #a3382f); opacity: 1; }
 
@@ -344,7 +347,7 @@
     .results-head-r { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .result-head { display: flex; align-items: center; gap: 10px; }
     .result-hm { flex: 1; min-width: 0; }
-    .result-fav { flex: none; font-size: 17px; line-height: 1; color: var(--meta-color); opacity: .5; cursor: pointer; padding: 4px 6px 4px 20px; }
+    .result-fav { flex: none; position: relative; width: 28px; height: 28px; padding: 3px; margin: 0 8px 0 16px; cursor: pointer; color: var(--meta-color); opacity: .5; box-sizing: border-box; }
     .result-fav:hover { opacity: .95; }
     .result-fav.on { color: var(--seal-color, #a3382f); opacity: 1; }
 
@@ -358,10 +361,32 @@
     .mini-btn.solid { background: var(--button-bg, #8b2c2c); border-color: var(--button-bg, #8b2c2c); color: var(--button-text, #fff); opacity: 1; }
     .search-tip { font-size: 11px; opacity: .6; text-align: center; margin: 6px 0 14px; line-height: 1.7; }
     .card-fav, .result-fav, .fav-heart { font-style: normal; flex: none; line-height: 1; }
+    .card-fav .star-svg, .result-fav .star-svg, .fav-heart .star-svg { width: 100%; height: 100%; display: block; }
+    /* 收藏瞬间：星星绽放 + 迸溅粒子 */
+    @keyframes starPop { 0% { transform: scale(.4); } 45% { transform: scale(1.35); } 100% { transform: scale(1); } }
+    @keyframes burstRing { 0% { opacity: .85; transform: scale(.3); } 100% { opacity: 0; transform: scale(1.7); } }
+    @keyframes burstDots { 0% { opacity: 1; transform: scale(.2); } 100% { opacity: 0; transform: scale(1.15); } }
+    .card-fav.burst .star-svg, .result-fav.burst .star-svg { animation: starPop .55s cubic-bezier(.22,1.4,.36,1); }
+    .card-fav.burst::before, .result-fav.burst::before { content: ""; position: absolute; left: 50%; top: 50%; width: 130%; height: 130%; margin: -65% 0 0 -65%; border: 1.5px solid var(--seal-color, #a3382f); border-radius: 50%; animation: burstRing .5s ease-out forwards; pointer-events: none; }
+    .card-fav.burst::after, .result-fav.burst::after { content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: var(--seal-color, #a3382f); box-shadow: 0 -17px 0 var(--seal-color, #a3382f), 15px -8px 0 var(--seal-color, #a3382f), 15px 8px 0 var(--seal-color, #a3382f), 0 17px 0 var(--seal-color, #a3382f), -15px 8px 0 var(--seal-color, #a3382f), -15px -8px 0 var(--seal-color, #a3382f); animation: burstDots .55s ease-out forwards; pointer-events: none; }
+    /* 按钮按压缩放回弹（iOS 风格；toggle 类在各自规则里合并 transition） */
+    button:not(.fav-toggle):not(.theme-toggle):not(.guide-toggle), .mini-btn, .type-tag, .ratio-opt { transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
+    button:active, .mini-btn:active, .type-tag:active, .ratio-opt:active, .fav-toggle:active, .theme-toggle:active, .guide-toggle:active { transform: scale(.92); }
+    button:disabled:active { transform: none; }
+    /* 顶部灯泡：使用指南入口 */
+    .guide-toggle { position: absolute; top: 18px; left: 18px; width: 26px; height: 26px; background: transparent; border: 0; color: var(--text-color); cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; opacity: 0; pointer-events: none; transition: opacity .5s ease, transform .18s cubic-bezier(.34,1.56,.64,1); }
+    .guide-toggle.ready { opacity: .7; pointer-events: auto; }
+    .guide-toggle.ready:hover { opacity: 1; }
+    .guide-toggle svg { width: 100%; height: 100%; }
+    /* 使用指南弹层 */
+    .guide-list { margin: 8px 0 16px; max-height: 58vh; overflow-y: auto; text-align: left; }
+    .guide-item { font-size: 13px; line-height: 1.9; opacity: .88; padding: 7px 0; border-bottom: 1px dashed var(--card-border); }
+    .guide-k { color: var(--seal-color, #a3382f); font-weight: bold; margin-right: 8px; }
+    .guide-ok { width: 100%; margin-top: 6px; }
     input { font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; }
 
     /* 收藏夹入口（设置齿轮旁） */
-    .fav-toggle { position: absolute; top: 18px; right: 56px; width: 26px; height: 26px; background: transparent; border: 0; color: var(--text-color); cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; opacity: 0; pointer-events: none; transition: opacity .5s ease; }
+    .fav-toggle { position: absolute; top: 18px; right: 56px; width: 26px; height: 26px; background: transparent; border: 0; color: var(--text-color); cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; opacity: 0; pointer-events: none; transition: opacity .5s ease, transform .18s cubic-bezier(.34,1.56,.64,1); }
     .fav-toggle.ready { opacity: .7; pointer-events: auto; }
     .fav-toggle.ready:hover { opacity: 1; }
     .fav-toggle svg { width: 22px; height: 22px; display: block; }
@@ -373,7 +398,7 @@
     .fav-list { max-height: 48vh; overflow-y: auto; }
     .fav-item { display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid var(--card-border); cursor: pointer; }
     .fav-item:hover { opacity: .7; }
-    .fav-heart { flex: none; color: var(--seal-color, #a3382f); }
+    .fav-heart { flex: none; width: 20px; height: 20px; color: var(--seal-color, #a3382f); }
 
     /* 轻提示 */
     #toast { position: fixed; left: 50%; bottom: 12vh; transform: translateX(-50%); background: rgba(0,0,0,.72); color: #fff; padding: 9px 20px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 2000; }
@@ -497,7 +522,7 @@
       /* 开屏动画完成后才显示（JS 加 .ready） */
       opacity: 0;
       pointer-events: none;
-      transition: opacity .5s ease, transform .25s ease;
+      transition: opacity .5s ease, transform .18s cubic-bezier(.34,1.56,.64,1);
     }
     .theme-toggle.ready { opacity: .7; pointer-events: auto; }
     .theme-toggle.ready:hover { opacity: 1; }
@@ -699,12 +724,31 @@
     <footer class="site-footer">
       <img class="footer-logo" src="assets/logo-yin.svg" alt="诗海">
       <div class="slogan">诗海 · 非营利古诗词共享项目</div>
-      <div class="copyright">版权所有 © Ethan 2026 · 非营利项目 · 数据来源：chinese-poetry 开源项目（MIT License）</div>
+      <div class="copyright">版权所有 © Ethan 2026 · 非营利项目</div>
+      <div class="copyright">数据来源：chinese-poetry 开源项目（MIT License）</div>
     </footer>
   </main>
 
 
-  <button id="favToggle" class="fav-toggle" title="收藏夹" aria-label="收藏夹"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>
+  <button id="guideToggle" class="guide-toggle" title="使用指南" aria-label="使用指南"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg></button>
+  <button id="favToggle" class="fav-toggle" title="收藏夹" aria-label="收藏夹"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
+  <div id="guideSheet" class="sheet-overlay">
+    <div class="sheet-backdrop" id="guideSheetBackdrop"></div>
+    <div class="sheet-box">
+      <div class="sheet-head">使用指南</div>
+      <div class="guide-list">
+        <div class="guide-item"><span class="guide-k">随机邂逅</span>不填任何条件，点「今日与诗相逢」随机推荐一首。</div>
+        <div class="guide-item"><span class="guide-k">条件搜索</span>填写作者 / 朝代 / 体裁任意组合；体裁点输入框展开选择，首项「无」表示不限。</div>
+        <div class="guide-item"><span class="guide-k">列表浏览</span>点击标题行展开全诗，一次只展开一首；上滑自动加载更多。</div>
+        <div class="guide-item"><span class="guide-k">批量收藏</span>列表中点「批量收藏」，勾选后一键加入收藏夹。</div>
+        <div class="guide-item"><span class="guide-k">收藏</span>点诗词旁的星星收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持批量管理与删除。</div>
+        <div class="guide-item"><span class="guide-k">分享卡片</span>在卡片内选择比例后点「下载或分享卡片」，生成高清图片保存或转发。</div>
+        <div class="guide-item"><span class="guide-k">主题排版</span>右上角齿轮可切换主题配色、横竖排版与字号版式。</div>
+        <div class="guide-item"><span class="guide-k">温馨提示</span>收藏保存在本机本地缓存（相当于 cookie），清除浏览器缓存后会丢失，心仪的诗词请及时保存分享卡片。</div>
+      </div>
+      <button class="btn guide-ok" id="guideOk" type="button">我知道了</button>
+    </div>
+  </div>
   <div id="favSheet" class="sheet-overlay">
     <div class="sheet-backdrop" id="favSheetBackdrop"></div>
     <div class="sheet-box">
@@ -1064,12 +1108,25 @@
       toast("已收藏");
       return true;
     }
-    // 收藏状态变化后同步结果列表里的小爱心
+    // ====== 圆润星形 SVG（描边圆角；on=实心，off=空心） ======
+    const STAR_PATH = "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
+    function starSVG(on) {
+      return '<svg class="star-svg" viewBox="0 0 24 24"><path d="' + STAR_PATH + '" fill="' + (on ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+    }
+    function burst(el) {
+      if (!el) return;
+      el.classList.remove("burst");
+      void el.offsetWidth;
+      el.classList.add("burst");
+      setTimeout(() => el.classList.remove("burst"), 650);
+    }
+
+    // 收藏状态变化后同步结果列表里的小星星
     function syncResultsFav() {
       document.querySelectorAll("#resultsList .result-fav").forEach((el) => {
         const on = favSet.has(el.dataset.id);
         el.classList.toggle("on", on);
-        el.textContent = on ? "★" : "☆";
+        el.innerHTML = starSVG(on);
       });
     }
 
@@ -1115,7 +1172,7 @@
         : "未找到正文";
       const isFav = favSet.has(favId(poem));
       card.innerHTML =
-        '<button id="cardFav" class="card-fav' + (isFav ? " on" : "") + '" type="button" title="收藏">' + (isFav ? "★" : "☆") + "</button>" +
+        '<button id="cardFav" class="card-fav' + (isFav ? " on" : "") + '" type="button" title="收藏">' + starSVG(isFav) + "</button>" +
         '<div class="card-body">' +
         '<div class="title">' + escapeHtml(title || "无题") + "</div>" +
         '<div class="meta">' + escapeHtml(meta) + "</div>" +
@@ -1151,7 +1208,8 @@
       haptic();
       const fav = toggleFav(currentPoem);
       btn.classList.toggle("on", fav);
-      btn.textContent = fav ? "★" : "☆";
+      btn.innerHTML = starSVG(fav);
+      if (fav) burst(btn);
       syncResultsFav();
     });
 
@@ -2132,14 +2190,15 @@
       const star = document.createElement("div");
       star.className = "result-fav" + (favSet.has(p.id) ? " on" : "");
       star.dataset.id = p.id;
-      star.textContent = favSet.has(p.id) ? "★" : "☆";
+      star.innerHTML = starSVG(favSet.has(p.id));
       star.title = "收藏";
       star.addEventListener("click", (ev) => {
         ev.stopPropagation();
         haptic();
         const fav = toggleFav(p);
         star.classList.toggle("on", fav);
-        star.textContent = fav ? "★" : "☆";
+        star.innerHTML = starSVG(fav);
+        if (fav) burst(star);
         if (currentPoem && favId(currentPoem) === p.id) updateCardFavBtn();
       });
       const arrow = document.createElement("div");
@@ -2176,7 +2235,10 @@
         item.classList.toggle("open");
         openItem = item.classList.contains("open") ? item : null;
       });
-      item.append(head, body);
+      const bodyWrap = document.createElement("div");
+      bodyWrap.className = "result-body-wrap";
+      bodyWrap.appendChild(body);
+      item.append(head, bodyWrap);
       return item;
     }
     async function loadMoreResults() {
@@ -2266,7 +2328,7 @@
       if (!btn || !currentPoem) return;
       const fav = favSet.has(favId(currentPoem));
       btn.classList.toggle("on", fav);
-      btn.textContent = fav ? "★" : "☆";
+      btn.innerHTML = starSVG(fav);
     }
     function updateFavBar() {
       $("favSelAll").style.display = favSelMode ? "" : "none";
@@ -2302,7 +2364,7 @@
         hm.append(t, m);
         const heart = document.createElement("span");
         heart.className = "fav-heart";
-        heart.textContent = "★";
+        heart.innerHTML = starSVG(true);
         item.append(chk, hm, heart);
         item.addEventListener("click", () => {
           if (favSelMode) {
@@ -2329,6 +2391,17 @@
       $("favSheet").classList.add("open");
     });
     $("favSheetBackdrop").addEventListener("click", () => $("favSheet").classList.remove("open"));
+
+    // ====== 使用指南（顶部灯泡呼出） ======
+    $("guideToggle").addEventListener("click", () => {
+      haptic();
+      $("guideSheet").classList.add("open");
+    });
+    $("guideSheetBackdrop").addEventListener("click", () => $("guideSheet").classList.remove("open"));
+    $("guideOk").addEventListener("click", () => {
+      haptic();
+      $("guideSheet").classList.remove("open");
+    });
     $("favManage").addEventListener("click", () => { haptic(); favSelMode = true; favSelIds.clear(); renderFavList(); updateFavBar(); });
     $("favManageDone").addEventListener("click", () => { haptic(); favSelMode = false; favSelIds.clear(); renderFavList(); updateFavBar(); });
     $("favSelAll").addEventListener("click", () => {
@@ -2416,6 +2489,8 @@
           if (tg) tg.classList.add("ready");
           const fv = $("favToggle");
           if (fv) fv.classList.add("ready");
+          const gd = $("guideToggle");
+          if (gd) gd.classList.add("ready");
           const splash = $("splash");
           if (splash) {
             splash.classList.add("hide");
@@ -2436,6 +2511,8 @@
         if (tg) tg.classList.add("ready");
         const fv = $("favToggle");
         if (fv) fv.classList.add("ready");
+        const gd = $("guideToggle");
+        if (gd) gd.classList.add("ready");
         setTimeout(() => splash.remove(), 900);
       };
       splash.addEventListener("click", hide);

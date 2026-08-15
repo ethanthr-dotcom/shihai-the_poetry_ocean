@@ -69,7 +69,7 @@
       <view class="card-frame"></view>
       <text class="card-watermark">詩</text>
       <block wx:if="{{hasPoem}}">
-        <view class="card-fav {{currentFav ? 'on' : ''}}" catchtap="onCardFavTap">{{currentFav ? '★' : '☆'}}</view>
+        <view class="card-fav {{currentFav ? 'on' : ''}} {{favBurst ? 'burst' : ''}}" catchtap="onCardFavTap"><view class="star-glyph"></view></view>
         <view class="card-body">
           <view class="title" style="{{titleStyle}}">
             <view wx:for="{{titleLines}}" wx:key="index" class="title-line">{{item}}</view>
@@ -127,10 +127,11 @@
             <view class="result-t">{{item.t || '无题'}}</view>
             <view class="result-m">{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</view>
           </view>
-          <view wx:if="{{!selMode}}" class="result-fav {{item.fav ? 'on' : ''}}" data-index="{{index}}" catchtap="onResultFavTap">{{item.fav ? '★' : '☆'}}</view>
+          <view wx:if="{{!selMode}}" class="result-fav {{item.fav ? 'on' : ''}} {{item.burst ? 'burst' : ''}}" data-index="{{index}}" catchtap="onResultFavTap"><view class="star-glyph"></view></view>
           <view class="result-arrow {{item.open ? 'open' : ''}}">▾</view>
         </view>
-        <view wx:if="{{item.open}}" class="result-body">
+        <view class="result-body-wrap {{item.open ? 'open' : ''}}">
+        <view class="result-body">
           <view class="result-verse">{{item.c}}</view>
           <view class="result-tools">
             <view class="ratio-row">
@@ -148,6 +149,7 @@
             </button>
           </view>
         </view>
+        </view>
       </view>
       <view class="results-foot">
         <block wx:if="{{resultsLoading}}">正在加载……</block>
@@ -159,11 +161,15 @@
     <view class="site-footer">
       <image class="footer-logo" src="/assets/logo-yin.png" mode="aspectFit"></image>
       <view class="slogan">诗海 · 非营利古诗词共享项目</view>
-      <view class="copyright" bindlongpress="onDevEntry">版权所有 © Ethan 2026 · 非营利项目 · 数据来源：chinese-poetry 开源项目（MIT License）</view>
+      <view class="copyright" bindlongpress="onDevEntry">版权所有 © Ethan 2026 · 非营利项目</view>
+      <view class="copyright">数据来源：chinese-poetry 开源项目（MIT License）</view>
     </view>
   </view>
 
   <!-- 收藏夹入口（设置图标旁） -->
+  <view class="guide-toggle {{uiReady ? 'ready' : ''}}" catchtap="onGuideOpen">
+    <view class="guide-icon"></view>
+  </view>
   <view class="fav-toggle {{uiReady ? 'ready' : ''}}" catchtap="onFavToggle">
     <view class="fav-icon"></view>
   </view>
@@ -222,6 +228,23 @@
   </view>
 
   <!-- 收藏夹抽屉：批量管理/删除；收藏仅存本机缓存 -->
+  <!-- 使用指南（顶部灯泡图标呼出） -->
+  <view wx:if="{{guideShow}}" class="picker-mask" bindtap="onGuideClose">
+    <view class="guide-box" catchtap="noop">
+      <view class="sheet-head">使用指南</view>
+      <view class="guide-list">
+        <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「今日与诗相逢」随机推荐一首。</view>
+        <view class="guide-item"><text class="guide-k">条件搜索</text>填写作者 / 朝代 / 体裁任意组合；体裁点输入框展开选择，首项「无」表示不限。</view>
+        <view class="guide-item"><text class="guide-k">列表浏览</text>点击标题行展开全诗，一次只展开一首；上滑自动加载更多。</view>
+        <view class="guide-item"><text class="guide-k">批量收藏</text>列表中点「批量收藏」，勾选后一键加入收藏夹。</view>
+        <view class="guide-item"><text class="guide-k">收藏</text>点诗词旁的星星收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持批量管理与删除。</view>
+        <view class="guide-item"><text class="guide-k">分享卡片</text>在卡片内选择比例后点「下载或分享卡片」，生成高清图片保存或转发。</view>
+        <view class="guide-item"><text class="guide-k">主题排版</text>右上角齿轮可切换主题配色、横竖排版与字号版式。</view>
+        <view class="guide-item"><text class="guide-k">温馨提示</text>收藏保存在本机本地缓存（相当于 cookie），清除缓存或卸载后会丢失，心仪的诗词请及时保存分享卡片。</view>
+      </view>
+      <button class="btn primary guide-ok" bindtap="onGuideClose">我知道了</button>
+    </view>
+  </view>
   <view wx:if="{{favSheetShow}}" class="picker-mask" bindtap="onFavSheetClose">
     <view class="fav-sheet" catchtap="noop">
       <view class="sheet-head">收藏夹<text class="results-count"> · {{favList.length}} 首</text></view>
@@ -241,7 +264,7 @@
             <view class="result-t">{{item.t || '无题'}}</view>
             <view class="result-m">{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</view>
           </view>
-          <text class="fav-heart">★</text>
+          <view class="fav-heart"><view class="star-glyph"></view></view>
         </view>
       </scroll-view>
     </view>
