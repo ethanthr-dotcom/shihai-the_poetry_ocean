@@ -1,79 +1,142 @@
-# 诗海 · 古诗词浏览器
+# 🌊 诗海 · The Poetry Ocean
 
-收录 **344,240 首古诗词**，纯前端静态网站，无需服务器。
+一个面向中文古典诗词的开源数字化展示项目——收录 **344,240 首古诗词**，纯前端静态网站，无服务器、无后端依赖，通过现代 Web 技术让千年诗意重新被看见。
 
-数据源：[chinese-poetry/chinese-poetry](https://github.com/chinese-poetry/chinese-poetry)（全唐诗/全宋诗/宋词/元曲/五代诗词/楚辞/诗经/曹操/纳兰性德等），繁体已统一转简体，PUA 与乱码字符已清理。
+<p align="center">
+  <img src="docs/screenshots/web-card.png" width="46%" alt="诗海网页端诗词卡片" />
+  <img src="docs/screenshots/share-card.png" width="46%" alt="诗海分享卡片" />
+</p>
 
-## 功能
+## 📖 Story Behind The Poetry Ocean
 
-- 随机展示一首古诗词
-- 按作者、朝代、体裁筛选
-- 横排/竖排显示、多种主题配色与字号
-- 一键生成高清分享卡片（1:1 / 3:4 / 9:16 / 自适应比例）
-- 数据完全在浏览器中按需加载，无后端依赖
+在信息快速流动的今天，我们每天接触大量文字，却越来越少停下来阅读那些跨越千年的诗句。
 
-## 本地预览
+中国古典诗词曾记录过无数人的情感：
+有杜甫忧国忧民的沉吟，有李白仗剑远游的豪情，有苏轼面对人生风雨时的旷达。
+然而，许多珍贵的诗词资源仍停留在数据库或传统文本中，与现代读者之间存在距离。
 
-```bash
-python3 -m http.server 8080
-```
+因此，我创建了「诗海」——希望通过现代互联网技术，让这些古老的文字拥有新的呈现方式。
+诗海不仅是一个诗词展示网站，更是一场关于传统文化与数字时代相遇的探索。
 
-浏览器打开 http://localhost:8080/
+> 当代码遇见诗歌，当数据承载文明，
+> 那些曾经被吟诵千年的文字，依然可以在今天的世界里继续闪耀。
 
-## 部署到 GitHub Pages
+## ✨ Features
 
-### 1. 创建 GitHub 仓库
+- **随机抽诗**：一键随机展示一首古诗词
+- **精细筛选**：按作者、朝代、体裁组合检索
+- **16 种主题配色** + 三种排版（居中 / 宽屏 / 紧凑），CSS 变量驱动即时切换
+- **横排 / 竖排**双方向阅读；竖排自动推荐 56 字以内的短诗
+- **高清分享卡片**：Canvas 手绘生成，支持 1:1 / 3:4 / 9:16 / 自适应比例
+- **按需加载**：345 个数据分块 + 两级索引，首次访问仅加载 18KB
+- **防溢出排版**：任何文字触碰边框即按规则折行，全设备自适应
+- **微信小程序 / 多端应用**：与网页端功能完全对等，数据经微信云开发云函数分发，免域名备案
 
-在 GitHub 上新建一个仓库（例如 `shihai-the_poetry_ocean`）。
+## 🛠️ Tech Stack
 
-### 2. 推送代码
-
-```bash
-git init
-git add .
-git commit -m "诗海 · 古诗词浏览器"
-git branch -M main
-git remote add origin https://github.com/<你的用户名>/<仓库名>.git
-git push -U origin main
-```
-
-### 3. 开启 GitHub Pages
-
-1. 打开仓库的 **Settings** → **Pages**
-2. **Source** 选择 **Deploy from a branch**
-3. **Branch** 选择 **main**，文件夹选 **/ (root)**
-4. 点击 **Save**
-
-等待 1-2 分钟，页面将上线：
+### 架构概览
 
 ```
-https://<你的用户名>.github.io/<仓库名>/
+网页端    浏览器 ──► 单文件 index.html ──► data/*.json（本地相对路径 / jsDelivr CDN）
+小程序端  页面 ──► wx.cloud.callFunction ──► poemData / poemData2（数据 gzip 打包在函数内）
 ```
 
-> 线上数据经 jsDelivr CDN 分发（`DATA_BASE` 指向本仓库的 jsDelivr 地址），国内访问友好。
+| 部分 | 技术 |
+|---|---|
+| 网页端 | 单文件 `index.html`（原生 HTML/CSS/JS，零框架零构建） |
+| 主题系统 | CSS 自定义属性（变量）动态注入，16 配色 × 3 排版即时切换 |
+| 分享图 | Canvas 2D 逐字手绘排版，横/竖版双布局 |
+| 字体 | Noto Serif SC（思源宋体），jsDelivr → unpkg 双 CDN 降级 |
+| 数据分发 | jsDelivr CDN（网页）/ 微信云开发云函数（小程序，gzip 打包） |
+| 小程序 | 微信原生小程序 + 多端应用，Web 端功能完整移植 |
+| 数据管线 | Python：繁简转换（zhconv）、乱码清理、切片、两级索引 |
 
-## 数据结构
+### 仓库结构
 
 ```
 .
-├── index.html           # 站点页面（单文件，含全部 CSS/JS）
-├── assets/              # 站点图片资源
-│   ├── logo-yang.svg    # 阳刻 logo（页头/开屏）
-│   ├── logo-yin.svg     # 阴刻 logo（页脚/分享图）
-│   ├── logo-vertical.svg# 竖版 logo（竖版分享图）
-│   ├── icon.png         # 网站图标原图（498×498）
-│   └── icons/           # 多尺寸 PNG 图标（16~512px + apple-touch）
-├── data/
-│   ├── index.json       # 精简索引（file/count/dynasties，18KB）
-│   ├── index-full.json  # 筛选索引（额外含 authors/types，324KB）
-│   ├── 001.json         # 345 个分块，每块 1000 首
-│   ├── 002.json
-│   └── ...345.json      # 总计约 90MB
-├── tools/
-│   └── convert_chinese_poetry.py  # 语料→data/ 的转换脚本
-└── sources/
-    └── chinese-poetry/  # 原始语料（按朝代/作者组织的 JSON）
+├── index.html          # 网站本体（单文件，含全部 CSS/JS）
+├── project.config.json # 微信开发者工具项目配置（appid 需替换为自己的）
+├── data/               # 345 个数据分块 + 两级索引（约 90MB）
+├── assets/             # logo / 图标
+├── tools/              # 语料转换脚本
+├── miniprogram/        # 微信小程序源码
+└── cloudfunctions/     # 数据云函数（poemData / poemData2，数据已 gzip 打包）
 ```
+
+### 本地部署
+
+#### ① 网页版（30 秒）
+
+只需任意静态文件服务器：
+
+```bash
+git clone https://github.com/ethanthr-dotcom/shihai-the_poetry_ocean.git
+cd shihai-the_poetry_ocean
+python3 -m http.server 8080
+```
+
+浏览器打开 http://localhost:8080/ 即可。
+站点会自动识别本地环境（`IS_LOCAL`），直接从相对路径 `data/` 按需加载分块，不走 CDN；部署到任意静态托管（GitHub Pages / Cloudflare Pages 等）时自动切换为 jsDelivr 数据源，无需改代码。
+
+#### ② 微信小程序（云开发模式）
+
+前置：微信开发者工具、自己的小程序 AppID、已开通云开发环境。
+
+1. 在开发者工具中新建一个「云开发」模板项目；
+2. 直接用开发者工具「导入项目」选择本仓库根目录（`project.config.json` 已配置好 `miniprogramRoot` / `cloudfunctionRoot`），并把其中的 `appid` 换成你自己的；
+3. 打开「云开发」控制台 → 设置 → 环境：
+   - 记下**环境 ID**，填入 `miniprogram/utils/config.js` 的 `CLOUDBASE_ENV`；
+   - 在「环境访问权限」中添加你的 AppID；
+4. 分别右键 `poemData`、`poemData2` → **上传并部署：所有文件**（约 17MB / 24MB，各需一两分钟）；
+5. 编译运行，随机抽诗即走云函数取数（启动时自动预热两个函数）。
+
+> 为什么是两个云函数？微信云函数部署包上限 50MB，345 个分块（gzip 后约 40MB）拆成 001–140 与 141–345 两个函数，小程序按分块号自动路由（`CLOUDBASE_SPLIT = 140`）。云函数内读取时即时 `gunzip` 并做内存缓存。
+
+#### ③ 纯本地调试模式（可选，免云开发）
+
+不想开通云开发也能跑小程序：修改 `miniprogram/utils/config.js`：
+
+```js
+const DATA_MODE = "http";
+const USE_LOCAL = true;   // 数据改从 http://127.0.0.1:8765/ 读取
+```
+
+然后在仓库根目录运行 `python3 -m http.server 8765`，并在开发者工具「详情 → 本地设置」勾选 **不校验合法域名**。
+
+#### ④ 重新生成数据
+
+```bash
+pip3 install zhconv   # 仅首次
+python3 tools/convert_chinese_poetry.py
+```
+
+## 📚 Data Source
+
+诗词数据来源于开源项目 [chinese-poetry/chinese-poetry](https://github.com/chinese-poetry/chinese-poetry)（MIT License），涵盖全唐诗、全宋诗、宋词、元曲、五代诗词、楚辞、诗经、曹操、纳兰性德等。
+
+诗海对原始语料进行了重新整理，以适应纯前端静态网站的按需加载：
+
+- 繁体统一转换为简体
+- 清理 PUA 码位与乱码字符
+- 切分为 345 个分块（每块 1000 首，共约 90MB），配合两级索引懒加载
+
+```
+data/
+├── index.json       # 精简索引（file/count/dynasties，18KB）
+├── index-full.json  # 筛选索引（额外含 authors/types，324KB）
+├── 001.json         # 345 个分块，每块 1000 首
+├── 002.json
+└── ...345.json
+```
+
+每个分块的诗词对象使用短键名：
+
+| 键 | 含义 | 键 | 含义 |
+|---|---|---|---|
+| `t` | 标题 | `d` | 朝代 |
+| `a` | 作者 | `y` | 体裁 |
+| `c` | 正文 | | |
 
 重新生成数据：
 
@@ -82,38 +145,16 @@ pip3 install zhconv   # 仅首次
 python3 tools/convert_chinese_poetry.py
 ```
 
-每个分块的诗词对象使用短键名：
+## 🚀 Online Demo
 
-| 键 | 含义 |
-|---|---|
-| `t` | 标题 |
-| `a` | 作者 |
-| `d` | 朝代 |
-| `y` | 体裁 |
-| `c` | 正文 |
+**https://ethanthr-dotcom.github.io/poetry-site/**
 
-## 数据来源与许可证
+> 线上数据经 jsDelivr CDN 分发，国内访问友好；小程序与多端应用请在微信内搜索体验。
 
-本项目的诗词数据来源于 chinese-poetry/chinese-poetry：
+## 📜 License
 
-https://github.com/chinese-poetry/chinese-poetry
+本项目源代码采用 **MIT License** 开源（见 [LICENSE](LICENSE)）。
 
-该数据集采用 MIT License。
+诗词数据来源于 chinese-poetry/chinese-poetry（MIT License）；诗海对其进行了重新整理、切片、索引与字符清理，第三方内容的许可证以其原始项目声明为准，详见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
 
-诗海对数据进行了重新整理、切片、索引和字符清理，
-以适应纯前端静态网站的按需加载。
-
-诗海的网页、交互逻辑及数据处理脚本由本项目自行实现。
-第三方内容的许可证仍以其原始项目声明为准。
-
-详见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
-
-## License
-
-The source code of this project is licensed under the MIT License.
-
-Third-party data and resources are licensed under their respective licenses.
-
-See:
-- LICENSE
-- THIRD-PARTY-NOTICES.md
+诗海是一款非营利古诗词阅读与检索工具，相关内容仅供阅读、学习与研究参考。

@@ -1,0 +1,6 @@
+{
+  "name": "poemData2",
+  "version": "1.0.0",
+  "description": "诗海诗词数据云函数（分块 141-345）",
+  "main": "index.js"
+}

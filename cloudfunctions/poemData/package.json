@@ -1,0 +1,6 @@
+{
+  "name": "poemData",
+  "version": "1.0.0",
+  "description": "诗海诗词数据云函数：数据 JSON 随函数打包部署，按文件名读取返回",
+  "main": "index.js"
+}
