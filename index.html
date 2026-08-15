@@ -248,7 +248,10 @@
     .verse-line.wrap { white-space: normal; }
         /* 行尾标点占零宽（悬挂标点）：居中只按文字计算，视觉对齐 */
         .hang-punct { display: inline-block; width: 0; }
-    .title, .meta { white-space: nowrap; }
+    .title { max-width: 100%; }
+    .meta { white-space: nowrap; max-width: 100%; }
+    /* 标题换行：每行保持完整并居中，追求上下对称 */
+    .title-line { white-space: nowrap; }
     /* 竖排显示（设置里可选）：高度随最长句自适应，绝不截断 */
     body.vertical .content {
       writing-mode: vertical-rl;
@@ -682,11 +685,69 @@
     // 排版规则（不缩小字号）：
     // 1. 五/七言绝句：一行两个小句（句号换行），宽度不够时改为逗号换行
     // 2. 非五/七言：八字以上的小句允许自适应换行，八字以下保持整行
+    // 标题排版：放得下则单行；超宽则换行为上下对称的两行（优先在标点处断句，
+    // 否则按字数均分、上行多一字），换行后仍超宽才等比缩小字号（最小 50%）
+    function buildTitle(innerW) {
+      const titleEl = card.querySelector(".title");
+      if (!titleEl || !currentPoem) return;
+      const title = currentPoem.t || "无题";
+      titleEl.style.fontSize = "";
+      const base = parseFloat(getComputedStyle(titleEl).fontSize);
+      const chars = Array.from(title);
+      if (chars.length * base <= innerW) {
+        setTitleEl(titleEl, [title], "");
+        return;
+      }
+      // 选离中点最近的标点断点（断在标点之后，且两行都不少于 2 字）
+      const mid = chars.length / 2;
+      let split = -1;
+      chars.forEach((ch, i) => {
+        const pos = i + 1;
+        if (!"，、。！？；： ".includes(ch)) return;
+        if (pos < 2 || pos > chars.length - 2) return;
+        if (split < 0 || Math.abs(pos - mid) < Math.abs(split - mid)) split = pos;
+      });
+      if (split < 0) split = Math.ceil(chars.length / 2);
+      const lines = [chars.slice(0, split).join(""), chars.slice(split).join("")];
+      // 换行后某行仍超宽：等比缩小字号兜底
+      const maxN = Math.max(Array.from(lines[0]).length, Array.from(lines[1]).length);
+      const fontSize = maxN * base > innerW
+        ? Math.max((base * innerW) / (maxN * base), base * 0.5)
+        : "";
+      setTitleEl(titleEl, lines, fontSize ? fontSize + "px" : "");
+    }
+
+    function setTitleEl(el, lines, fontSize) {
+      el.style.fontSize = fontSize;
+      el.innerHTML = lines
+        .map((l) => '<div class="title-line">' + escapeHtml(l) + "</div>")
+        .join("");
+    }
+
+    // 硬性要求：作者行超宽时等比缩小（最小 50%），保证不出卡片内框
+    function fitInline(el, innerW) {
+      if (!el) return;
+      el.style.fontSize = "";
+      if (el.scrollWidth > innerW) {
+        const base = parseFloat(getComputedStyle(el).fontSize);
+        el.style.fontSize = Math.max((base * innerW) / el.scrollWidth, base * 0.5) + "px";
+      }
+    }
+
     function fitCardText() {
       const contentEl = card.querySelector(".content");
       if (!contentEl || !currentPoem) return;
       const verses = splitVerses(currentPoem.c);
       const isV = document.body.classList.contains("vertical");
+      const cs = getComputedStyle(card);
+      const innerW =
+        card.clientWidth -
+        parseFloat(cs.paddingLeft) -
+        parseFloat(cs.paddingRight) -
+        28;
+      // 标题超宽对称换行（兜底缩小）；作者行超宽等比缩小——均不出卡片内框
+      buildTitle(innerW);
+      fitInline(card.querySelector(".meta"), innerW);
       // 竖排：恢复整句成列
       if (isV) {
         contentEl.innerHTML = verses
@@ -694,12 +755,6 @@
           .join("");
         return;
       }
-      const cs = getComputedStyle(card);
-      const innerW =
-        card.clientWidth -
-        parseFloat(cs.paddingLeft) -
-        parseFloat(cs.paddingRight) -
-        28;
 
       const clauses = [];
       for (const v of verses) {

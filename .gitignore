@@ -10,3 +10,7 @@ __pycache__/
 .pyenv/
 .pytest_cache/
 node_modules/
+
+# 微信开发者工具临时文件
+miniprogram/Z*.png
+miniprogram/project.private.config.json

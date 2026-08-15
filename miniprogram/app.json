@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#8b2c2c",
+    "navigationBarTitleText": "诗海 · 古诗词浏览器",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f4f1e8",
+    "backgroundTextStyle": "dark"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

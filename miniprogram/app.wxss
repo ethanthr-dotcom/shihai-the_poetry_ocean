@@ -1,0 +1,13 @@
+/* 全局基础：配色变量由页面主题动态注入到根节点 */
+page {
+  font-family: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  background: #f4f1e8;
+}
+
+view, text, input, button {
+  box-sizing: border-box;
+}
+
+button::after {
+  border: none;
+}

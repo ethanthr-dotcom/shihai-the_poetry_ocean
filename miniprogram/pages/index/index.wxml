@@ -1,0 +1,116 @@
+<view class="app" style="{{varsStyle}}" bindtap="onPageTap">
+  <!-- 顶部加载进度条 -->
+  <view class="progress {{progressState}}"></view>
+
+  <!-- 点缀：山峦（CSS clip-path 简化版，跟随主题色） -->
+  <view class="deco-mountains">
+    <view class="mountain far"></view>
+    <view class="mountain near"></view>
+  </view>
+
+  <!-- 开屏动画（与网页版一致：2.6s 自动消失，点击可跳过） -->
+  <view wx:if="{{splashShow}}" class="splash" catchtap="onTapSplash">
+    <view class="splash-box">
+      <image class="splash-logo" src="/assets/logo-yang.png" mode="aspectFit"></image>
+      <view class="splash-rule"></view>
+      <view class="splash-motto">掬古人之诗 · 养今时之心</view>
+      <view class="splash-note">非营利项目 · 数据源自开源社区 · 仅供学习欣赏</view>
+    </view>
+  </view>
+
+  <view class="page">
+    <view class="header">
+      <image class="site-logo" src="/assets/logo-yang.png" mode="aspectFit"></image>
+    </view>
+    <view class="subtitle">在线古诗词浏览器</view>
+
+    <view class="controls">
+      <view class="row">
+        <view class="field">
+          <view class="label">作者（可留空）</view>
+          <input class="input" placeholder="例如：李白" placeholder-class="ph" value="{{author}}" bindinput="onAuthorInput" />
+        </view>
+        <view class="field">
+          <view class="label">朝代（可留空）</view>
+          <input class="input" placeholder="例如：唐" placeholder-class="ph" value="{{dynasty}}" bindinput="onDynastyInput" />
+        </view>
+        <view class="field">
+          <view class="label">体裁（可留空）</view>
+          <input class="input" placeholder="例如：五言绝句" placeholder-class="ph" value="{{type}}" bindinput="onTypeInput" />
+        </view>
+      </view>
+      <button class="btn primary" disabled="{{randomLoading}}" bindtap="onRandomTap">{{randomLoading ? "正在读取……" : "随机显示一首诗/词"}}</button>
+      <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">{{shareLoading ? "生成中……" : "分享诗词卡片"}}</button>
+      <view class="ratio-row">
+        <text class="ratio-label">卡片比例</text>
+        <view wx:for="{{ratioOptions}}" wx:key="value"
+          class="ratio-opt {{item.active ? 'active' : ''}} {{item.disabled ? 'disabled' : ''}}"
+          data-value="{{item.value}}" bindtap="onRatioTap">{{item.label}}</view>
+      </view>
+      <view class="tip">{{libTip}}</view>
+    </view>
+
+    <view class="card">
+      <view class="card-frame"></view>
+      <text class="card-watermark">詩</text>
+      <block wx:if="{{hasPoem}}">
+        <view class="title" style="{{titleStyle}}">
+          <view wx:for="{{titleLines}}" wx:key="index" class="title-line">{{item}}</view>
+        </view>
+        <view class="meta" style="{{metaStyle}}">{{poem.meta}}</view>
+        <view class="content {{isVertical ? 'vertical' : ''}}">
+          <view wx:for="{{verseLines}}" wx:key="index" class="verse-line {{item.wrap ? 'wrap' : ''}}">
+            <text>{{item.text}}</text><text wx:if="{{item.punct}}" class="hang-punct">{{item.punct}}</text>
+          </view>
+        </view>
+        <view wx:if="{{poem.type}}" class="category">体裁：{{poem.type}}</view>
+      </block>
+      <view wx:else class="status {{statusError ? 'error' : ''}}">{{statusText}}</view>
+    </view>
+
+    <view class="site-footer">
+      <image class="footer-logo" src="/assets/logo-yin.png" mode="aspectFit"></image>
+      <view class="slogan">诗海 · 非营利古诗词共享项目</view>
+      <view class="copyright">版权所有 © Ethan 2026 · 非营利项目 · 诗词数据来源于 chinese-poetry 开源项目</view>
+      <view class="copyright">数据来源：chinese-poetry/chinese-poetry · MIT License</view>
+    </view>
+  </view>
+
+  <!-- 主题设置按钮 -->
+  <!-- 设置图标：纯色滑块样式（跟随主题文字色） -->
+  <view class="theme-toggle {{uiReady ? 'ready' : ''}}" catchtap="onThemeToggle">
+    <view class="slider-icon">
+      <view class="sl-line"><view class="sl-dot pos-a"></view></view>
+      <view class="sl-line"><view class="sl-dot pos-b"></view></view>
+      <view class="sl-line"><view class="sl-dot pos-c"></view></view>
+    </view>
+  </view>
+
+  <!-- 主题面板（配色/排版/字号/文字方向，与网页版一致） -->
+  <view class="theme-panel {{themePanelOpen ? 'open' : ''}}" catchtap="noop">
+    <view class="theme-section">
+      <view class="theme-label">配色</view>
+      <view class="theme-options">
+        <view wx:for="{{colorOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
+          data-group="color" data-value="{{item.value}}" bindtap="onThemeOptTap">{{item.label}}</view>
+      </view>
+    </view>
+    <view class="theme-section">
+      <view class="theme-label">字号</view>
+      <view class="theme-options">
+        <view wx:for="{{sizeOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
+          data-group="size" data-value="{{item.value}}" bindtap="onThemeOptTap">{{item.label}}</view>
+      </view>
+    </view>
+    <view class="theme-section">
+      <view class="theme-label">文字方向</view>
+      <view class="theme-options">
+        <view wx:for="{{directionOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
+          data-group="direction" data-value="{{item.value}}" bindtap="onThemeOptTap">{{item.label}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分享图离屏画布（canvas 2d） -->
+  <canvas type="2d" id="shareCanvas" class="share-canvas"></canvas>
+</view>
