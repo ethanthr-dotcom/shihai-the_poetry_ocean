@@ -42,7 +42,6 @@ Page({
     isVertical: false,
     themePanelOpen: false,
     colorOptions: themes.COLOR_OPTIONS.map((o) => ({ ...o, active: o.value === "warm" })),
-    sizeOptions: themes.SIZE_OPTIONS.map((o) => ({ ...o, active: o.value === "medium" })),
     directionOptions: themes.DIRECTION_OPTIONS.map((o) => ({ ...o, active: o.value === "horizontal" })),
 
     author: "",
@@ -57,6 +56,7 @@ Page({
     titleStyle: "",
     titleLines: [],
     metaStyle: "",
+    categoryStyle: "",
     randomLoading: false,
     shareLoading: false,
     ratioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === "1:1", disabled: false })),
@@ -192,6 +192,7 @@ Page({
       titleLines: tt.lines,
       titleStyle: tt.style,
       metaStyle: this._fitInlineStyle(meta, "--meta-font-size"),
+      categoryStyle: this._fitInlineStyle(poem.y ? "体裁：" + poem.y : "", "--category-font-size"),
       verseLines: this.buildVerseLines(poem)
     }, () => this.fitCardText());
   },
@@ -202,12 +203,13 @@ Page({
     const winW = wx.getSystemInfoSync().windowWidth;
     const scale = winW / 750;
     const fontRpx = parseFloat(themes.THEMES.size[this.currentTheme.size].vars["--title-font-size"]) * 2;
-    const innerW = this._cardInnerW();
+    // 留 6% 安全边距：补偿字宽估算误差，确保任何字体下都不碰边框
+    const innerW = this._cardInnerW() * 0.94;
     const chars = Array.from(title);
     const unitW = fontRpx * scale;
     if (chars.length * unitW <= innerW) return { lines: [title], style: "" };
     const lines = splitTitleLines(chars, unitW, innerW);
-    // 换行后某行仍超宽：等比缩小字号兜底
+    // 换行后某行仍超宽：等比缩小字号兜底（最小 50%）
     const maxN = Math.max(...lines.map((l) => Array.from(l).length));
     let style = "";
     if (maxN * unitW > innerW) {
@@ -245,32 +247,26 @@ Page({
     for (const v of verses) {
       for (const c of verse.splitClauseLines(v)) clauses.push(c);
     }
-    const innerW = this._cardInnerW();
+    const safeW = this._cardInnerW() * 0.98;
     const fontSize = this._contentFontPx();
+    // 字宽估算留 6% 余量（含行尾悬挂标点），任何字都不允许碰到卡片内框
+    const estW = (t) => t.length * fontSize * 1.06;
+    const plain = (t) => t.replace(/[，、。！？；]/g, "").length;
+    // 硬性规则：一旦有任何小句单独放不下，整首诗都以一行一个小句呈现
+    const needBreak = clauses.some((c) => estW(c) > safeW);
     const out = [];
-    if (verse.isShortJueju(poem)) {
-      // 绝句：一行两个小句，宽度不够则一行一小句（以字数×字号估算，等价网页版探针）
-      for (let i = 0; i < clauses.length; i += 2) {
-        const a = clauses[i];
-        const b = clauses[i + 1];
-        if (b && (a.length + b.length) * fontSize <= innerW + 2) {
-          const sp = verse.hangSplit(a + b);
-          out.push({ text: sp.body, punct: sp.punct, wrap: false });
-          continue;
-        }
-        const sa = verse.hangSplit(a);
-        out.push({ text: sa.body, punct: sa.punct, wrap: false });
-        if (b) {
-          const sb = verse.hangSplit(b);
-          out.push({ text: sb.body, punct: sb.punct, wrap: false });
-        }
+    for (let i = 0; i < clauses.length; i++) {
+      const a = clauses[i];
+      const b = clauses[i + 1];
+      // 大句合并：两小句均较短（≤14 字）且合并后放得下（整句需折行时不合并）
+      if (!needBreak && b && plain(a) <= 14 && plain(b) <= 14 && estW(a + b) <= safeW) {
+        const sp = verse.hangSplit(a + b);
+        out.push({ text: sp.body, punct: sp.punct, wrap: false });
+        i++;
+        continue;
       }
-    } else {
-      for (const c of clauses) {
-        const n = c.replace(/[，、。！？；]/g, "").length;
-        const sp = verse.hangSplit(c);
-        out.push({ text: sp.body, punct: sp.punct, wrap: n >= 8 });
-      }
+      const sp = verse.hangSplit(a);
+      out.push({ text: sp.body, punct: sp.punct, wrap: plain(a) >= 8 || estW(a) > safeW });
     }
     return out;
   },
@@ -288,7 +284,8 @@ Page({
     // 页面两侧留白（主题变量 --page-padding 水平值，设计 px → rpx(×2) → 屏幕 px）
     const padVar = themes.THEMES.layout[this.currentTheme.layout].vars["--page-padding"];
     const pagePad = parseFloat(padVar.split(" ")[1]) * 2 * scale;
-    const cardW = Math.min(winW - pagePad * 2, 900);
+    // 卡片铺满屏幕（主题已不再限制 max-width）
+    const cardW = winW - pagePad * 2;
     const padX = themes.CARD_PAD_X[this.currentTheme.layout] * 2 * scale;
     // 与网页版一致：再减 28（装饰内框余量）
     return cardW - padX * 2 - 28 * scale;
@@ -320,15 +317,13 @@ Page({
   onThemeOptTap(e) {
     const { group, value } = e.currentTarget.dataset;
     if (this.currentTheme[group] === value) return;
-    // 切到竖排：默认紧凑排版 + 小字号；切回横排恢复原选择（与网页版一致）
+    // 切到竖排：默认紧凑排版；切回横排恢复原选择（与网页版一致）
     if (group === "direction") {
       if (value === "vertical") {
-        this.prevHorzTheme = { layout: this.currentTheme.layout, size: this.currentTheme.size };
+        this.prevHorzTheme = { layout: this.currentTheme.layout };
         this.currentTheme.layout = "compact";
-        this.currentTheme.size = "small";
       } else if (this.prevHorzTheme) {
         this.currentTheme.layout = this.prevHorzTheme.layout;
-        this.currentTheme.size = this.prevHorzTheme.size;
         this.prevHorzTheme = null;
       }
     }
@@ -371,7 +366,6 @@ Page({
         active: isVertical ? o.value === "auto" : o.value === shareRatio
       })),
       colorOptions: this.data.colorOptions.map((o) => ({ ...o, active: o.value === t.color })),
-      sizeOptions: this.data.sizeOptions.map((o) => ({ ...o, active: o.value === t.size })),
       directionOptions: this.data.directionOptions.map((o) => ({ ...o, active: o.value === t.direction }))
     });
   },

@@ -229,15 +229,14 @@ const THEMES = {
     }
   },
   layout: {
-    centered: { label: "居中", vars: { "--max-width": "900px", "--page-padding": "48px 10px", "--card-padding": "42px 28px" } },
-    wide: { label: "宽屏", vars: { "--max-width": "1200px", "--page-padding": "48px 10px", "--card-padding": "42px 28px" } },
-    compact: { label: "紧凑", vars: { "--max-width": "700px", "--page-padding": "32px 8px", "--card-padding": "30px 18px" } }
+    // 卡片铺满屏幕，两侧各留 25px（750 设计稿下即 50rpx）一字符边距
+    centered: { label: "居中", vars: { "--max-width": "none", "--page-padding": "48px 25px", "--card-padding": "42px 25px" } },
+    wide: { label: "宽屏", vars: { "--max-width": "none", "--page-padding": "48px 25px", "--card-padding": "42px 25px" } },
+    compact: { label: "紧凑", vars: { "--max-width": "none", "--page-padding": "32px 25px", "--card-padding": "30px 25px" } }
   },
   size: {
-    // 中号：标题 36/作者 23/正文 26/体裁 20；小/大各减/加 20%
-    small: { label: "小", vars: { "--title-font-size": "29px", "--meta-font-size": "18px", "--content-font-size": "21px", "--category-font-size": "16px" } },
-    medium: { label: "中", vars: { "--title-font-size": "36px", "--meta-font-size": "23px", "--content-font-size": "26px", "--category-font-size": "20px" } },
-    large: { label: "大", vars: { "--title-font-size": "43px", "--meta-font-size": "28px", "--content-font-size": "31px", "--category-font-size": "24px" } }
+    // 字号选项已移除：固定大号（标题 29/作者 18/正文 21/体裁 16）
+    large: { label: "大", vars: { "--title-font-size": "29px", "--meta-font-size": "18px", "--content-font-size": "21px", "--category-font-size": "16px" } }
   }
 };
 
@@ -246,14 +245,13 @@ const COLOR_OPTIONS = ["warm", "ink", "dark", "celadon", "morandi", "vivid", "va
   (v) => ({ value: v, label: THEMES.color[v].label })
 );
 const LAYOUT_OPTIONS = ["centered", "wide", "compact"].map((v) => ({ value: v, label: THEMES.layout[v].label }));
-const SIZE_OPTIONS = ["small", "medium", "large"].map((v) => ({ value: v, label: THEMES.size[v].label }));
 const DIRECTION_OPTIONS = [
   { value: "horizontal", label: "横排" },
   { value: "vertical", label: "竖排" }
 ];
 
 // 卡片左右内边距（fitCardText 探针换算用）
-const CARD_PAD_X = { centered: 28, wide: 28, compact: 18 };
+const CARD_PAD_X = { centered: 25, wide: 25, compact: 25 };
 
 // 主题 → 根节点 style 字符串
 function buildStyleVars(theme) {
@@ -267,19 +265,17 @@ function buildStyleVars(theme) {
 }
 
 function loadTheme() {
-  const theme = { color: "warm", layout: "centered", size: "medium", direction: "horizontal" };
+  const theme = { color: "warm", layout: "centered", size: "large", direction: "horizontal" };
   try {
     const saved = wx.getStorageSync(THEME_KEY);
     if (saved) {
       const p = JSON.parse(saved);
       if (p.color && THEMES.color[p.color]) theme.color = p.color;
       if (p.layout && THEMES.layout[p.layout]) theme.layout = p.layout;
-      if (p.size && THEMES.size[p.size]) theme.size = p.size;
       if (p.direction === "vertical" || p.direction === "horizontal") theme.direction = p.direction;
-      // 竖排分享图默认紧凑排版 + 小字号
+      // 竖排分享图默认紧凑排版
       if (theme.direction === "vertical") {
         theme.layout = "compact";
-        theme.size = "small";
       }
     }
   } catch (e) {}
@@ -294,6 +290,6 @@ function saveTheme(theme) {
 
 module.exports = {
   THEMES, THEME_KEY, CARD_PAD_X,
-  COLOR_OPTIONS, LAYOUT_OPTIONS, SIZE_OPTIONS, DIRECTION_OPTIONS,
+  COLOR_OPTIONS, LAYOUT_OPTIONS, DIRECTION_OPTIONS,
   buildStyleVars, loadTheme, saveTheme
 };

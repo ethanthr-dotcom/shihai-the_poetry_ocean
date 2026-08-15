@@ -62,7 +62,7 @@
             <text>{{item.text}}</text><text wx:if="{{item.punct}}" class="hang-punct">{{item.punct}}</text>
           </view>
         </view>
-        <view wx:if="{{poem.type}}" class="category">体裁：{{poem.type}}</view>
+        <view wx:if="{{poem.type}}" class="category" style="{{categoryStyle}}">体裁：{{poem.type}}</view>
       </block>
       <view wx:else class="status {{statusError ? 'error' : ''}}">{{statusText}}</view>
     </view>
@@ -85,20 +85,13 @@
     </view>
   </view>
 
-  <!-- 主题面板（配色/排版/字号/文字方向，与网页版一致） -->
+  <!-- 主题面板（配色/文字方向，与网页版一致） -->
   <view class="theme-panel {{themePanelOpen ? 'open' : ''}}" catchtap="noop">
     <view class="theme-section">
       <view class="theme-label">配色</view>
       <view class="theme-options">
         <view wx:for="{{colorOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
           data-group="color" data-value="{{item.value}}" bindtap="onThemeOptTap">{{item.label}}</view>
-      </view>
-    </view>
-    <view class="theme-section">
-      <view class="theme-label">字号</view>
-      <view class="theme-options">
-        <view wx:for="{{sizeOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
-          data-group="size" data-value="{{item.value}}" bindtap="onThemeOptTap">{{item.label}}</view>
       </view>
     </view>
     <view class="theme-section">

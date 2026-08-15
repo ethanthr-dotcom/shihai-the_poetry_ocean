@@ -250,6 +250,8 @@
         .hang-punct { display: inline-block; width: 0; }
     .title { max-width: 100%; }
     .meta { white-space: nowrap; max-width: 100%; }
+    /* 硬性兜底：任何文字一碰到卡片内框立即折行，绝不溢出 */
+    .title-line, .meta, .category { overflow-wrap: break-word; word-break: break-all; }
     /* 标题换行：每行保持完整并居中，追求上下对称 */
     .title-line { white-space: nowrap; }
     /* 竖排显示（设置里可选）：高度随最长句自适应，绝不截断 */
@@ -586,14 +588,6 @@
       </div>
     </div>
     <div class="theme-section">
-      <div class="theme-label">字号</div>
-      <div class="theme-options" data-group="size">
-        <button class="theme-opt" data-value="small">小</button>
-        <button class="theme-opt active" data-value="medium">中</button>
-        <button class="theme-opt" data-value="large">大</button>
-      </div>
-    </div>
-    <div class="theme-section">
       <div class="theme-label">文字方向</div>
       <div class="theme-options" data-group="direction">
         <button class="theme-opt active" data-value="horizontal">横排</button>
@@ -750,17 +744,26 @@
       const title = currentPoem.t || "无题";
       titleEl.style.fontSize = "";
       const base = parseFloat(getComputedStyle(titleEl).fontSize);
+      // 留 6% 安全边距：确保标题与边框始终有距离
+      const safeW = innerW * 0.94;
       const chars = Array.from(title);
-      if (chars.length * base <= innerW) {
+      if (chars.length * base <= safeW) {
         setTitleEl(titleEl, [title], "");
         return;
       }
-      const lines = splitTitleLines(chars, base, innerW);
+      const lines = splitTitleLines(chars, base, safeW);
       const maxN = Math.max(...lines.map((l) => Array.from(l).length));
-      const fontSize = maxN * base > innerW
-        ? Math.max((base * innerW) / (maxN * base), base * 0.5)
+      const fontSize = maxN * base > safeW
+        ? Math.max((base * safeW) / (maxN * base), base * 0.5)
         : "";
       setTitleEl(titleEl, lines, fontSize ? fontSize + "px" : "");
+      // 硬性兜底：渲染后实测每行宽度，仍超则继续等比缩小（最小 50%）
+      const worst = Math.max(...Array.from(titleEl.querySelectorAll(".title-line"),
+        (l) => l.scrollWidth), 0);
+      const cur = parseFloat(getComputedStyle(titleEl).fontSize);
+      if (worst > innerW) {
+        titleEl.style.fontSize = Math.max((cur * innerW) / worst, base * 0.5) + "px";
+      }
     }
 
     function setTitleEl(el, lines, fontSize) {
@@ -794,6 +797,7 @@
       // 标题超宽对称换行（兜底缩小）；作者行超宽等比缩小——均不出卡片内框
       buildTitle(innerW);
       fitInline(card.querySelector(".meta"), innerW);
+      fitInline(card.querySelector(".category"), innerW);
       // 竖排：恢复整句成列
       if (isV) {
         contentEl.innerHTML = verses
@@ -807,33 +811,33 @@
         for (const c of splitClauseLines(v)) clauses.push(c);
       }
 
+      // 排版规则（所有诗通用）：空间允许时一行放一个大句（两个小句，短行以逗号收尾），
+      // 否则一行一个小句；一旦有任何小句放不下，整首诗都以一行一个小句呈现。
+      // 宽度估算留 6% 余量，任何字都不允许碰到卡片内框
+      const safeW = innerW * 0.98;
+      const probe = document.createElement("span");
+      probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap;";
+      contentEl.appendChild(probe);
+      const widthOf = (t) => {
+        probe.textContent = t;
+        return probe.scrollWidth * 1.06;
+      };
+      const plain = (t) => t.replace(/[，、。！？；]/g, "").length;
+      const needBreak = clauses.some((c) => widthOf(c) > safeW);
       const html = [];
-      if (isShortJueju(currentPoem)) {
-        // 探针元素继承正文字体，实测两小句同行是否放得下
-        const probe = document.createElement("span");
-        probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap;";
-        contentEl.appendChild(probe);
-        for (let i = 0; i < clauses.length; i += 2) {
-          const a = clauses[i];
-          const b = clauses[i + 1];
-          if (b) {
-            probe.textContent = a + b;
-            if (probe.scrollWidth <= innerW + 2) {
-              html.push('<div class="verse-line">' + verseHtml(a + b) + "</div>");
-              continue;
-            }
-          }
-          html.push('<div class="verse-line">' + verseHtml(a) + "</div>");
-          if (b) html.push('<div class="verse-line">' + verseHtml(b) + "</div>");
+      for (let i = 0; i < clauses.length; i++) {
+        const a = clauses[i];
+        const b = clauses[i + 1];
+        // 大句合并：两小句均较短（≤14 字）且合并后实测放得下（整句需折行时不合并）
+        if (!needBreak && b && plain(a) <= 14 && plain(b) <= 14 && widthOf(a + b) <= safeW) {
+          html.push('<div class="verse-line">' + verseHtml(a + b) + "</div>");
+          i++;
+          continue;
         }
-        probe.remove();
-      } else {
-        for (const c of clauses) {
-          const n = c.replace(/[，、。！？；]/g, "").length;
-          const cls = n >= 8 ? "verse-line wrap" : "verse-line";
-          html.push('<div class="' + cls + '">' + verseHtml(c) + "</div>");
-        }
+        const cls = plain(a) >= 8 || widthOf(a) > safeW ? "verse-line wrap" : "verse-line";
+        html.push('<div class="' + cls + '">' + verseHtml(a) + "</div>");
       }
+      probe.remove();
       contentEl.innerHTML = html.join("");
     }
 
@@ -1631,33 +1635,31 @@
       layout: {
         centered: {
           vars: {
-            "--max-width": "900px", "--page-padding": "48px 20px",
-            "--card-padding": "42px 28px"
+            "--max-width": "none", "--page-padding": "48px 25px",
+            "--card-padding": "42px 25px"
           }
         },
         wide: {
           vars: {
-            "--max-width": "1200px", "--page-padding": "48px 20px",
-            "--card-padding": "42px 28px"
+            "--max-width": "none", "--page-padding": "48px 25px",
+            "--card-padding": "42px 25px"
           }
         },
         compact: {
           vars: {
-            "--max-width": "700px", "--page-padding": "32px 16px",
-            "--card-padding": "30px 18px"
+            "--max-width": "none", "--page-padding": "32px 25px",
+            "--card-padding": "30px 25px"
           }
         }
       },
       size: {
-        // 中号：标题 36/作者 23/正文 26/体裁 20；小/大各减/加 20%
-        small: { vars: { "--title-font-size": "29px", "--meta-font-size": "18px", "--content-font-size": "21px", "--category-font-size": "16px" } },
-        medium: { vars: { "--title-font-size": "36px", "--meta-font-size": "23px", "--content-font-size": "26px", "--category-font-size": "20px" } },
-        large: { vars: { "--title-font-size": "43px", "--meta-font-size": "28px", "--content-font-size": "31px", "--category-font-size": "24px" } }
+        // 字号选项已移除：固定大号（标题 29/作者 18/正文 21/体裁 16）
+        large: { vars: { "--title-font-size": "29px", "--meta-font-size": "18px", "--content-font-size": "21px", "--category-font-size": "16px" } }
       }
     };
 
-    let currentTheme = { color: "warm", layout: "centered", size: "medium", direction: "horizontal" };
-    // 竖排默认紧凑+小字号；切回横排时恢复之前的选择
+    let currentTheme = { color: "warm", layout: "centered", size: "large", direction: "horizontal" };
+    // 竖排默认紧凑排版；切回横排时恢复之前的选择
     let prevHorzTheme = null;
 
     function applyTheme() {
@@ -1696,12 +1698,10 @@
           const p = JSON.parse(saved);
           if (p.color && THEMES.color[p.color]) currentTheme.color = p.color;
           if (p.layout && THEMES.layout[p.layout]) currentTheme.layout = p.layout;
-          if (p.size && THEMES.size[p.size]) currentTheme.size = p.size;
           if (p.direction === "vertical" || p.direction === "horizontal") currentTheme.direction = p.direction;
-          // 竖排分享图默认紧凑排版 + 小字号
+          // 竖排分享图默认紧凑排版
           if (currentTheme.direction === "vertical") {
             currentTheme.layout = "compact";
-            currentTheme.size = "small";
           }
         }
       } catch (e) {}
@@ -1726,15 +1726,13 @@
       btn.addEventListener("click", () => {
         const group = btn.closest(".theme-options").dataset.group;
         const value = btn.dataset.value;
-        // 切到竖排：默认紧凑排版 + 小字号（竖版分享图按网页卡片自适应生成）；切回横排恢复原选择
+        // 切到竖排：默认紧凑排版（竖版分享图按网页卡片自适应生成）；切回横排恢复原选择
         if (group === "direction" && value !== currentTheme.direction) {
           if (value === "vertical") {
-            prevHorzTheme = { layout: currentTheme.layout, size: currentTheme.size };
+            prevHorzTheme = { layout: currentTheme.layout };
             currentTheme.layout = "compact";
-            currentTheme.size = "small";
           } else if (prevHorzTheme) {
             currentTheme.layout = prevHorzTheme.layout;
-            currentTheme.size = prevHorzTheme.size;
             prevHorzTheme = null;
           }
         }
