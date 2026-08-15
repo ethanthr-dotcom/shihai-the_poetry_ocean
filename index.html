@@ -109,6 +109,10 @@
       transition: background 0.3s, border-color 0.3s;
     }
     .controls { padding: 18px; margin-bottom: 22px; }
+    /* 按钮行负边距外扩：两个主按钮比控件区更宽 */
+    .btn-row { margin: 0 -8px; }
+    #randomButton, #shareButton { white-space: normal; }
+    .btn-line { display: block; }
     .row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -533,8 +537,10 @@
           <input id="type" placeholder="例如：五言绝句">
         </div>
       </div>
-      <button id="randomButton" type="button">随机显示诗/词</button>
-      <button id="shareButton" type="button" class="secondary">点击可下载或分享</button>
+      <div class="btn-row">
+        <button id="randomButton" type="button">随机显示诗/词</button>
+        <button id="shareButton" type="button" class="secondary">下载或分享诗卡</button>
+      </div>
       <div class="ratio-row">
         <span class="ratio-label">卡片比例</span>
         <button class="ratio-opt active" data-ratio="1:1" type="button">1:1</button>
@@ -844,8 +850,36 @@
     let fitTimer = null;
     window.addEventListener("resize", () => {
       clearTimeout(fitTimer);
-      fitTimer = setTimeout(fitCardText, 120);
+      fitTimer = setTimeout(() => { fitCardText(); fitButtons(); }, 120);
     });
+
+    // ====== 按钮标签自适应换行：太窄拆行，每行不少于两个字 ======
+    function splitBtnLabel(text, availW, fontPx) {
+      if (text.length * fontPx <= availW) return [text];
+      const n = text.length;
+      for (let k = 2; k <= Math.floor(n / 2); k++) {
+        const per = Math.ceil(n / k);
+        if (per * fontPx <= availW) {
+          const lines = [];
+          for (let i = 0; i < n; i += per) lines.push(text.slice(i, i + per));
+          return lines;
+        }
+      }
+      return [text];
+    }
+    function setBtnLabel(btn, text) {
+      const cs = getComputedStyle(btn);
+      const avail = btn.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const fontPx = parseFloat(cs.fontSize) || 16;
+      btn.innerHTML = splitBtnLabel(text, avail, fontPx * 1.06)
+        .map((l) => '<span class="btn-line">' + l + "</span>").join("");
+    }
+    function fitButtons() {
+      setBtnLabel(button, "随机显示诗/词");
+      const sb = $("shareButton");
+      if (!sb.disabled) setBtnLabel(sb, "下载或分享诗卡");
+    }
+    fitButtons();
 
     function renderPoem(poem) {
       currentPoem = poem;
@@ -998,7 +1032,7 @@
         showStatus("读取失败：" + (err && err.message ? err.message : err), true);
       } finally {
         button.disabled = false;
-        button.textContent = "随机显示诗/词";
+        setBtnLabel(button, "随机显示诗/词");
         progressDone();
       }
     }
@@ -1396,7 +1430,7 @@
         showStatus("生成卡片失败：" + (e && e.message ? e.message : e), true);
       } finally {
         shareButton.disabled = false;
-        shareButton.textContent = "点击可下载或分享";
+        setBtnLabel(shareButton, "下载或分享诗卡");
       }
     });
 

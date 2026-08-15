@@ -77,6 +77,8 @@
 }
 .ph { color: var(--label-color); opacity: .6; }
 
+/* 按钮行负边距外扩：两个主按钮比控件区更宽，向屏幕边缘靠近 */
+.btn-row { margin: 0 -16rpx; }
 .btn {
   width: 100%;
   border: 0;
@@ -87,7 +89,9 @@
   background: var(--accent-color);
   color: var(--button-text);
   font-family: inherit;
+  white-space: normal;
 }
+.btn-line { display: block; }
 .btn[disabled] { opacity: .55; color: var(--button-text); background: var(--accent-color); }
 .btn.secondary {
   background: transparent;
@@ -248,7 +252,8 @@
 
 /* ====== 主题切换按钮与面板 ====== */
 .theme-toggle {
-  position: fixed;
+  /* 与网页端一致：绝对定位跟随页面滚动，不冻结在视口 */
+  position: absolute;
   top: 36rpx; right: 36rpx;
   width: 56rpx; height: 56rpx;
   display: flex; align-items: center; justify-content: center;

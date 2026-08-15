@@ -61,6 +61,8 @@ Page({
     shareLoading: false,
     shareSheetShow: false,
     shareImg: "",
+    randomBtnLines: ["随机显示诗/词"],
+    shareBtnLines: ["下载或分享诗卡"],
     ratioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === "1:1", disabled: false })),
     shareRatio: "1:1",
     progressState: "", // "" | run | done
@@ -86,6 +88,38 @@ Page({
       this.startSplash();
     }
     this.boot();
+    this.fitBtnLabels();
+  },
+
+  onResize() {
+    this.fitBtnLabels();
+  },
+
+  // 按钮标签自适应换行：太窄时拆行，硬性保证每行不少于两个字
+  fitBtnLabels() {
+    const winW = wx.getSystemInfoSync().windowWidth;
+    const scale = winW / 375; // 32rpx 字号 → 16*scale px
+    // 按钮内文字可用宽 = 屏宽 - 页面左右16px*2 - 控件区36rpx + btn-row外扩16rpx - 按钮自身左右padding 32rpx*2
+    const avail = winW - 32 - 36 * scale + 16 * scale - 32 * scale;
+    const fontPx = 16 * scale;
+    this.setData({
+      randomBtnLines: this._splitBtnLabel("随机显示诗/词", avail, fontPx),
+      shareBtnLines: this._splitBtnLabel("下载或分享诗卡", avail, fontPx)
+    });
+  },
+
+  _splitBtnLabel(text, availW, fontPx) {
+    if (text.length * fontPx <= availW) return [text];
+    const n = text.length;
+    for (let k = 2; k <= Math.floor(n / 2); k++) {
+      const per = Math.ceil(n / k);
+      if (per * fontPx <= availW) {
+        const lines = [];
+        for (let i = 0; i < n; i += per) lines.push(text.slice(i, i + per));
+        return lines;
+      }
+    }
+    return [text];
   },
 
   onDismissDisclaimer() {

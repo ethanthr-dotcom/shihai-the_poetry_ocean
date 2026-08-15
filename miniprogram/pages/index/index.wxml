@@ -39,8 +39,16 @@
           <input class="input" placeholder="例如：五言绝句" placeholder-class="ph" value="{{type}}" bindinput="onTypeInput" />
         </view>
       </view>
-      <button class="btn primary" disabled="{{randomLoading}}" bindtap="onRandomTap">{{randomLoading ? "正在读取……" : "随机显示诗/词"}}</button>
-      <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">{{shareLoading ? "生成中……" : "点击可下载或分享"}}</button>
+      <view class="btn-row">
+        <button class="btn primary" disabled="{{randomLoading}}" bindtap="onRandomTap">
+          <block wx:if="{{randomLoading}}">正在读取……</block>
+          <block wx:else><text class="btn-line" wx:for="{{randomBtnLines}}" wx:key="index">{{item}}</text></block>
+        </button>
+        <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">
+          <block wx:if="{{shareLoading}}">生成中……</block>
+          <block wx:else><text class="btn-line" wx:for="{{shareBtnLines}}" wx:key="index">{{item}}</text></block>
+        </button>
+      </view>
       <view class="ratio-row">
         <text class="ratio-label">卡片比例</text>
         <view wx:for="{{ratioOptions}}" wx:key="value"
