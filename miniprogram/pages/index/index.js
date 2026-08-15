@@ -180,9 +180,13 @@ Page({
   },
 
   // ====== 渲染诗词（对齐网页版 renderPoem + fitCardText） ======
+  _metaText(poem) {
+    return [poem.d, poem.a].filter(Boolean).join(" · ");
+  },
+
   renderPoem(poem) {
     this.currentPoem = poem;
-    const meta = [poem.d, poem.a].filter(Boolean).join(" · ");
+    const meta = this._metaText(poem);
     const tt = this._buildTitle(poem.t || "无题");
     this.setData({
       hasPoem: true,
@@ -199,12 +203,12 @@ Page({
 
   // 标题排版：放得下则单行；超宽则均分为多行（优先在标点处断句），
   // 换行后仍超宽才等比缩小字号（最小 50%）——文字绝不触碰卡片内框
-  _buildTitle(title) {
+  _buildTitle(title, width) {
     const winW = wx.getSystemInfoSync().windowWidth;
     const scale = winW / 750;
     const fontRpx = parseFloat(themes.THEMES.size[this.currentTheme.size].vars["--title-font-size"]) * 2;
     // 留 6% 安全边距：补偿字宽估算误差，确保任何字体下都不碰边框
-    const innerW = this._cardInnerW() * 0.94;
+    const innerW = (width || this._cardInnerW()) * 0.94;
     const chars = Array.from(title);
     const unitW = fontRpx * scale;
     if (chars.length * unitW <= innerW) return { lines: [title], style: "" };
@@ -220,13 +224,13 @@ Page({
   },
 
   // 硬性要求：作者行超宽时按比例缩小（最小 50%），保证不出卡片内框
-  _fitInlineStyle(text, fontVar) {
+  _fitInlineStyle(text, fontVar, width) {
     if (!text) return "";
     const winW = wx.getSystemInfoSync().windowWidth;
     const scale = winW / 750;
     const fontRpx = parseFloat(themes.THEMES.size[this.currentTheme.size].vars[fontVar]) * 2;
     const w = Array.from(text).length * fontRpx * scale;
-    const innerW = this._cardInnerW();
+    const innerW = width || this._cardInnerW();
     if (w <= innerW) return "";
     return "font-size:" + Math.max((fontRpx * innerW) / w, fontRpx * 0.5) + "rpx;";
   },
@@ -242,12 +246,12 @@ Page({
     return this._fitVerses(poem, verses);
   },
 
-  _fitVerses(poem, verses) {
+  _fitVerses(poem, verses, width) {
     const clauses = [];
     for (const v of verses) {
       for (const c of verse.splitClauseLines(v)) clauses.push(c);
     }
-    const safeW = this._cardInnerW() * 0.98;
+    const safeW = (width || this._cardInnerW()) * 0.98;
     const fontSize = this._contentFontPx();
     // 字宽估算留 6% 余量（含行尾悬挂标点），任何字都不允许碰到卡片内框
     const estW = (t) => t.length * fontSize * 1.06;
@@ -291,18 +295,31 @@ Page({
     return cardW - padX * 2 - 28 * scale;
   },
 
-  // 卡片实际尺寸测量后再排版一次（等价 resize 监听）
+  // 卡片实际尺寸测量后再排版一次（等价 resize 监听）：
+  // 直接取 .content 内容盒实测宽度（装饰内框之内的真实可用宽度）重排所有文字，
+  // 不依赖公式估算，任何字体/缩放下都不可能超出内框
   fitCardText() {
     if (!this.currentPoem) return;
     wx.createSelectorQuery()
       .select(".card")
       .boundingClientRect()
+      .select(".content")
+      .boundingClientRect()
       .exec((res) => {
         if (!res || !res[0]) return;
         this._cardRect = res[0];
-        if (this.currentTheme.direction !== "vertical") {
-          this.setData({ verseLines: this._fitVerses(this.currentPoem, verse.splitVerses(this.currentPoem.c)) });
-        }
+        if (this.currentTheme.direction === "vertical") return;
+        const innerW = res[1] && res[1].width ? res[1].width : this._cardInnerW();
+        const poem = this.currentPoem;
+        const tt = this._buildTitle(poem.t || "无题", innerW);
+        const meta = this._metaText(poem);
+        this.setData({
+          titleLines: tt.lines,
+          titleStyle: tt.style,
+          metaStyle: this._fitInlineStyle(meta, "--meta-font-size", innerW),
+          categoryStyle: this._fitInlineStyle(poem.y ? "体裁：" + poem.y : "", "--category-font-size", innerW),
+          verseLines: this._fitVerses(poem, verse.splitVerses(poem.c), innerW)
+        });
       });
   },
 

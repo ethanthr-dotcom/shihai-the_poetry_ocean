@@ -244,16 +244,16 @@
       text-align: center;
     }
     /* 每行保持完整分句；.wrap 允许八字以上分句自适应换行 */
-    .verse-line { margin: 0; white-space: nowrap; }
-    .verse-line.wrap { white-space: normal; }
+    .verse-line { margin: 0; overflow-wrap: break-word; word-break: break-all; }
+    .verse-line.wrap { white-space: normal; overflow-wrap: break-word; word-break: break-all; }
         /* 行尾标点占零宽（悬挂标点）：居中只按文字计算，视觉对齐 */
         .hang-punct { display: inline-block; width: 0; }
     .title { max-width: 100%; }
     .meta { white-space: nowrap; max-width: 100%; }
     /* 硬性兜底：任何文字一碰到卡片内框立即折行，绝不溢出 */
     .title-line, .meta, .category { overflow-wrap: break-word; word-break: break-all; }
-    /* 标题换行：每行保持完整并居中，追求上下对称 */
-    .title-line { white-space: nowrap; }
+    /* 标题换行：优先 JS 均分行，超出内框时 CSS 直接折行，绝不碰框 */
+    .title-line { overflow-wrap: break-word; word-break: break-all; }
     /* 竖排显示（设置里可选）：高度随最长句自适应，绝不截断 */
     body.vertical .content {
       writing-mode: vertical-rl;
@@ -1635,19 +1635,19 @@
       layout: {
         centered: {
           vars: {
-            "--max-width": "none", "--page-padding": "48px 25px",
+            "--max-width": "none", "--page-padding": "48px 16px",
             "--card-padding": "42px 25px"
           }
         },
         wide: {
           vars: {
-            "--max-width": "none", "--page-padding": "48px 25px",
+            "--max-width": "none", "--page-padding": "48px 16px",
             "--card-padding": "42px 25px"
           }
         },
         compact: {
           vars: {
-            "--max-width": "none", "--page-padding": "32px 25px",
+            "--max-width": "none", "--page-padding": "32px 16px",
             "--card-padding": "30px 25px"
           }
         }

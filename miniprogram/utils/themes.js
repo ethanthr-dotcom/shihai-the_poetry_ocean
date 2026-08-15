@@ -229,10 +229,10 @@ const THEMES = {
     }
   },
   layout: {
-    // 卡片铺满屏幕，两侧各留 25px（750 设计稿下即 50rpx）一字符边距
-    centered: { label: "居中", vars: { "--max-width": "none", "--page-padding": "48px 25px", "--card-padding": "42px 25px" } },
-    wide: { label: "宽屏", vars: { "--max-width": "none", "--page-padding": "48px 25px", "--card-padding": "42px 25px" } },
-    compact: { label: "紧凑", vars: { "--max-width": "none", "--page-padding": "32px 25px", "--card-padding": "30px 25px" } }
+    // 卡片铺满屏幕，两侧各留 16px（750 设计稿下即 32rpx）一字符边距
+    centered: { label: "居中", vars: { "--max-width": "none", "--page-padding": "48px 16px", "--card-padding": "42px 25px" } },
+    wide: { label: "宽屏", vars: { "--max-width": "none", "--page-padding": "48px 16px", "--card-padding": "42px 25px" } },
+    compact: { label: "紧凑", vars: { "--max-width": "none", "--page-padding": "32px 16px", "--card-padding": "30px 25px" } }
   },
   size: {
     // 字号选项已移除：固定大号（标题 29/作者 18/正文 21/体裁 16）
