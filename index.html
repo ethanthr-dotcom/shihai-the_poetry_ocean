@@ -384,7 +384,7 @@
     .note-toggle.ready { opacity: .7; pointer-events: auto; }
     .note-toggle.ready:hover { opacity: 1; }
     .note-toggle svg { width: 100%; height: 100%; }
-    .card-note { position: absolute; top: 10px; right: 52px; z-index: 3; background: none; border: 0; width: 32px; height: 32px; padding: 4px; cursor: pointer; color: var(--meta-color); opacity: .55; transition: opacity .2s, color .2s; font-family: inherit; box-sizing: border-box; }
+    .card-note { position: absolute; top: 10px; right: 46px; z-index: 3; background: none; border: 0; width: 26px; height: 26px; padding: 2px; cursor: pointer; color: var(--meta-color); opacity: .55; transition: opacity .2s, color .2s; font-family: inherit; box-sizing: border-box; }
     .card-note:hover { opacity: .95; }
     .card-note.on { color: var(--seal-color, #a3382f); opacity: 1; }
     .result-note { position: relative; width: 23px; height: 23px; margin: 0 2px 0 12px; color: var(--meta-color); opacity: .5; flex: none; cursor: pointer; }
@@ -2587,12 +2587,12 @@
       closeNoteEditor();
       updateCardNoteBtn(); syncResultsNote();
       renderNoteList(); updateNoteBar();
-      showStatus("批注已删除", false);
+      toast("批注已删除");
     });
     $("noteSave").addEventListener("click", () => {
       if (!editingNotePoem) return;
       const text = $("noteText").value.trim();
-      if (!text) { showStatus("批注内容不能为空", true); return; }
+      if (!text) { toast("批注内容不能为空"); return; }
       haptic();
       const poem = editingNotePoem;
       const id = favId(poem);
@@ -2607,7 +2607,7 @@
       updateCardNoteBtn(); syncResultsNote();
       // 「不再询问」记忆：yes=保存后直接生成卡片，no=只保存
       if (noteAskMode === "yes") { openNoteRatioSheet(id); return; }
-      if (noteAskMode === "no") { showStatus("批注已保存", false); return; }
+      if (noteAskMode === "no") { toast("批注已保存 · 点右上角 ✎ 打开批注本查看"); return; }
       $("noteAskRemember").checked = false;
       $("noteAskSheet").dataset.noteId = id;
       $("noteAskSheet").classList.add("open");
@@ -2620,6 +2620,7 @@
       const id = $("noteAskSheet").dataset.noteId;
       $("noteAskSheet").classList.remove("open");
       if (action === "yes") openNoteRatioSheet(id);
+      else toast("批注已保存 · 点右上角 ✎ 打开批注本查看");
     }
     $("noteAskYes").addEventListener("click", () => { haptic(); noteAskFinish("yes"); });
     $("noteAskNo").addEventListener("click", () => { haptic(); noteAskFinish("no"); });
@@ -2665,7 +2666,7 @@
       saveNotes();
       renderNoteList(); updateNoteBar();
       updateCardNoteBtn(); syncResultsNote();
-      showStatus("已删除", false);
+      toast("已删除");
     });
     const fmtNoteDate = (ts) => {
       const dt = new Date(ts || Date.now());
@@ -2870,7 +2871,7 @@
         document.body.appendChild(a);
         a.click();
         a.remove();
-        showStatus("批注卡片已生成并开始下载", false);
+        toast("批注卡片已生成并开始下载");
       } catch (e) {
         showStatus("生成批注卡片失败：" + (e && e.message ? e.message : e), true);
       }

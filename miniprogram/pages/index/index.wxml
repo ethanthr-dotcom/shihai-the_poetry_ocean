@@ -314,7 +314,7 @@
             <view class="note-text">{{item.n}}</view>
             <view class="result-m note-date">《{{item.t || '无题'}}》{{item.d}} · {{item.a}} · {{item.date}}</view>
           </view>
-          <view wx:if="{{!noteSelMode}}" class="note-card-btn" data-index="{{index}}" catchtap="onNoteItemCard">卡片</view>
+          <view wx:if="{{!noteSelMode}}" class="note-card-btn" data-index="{{index}}" catchtap="onNoteItemCard">生成卡片</view>
         </view>
       </scroll-view>
     </view>

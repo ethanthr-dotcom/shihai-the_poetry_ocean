@@ -438,7 +438,7 @@ Page({
     this._syncResultsNote();
     // 「不再询问」记忆：yes=保存后直接生成卡片，no=只保存
     if (this._noteAskMode === "yes") { this.openNoteRatioSheet(id); return; }
-    if (this._noteAskMode === "no") { wx.showToast({ title: "批注已保存", icon: "none" }); return; }
+    if (this._noteAskMode === "no") { wx.showToast({ title: "批注已保存 · 右上角批注本可查看", icon: "none", duration: 2200 }); return; }
     this._noteAskId = id;
     this.setData({ noteAskShow: true, noteAskRemember: false });
   },
@@ -451,6 +451,7 @@ Page({
     const id = this._noteAskId;
     this.setData({ noteAskShow: false });
     if (action === "yes") this.openNoteRatioSheet(id);
+    else wx.showToast({ title: "批注已保存 · 右上角批注本可查看", icon: "none", duration: 2200 });
   },
   onNoteAskYes() { this.haptic(); this._noteAskFinish("yes"); },
   onNoteAskNo() { this.haptic(); this._noteAskFinish("no"); },
