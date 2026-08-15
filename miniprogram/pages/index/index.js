@@ -1066,6 +1066,7 @@ Page({
   openDevPanel() {
     // 强触感提示长按已到位
     try { wx.vibrateShort({ type: "heavy" }); } catch (e) { try { wx.vibrateShort(); } catch (e2) {} }
+    this._devOpenedAt = Date.now();
     this.refreshDevRows();
     this.setData({ devShow: true, themePanelOpen: false });
     // 面板打开期间每秒刷新实时状态
@@ -1075,31 +1076,73 @@ Page({
   refreshDevRows() {
     const app = getApp() || { globalData: {} };
     const g = app.globalData || {};
-    let win = {}, acct = "";
+    let win = {}, dev = {}, base = {}, acct = "", store = {};
     try { win = wx.getWindowInfo(); } catch (e) {}
+    try { dev = wx.getDeviceInfo(); } catch (e) {}
+    try { base = wx.getAppBaseInfo ? wx.getAppBaseInfo() : {}; } catch (e) {}
     try { acct = wx.getAccountInfoSync().miniProgram.appId; } catch (e) {}
-    try { wx.getNetworkType({ success: (r) => this._updateDevRow("网络", r.networkType) }); } catch (e) {}
+    try { store = wx.getStorageInfoSync(); } catch (e) {}
+    win = win || {}; dev = dev || {}; base = base || {}; store = store || {};
+    try {
+      wx.getNetworkType({ success: (r) => {
+        this._devNet = r.networkType === "none" ? "未连接" : r.networkType;
+        this._updateDevRow("网络", this._devNet);
+      } });
+    } catch (e) {}
+    try {
+      wx.getBatteryInfo({ success: (r) => {
+        this._devBat = r.level + "%" + (r.isCharging ? "（充电中）" : "");
+        this._updateDevRow("电量", this._devBat);
+      } });
+    } catch (e) {}
     const cache = data.cacheStats();
     const t = this.currentTheme || {};
-    const rows = [
+    const up = Math.max(0, Math.floor((Date.now() - (this._devOpenedAt || Date.now())) / 1000));
+    const pad = (n) => String(n).padStart(2, "0");
+    const dur = pad(Math.floor(up / 60)) + ":" + pad(up % 60);
+    const now = new Date();
+    const clock = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+    const raw = [
+      { sec: "应用" },
       { k: "应用名称", v: "诗海 · The Poetry Ocean" },
       { k: "AppID", v: acct || "不可用" },
-      { k: "基础库", v: (win.SDKVersion || "-") + (typeof __wxConfig !== "undefined" && __wxConfig.envVersion ? "（" + __wxConfig.envVersion + "）" : "") },
-      { k: "网络", v: "检测中…" },
+      { k: "基础库", v: win.SDKVersion || "-" },
+      { k: "环境版本", v: typeof __wxConfig !== "undefined" && __wxConfig.envVersion ? __wxConfig.envVersion : "-" },
+      { sec: "设备与系统" },
+      { k: "设备型号", v: ((dev.brand ? dev.brand + " " : "") + (dev.model || "-")).trim() },
+      { k: "系统", v: (dev.system || "-") + " · " + (dev.platform || "-") },
+      { k: "语言", v: base.language || dev.language || "-" },
+      { k: "屏幕", v: (win.screenWidth || "-") + "×" + (win.screenHeight || "-") + (win.pixelRatio ? " @" + win.pixelRatio + "x" : "") },
+      { k: "窗口", v: (win.windowWidth || "-") + "×" + (win.windowHeight || "-") + (win.statusBarHeight != null ? " · 状态栏 " + win.statusBarHeight + "px" : "") },
+      { k: "电量", v: this._devBat || "检测中…" },
+      { sec: "数据与存储" },
       { k: "诗词总数", v: (g.total || 0).toLocaleString() + " 首" },
       { k: "数据模式", v: cfg.DATA_MODE + (cfg.DATA_MODE === "cloudbase" ? "（" + cfg.CLOUDBASE_ENV + "）" : "") },
       { k: "内存缓存分块", v: cache.count + " 个" + (cache.count ? "：" + cache.chunks.slice(0, 8).join(", ") + (cache.chunks.length > 8 ? "…" : "") : "") },
+      { k: "本地存储", v: (store.currentSize || 0) + " KB / " + (store.limitSize || "?") + " KB · " + (store.keys || []).length + " 项" },
+      { k: "收藏 / 批注", v: (this._favs || []).length + " 条收藏 · " + (this._notes || []).length + " 条批注" },
+      { sec: "运行状态" },
+      { k: "网络", v: this._devNet || "检测中…" },
       { k: "思源宋体", v: g.fontOk ? "✓ 已加载（" + (g.fontSrc || "") + "）" : "加载中/回退（" + (g.fontLoaded || []).length + "/2 字重）" },
       { k: "当前主题", v: (t.color || "-") + " · " + (t.layout || "-") + " · " + (t.direction || "-") },
-      { k: "窗口尺寸", v: (win.windowWidth || "-") + "×" + (win.windowHeight || "-") + (win.pixelRatio ? " @" + win.pixelRatio + "x" : "") }
+      { k: "面板已打开", v: dur },
+      { k: "当前时间", v: clock }
     ];
+    const rows = raw.map((r, i) => Object.assign({ id: i }, r));
     this._devRowsCache = rows;
     this.setData({ devRows: rows });
   },
   _updateDevRow(k, v) {
     if (!this.data.devShow) return;
-    const rows = this.data.devRows.map((r) => (r.k === k ? { k, v } : r));
+    const rows = this.data.devRows.map((r) => (r.k === k ? Object.assign({}, r, { v }) : r));
     this.setData({ devRows: rows });
+  },
+  onDevCopy() {
+    this.haptic();
+    const text = (this._devRowsCache || [])
+      .map((r) => (r.sec ? "[" + r.sec + "]" : r.k + ": " + r.v))
+      .join("\n");
+    wx.setClipboardData({ data: text });
   },
   onDevReshowDisclaimer() {
     this.haptic();

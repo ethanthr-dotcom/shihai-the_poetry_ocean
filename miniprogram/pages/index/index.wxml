@@ -231,12 +231,16 @@
     <view class="dev-sheet" catchtap="noop">
       <view class="dev-title">🛠 开发者面板</view>
       <scroll-view scroll-y class="dev-list">
-        <view wx:for="{{devRows}}" wx:key="k" class="dev-row">
-          <text class="dev-k">{{item.k}}</text>
-          <text class="dev-v">{{item.v}}</text>
-        </view>
+        <block wx:for="{{devRows}}" wx:key="id">
+          <view wx:if="{{item.sec}}" class="dev-sec">{{item.sec}}</view>
+          <view wx:else class="dev-row">
+            <text class="dev-k">{{item.k}}</text>
+            <text class="dev-v">{{item.v}}</text>
+          </view>
+        </block>
       </scroll-view>
-      <button class="btn primary dev-btn" catchtap="onDevReshowDisclaimer">重新显示开屏使用提示</button>
+      <button class="btn primary dev-btn" catchtap="onDevCopy">复制全部信息</button>
+      <button class="btn secondary dev-btn" catchtap="onDevReshowDisclaimer">重新显示开屏使用提示</button>
       <button class="btn secondary dev-btn" catchtap="onDevClose">关闭面板</button>
     </view>
   </view>

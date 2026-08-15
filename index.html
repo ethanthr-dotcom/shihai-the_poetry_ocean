@@ -434,6 +434,12 @@
     #toast { position: fixed; left: 50%; bottom: 12vh; transform: translateX(-50%); background: rgba(0,0,0,.72); color: #fff; padding: 9px 20px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 2000; }
     #toast.show { opacity: 1; }
     body.no-scroll { overflow: hidden; }
+    .dev-list { max-height: 46vh; overflow-y: auto; text-align: left; margin: 6px 0 12px; }
+    .dev-sec { font-size: 12px; color: var(--meta-color); letter-spacing: 2px; margin: 12px 0 4px; opacity: .85; }
+    .dev-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 2px; border-bottom: 1px solid rgba(128, 128, 128, .18); }
+    .dev-k { font-size: 13px; color: var(--meta-color); flex-shrink: 0; }
+    .dev-v { font-size: 13px; color: var(--text-color); text-align: right; word-break: break-all; }
+    #copyrightDev { user-select: none; -webkit-user-select: none; }
 
     
     .slogan {
@@ -758,7 +764,7 @@
     <footer class="site-footer">
       <img class="footer-logo" src="assets/logo-yin.svg" alt="诗海">
       <div class="slogan">诗海 · 非营利古诗词共享项目</div>
-      <div class="copyright">版权所有 © Ethan 2026 · 非营利项目</div>
+      <div class="copyright" id="copyrightDev">版权所有 © Ethan 2026 · 非营利项目</div>
       <div class="copyright">数据来源：chinese-poetry 开源项目（MIT License）</div>
     </footer>
   </main>
@@ -863,6 +869,20 @@
       <div class="fav-bar">
         <button class="mini-btn" id="noteRatioCancel" type="button">取消</button>
         <button class="mini-btn solid" id="noteRatioGo" type="button">生成卡片</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 开发者面板：长按页脚版权行 1.5s 呼出（仅供调试） -->
+  <div id="devSheet" class="sheet-overlay">
+    <div class="sheet-backdrop" id="devSheetBackdrop"></div>
+    <div class="sheet-box">
+      <div class="sheet-head">🛠 开发者面板</div>
+      <div class="dev-list" id="devList"></div>
+      <div class="fav-bar">
+        <button class="mini-btn" id="devCopy" type="button">复制全部信息</button>
+        <button class="mini-btn" id="devReshow" type="button">重新显示开屏提示</button>
+        <button class="mini-btn solid" id="devClose" type="button">关闭面板</button>
       </div>
     </div>
   </div>
@@ -2991,35 +3011,36 @@
       });
     });
 
-    // ====== 首次使用提示（localStorage 记忆，确认后不再出现） ======
+    // ====== 首次使用提示（localStorage 记忆，确认后隐藏；可从开发者面板重新呼出） ======
     const DISCLAIMER_KEY = "shihai-disclaimer-v1";
     let disclaimerPending = false;
+    const disclaimerBox = $("disclaimer");
+    const finishDisclaimer = () => {
+      haptic();
+      try { localStorage.setItem(DISCLAIMER_KEY, "1"); } catch (e) {}
+      disclaimerBox.style.display = "none";
+      disclaimerPending = false;
+      // 确认后结束开屏并显示设置按钮与各入口
+      const tg = $("themeToggle");
+      if (tg) tg.classList.add("ready");
+      const fv = $("favToggle");
+      if (fv) fv.classList.add("ready");
+      const nt = $("noteToggle");
+      if (nt) nt.classList.add("ready");
+      const gd = $("guideToggle");
+      if (gd) gd.classList.add("ready");
+      const splash = $("splash");
+      if (splash) {
+        splash.classList.add("hide");
+        setTimeout(() => splash.remove(), 900);
+      }
+    };
     try {
       if (!localStorage.getItem(DISCLAIMER_KEY)) {
         disclaimerPending = true;
-        const box = $("disclaimer");
-        box.style.display = "";
-        $("disclaimerOk").addEventListener("click", () => {
-          haptic();
-          try { localStorage.setItem(DISCLAIMER_KEY, "1"); } catch (e) {}
-          box.remove();
-          disclaimerPending = false;
-          // 首次确认后直接结束开屏并显示设置按钮与收藏夹入口
-          const tg = $("themeToggle");
-          if (tg) tg.classList.add("ready");
-          const fv = $("favToggle");
-          if (fv) fv.classList.add("ready");
-          const nt = $("noteToggle");
-          if (nt) nt.classList.add("ready");
-          const gd = $("guideToggle");
-          if (gd) gd.classList.add("ready");
-          const splash = $("splash");
-          if (splash) {
-            splash.classList.add("hide");
-            setTimeout(() => splash.remove(), 900);
-          }
-        });
+        disclaimerBox.style.display = "";
       }
+      $("disclaimerOk").addEventListener("click", finishDisclaimer);
     } catch (e) {}
 
     // ====== 开屏动画（每次会话一次，点击可跳过） ======
@@ -3041,6 +3062,158 @@
       };
       splash.addEventListener("click", hide);
       if (!disclaimerPending) setTimeout(hide, 3200);
+    })();
+
+    // ====== 开发者面板：长按页脚版权行 1.5s 呼出（仅供调试） ======
+    const devOpenedAt = { t: 0 };
+    let devTimer = null;
+    function uaSummary() {
+      const ua = navigator.userAgent;
+      if (ua.indexOf("Edg/") >= 0) return "Edge";
+      if (ua.indexOf("OPR/") >= 0) return "Opera";
+      if (ua.indexOf("Firefox/") >= 0) return "Firefox";
+      if (ua.indexOf("Chrome/") >= 0) return "Chrome";
+      if (ua.indexOf("Safari/") >= 0) return "Safari";
+      return "未知浏览器";
+    }
+    function storageSummary() {
+      let bytes = 0, count = 0;
+      try {
+        count = localStorage.length;
+        for (let i = 0; i < count; i++) {
+          const k = localStorage.key(i);
+          bytes += (k.length + (localStorage.getItem(k) || "").length) * 2;
+        }
+      } catch (e) {}
+      return (bytes / 1024).toFixed(1) + " KB · " + count + " 项";
+    }
+    function collectDevRows() {
+      const up = Math.max(0, Math.floor((Date.now() - devOpenedAt.t) / 1000));
+      const pad = (n) => String(n).padStart(2, "0");
+      const dur = pad(Math.floor(up / 60)) + ":" + pad(up % 60);
+      const now = new Date();
+      const clock = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+      let nav = "-";
+      try {
+        const ne = performance.getEntriesByType("navigation")[0];
+        if (ne && ne.loadEventEnd) nav = Math.round(ne.loadEventEnd) + " ms";
+      } catch (e) {}
+      const fontOk = !!(document.fonts && document.fonts.check && document.fonts.check('1em "Noto Serif SC"'));
+      const conn = navigator.connection;
+      const askMode = localStorage.getItem(NOTE_ASK_KEY) || "";
+      return [
+        { sec: "应用" },
+        { k: "应用名称", v: "诗海 · The Poetry Ocean" },
+        { k: "诗词总数", v: TOTAL ? TOTAL.toLocaleString("zh-CN") + " 首" : "索引加载中…" },
+        { k: "索引缓存", v: INDEX ? "已加载" + (localStorage.getItem(INDEX_CACHE_KEY) ? " · 已持久化" : "") : "未加载" },
+        { k: "内存缓存分块", v: chunkCache.size + " 个" + (chunkCache.size ? "：" + Array.from(chunkCache.keys()).slice(0, 8).join(", ") + (chunkCache.size > 8 ? "…" : "") : "") },
+        { sec: "浏览器与环境" },
+        { k: "浏览器", v: uaSummary() },
+        { k: "平台", v: (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "-" },
+        { k: "语言", v: navigator.language || "-" },
+        { k: "视口", v: window.innerWidth + "×" + window.innerHeight + " @" + (window.devicePixelRatio || 1) + "x" },
+        { k: "屏幕", v: screen.width + "×" + screen.height + " · " + (screen.colorDepth || "-") + "bit" },
+        { k: "网络", v: navigator.onLine ? (conn && conn.effectiveType ? conn.effectiveType : "在线") : "离线" },
+        { sec: "数据与存储" },
+        { k: "本地存储", v: storageSummary() },
+        { k: "收藏 / 批注", v: favs.length + " 条收藏 · " + notes.length + " 条批注" },
+        { k: "批注卡片提醒", v: notePromptOn ? "开" : "关" },
+        { k: "生成卡片记忆", v: askMode === "yes" ? "自动生成" : askMode === "no" ? "不生成" : "每次询问" },
+        { sec: "运行状态" },
+        { k: "思源宋体", v: fontOk ? "✓ 已加载" : "加载中/回退" },
+        { k: "当前主题", v: currentTheme.color + " · " + currentTheme.layout + " · " + currentTheme.direction + " · " + currentTheme.size },
+        { k: "页面加载耗时", v: nav },
+        { k: "JS 堆内存", v: performance.memory ? (performance.memory.usedJSHeapSize / 1048576).toFixed(1) + " MB" : "不支持" },
+        { k: "面板已打开", v: dur },
+        { k: "当前时间", v: clock }
+      ];
+    }
+    function renderDevRows() {
+      const list = $("devList");
+      list.textContent = "";
+      collectDevRows().forEach((r) => {
+        if (r.sec) {
+          const d = document.createElement("div");
+          d.className = "dev-sec";
+          d.textContent = r.sec;
+          list.appendChild(d);
+          return;
+        }
+        const row = document.createElement("div");
+        row.className = "dev-row";
+        const k = document.createElement("span");
+        k.className = "dev-k";
+        k.textContent = r.k;
+        const v = document.createElement("span");
+        v.className = "dev-v";
+        v.textContent = r.v;
+        row.appendChild(k);
+        row.appendChild(v);
+        list.appendChild(row);
+      });
+    }
+    function openDevPanel() {
+      haptic();
+      devOpenedAt.t = Date.now();
+      renderDevRows();
+      $("devSheet").classList.add("open");
+      clearInterval(devTimer);
+      devTimer = setInterval(renderDevRows, 1000);
+    }
+    function closeDevPanel() {
+      clearInterval(devTimer);
+      devTimer = null;
+      $("devSheet").classList.remove("open");
+    }
+    $("devSheetBackdrop").addEventListener("click", closeDevPanel);
+    $("devClose").addEventListener("click", closeDevPanel);
+    $("devCopy").addEventListener("click", () => {
+      haptic();
+      const text = collectDevRows().map((r) => (r.sec ? "[" + r.sec + "]" : r.k + ": " + r.v)).join("\n");
+      const done = () => toast("已复制开发者信息");
+      const fallback = () => {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); } catch (e) {}
+        ta.remove();
+        done();
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(fallback);
+      } else {
+        fallback();
+      }
+    });
+    $("devReshow").addEventListener("click", () => {
+      haptic();
+      closeDevPanel();
+      try { localStorage.removeItem(DISCLAIMER_KEY); } catch (e) {}
+      if (disclaimerBox) {
+        disclaimerBox.style.display = "";
+        window.scrollTo({ top: 0 });
+      }
+    });
+
+    // 开发者入口：长按页脚版权行 1.5s 呼出（轻微移动不取消）
+    (function initDevEntry() {
+      const el = $("copyrightDev");
+      if (!el) return;
+      let timer = null, start = null;
+      const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
+      el.addEventListener("contextmenu", (e) => e.preventDefault());
+      el.addEventListener("pointerdown", (e) => {
+        start = { x: e.clientX, y: e.clientY };
+        clear();
+        timer = setTimeout(() => { timer = null; openDevPanel(); }, 1500);
+      });
+      el.addEventListener("pointermove", (e) => {
+        if (!timer || !start) return;
+        const dx = e.clientX - start.x, dy = e.clientY - start.y;
+        if (dx * dx + dy * dy > 144) clear();
+      });
+      ["pointerup", "pointercancel", "pointerleave"].forEach((t) => el.addEventListener(t, clear));
     })();
 
     // ====== 启动 ======

@@ -367,7 +367,8 @@
   animation: sheetUp .3s ease-out; text-align: center;
 }
 .dev-title { font-size: 34rpx; font-weight: 600; margin-bottom: 24rpx; }
-.dev-list { max-height: 520rpx; text-align: left; margin-bottom: 20rpx; }
+.dev-list { max-height: 680rpx; text-align: left; margin-bottom: 20rpx; }
+.dev-sec { font-size: 24rpx; color: var(--meta-color); letter-spacing: 4rpx; margin: 22rpx 0 6rpx; opacity: .85; }
 .dev-row { display: flex; justify-content: space-between; gap: 24rpx; padding: 14rpx 8rpx; border-bottom: 2rpx solid var(--input-border); }
 .dev-k { font-size: 26rpx; color: var(--meta-color); flex-shrink: 0; }
 .dev-v { font-size: 26rpx; color: var(--text-color); text-align: right; word-break: break-all; }
