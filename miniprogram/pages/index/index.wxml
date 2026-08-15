@@ -110,6 +110,18 @@
     </view>
   </view>
 
+  <!-- 首次使用提示（确认一次后不再显示） -->
+  <view wx:if="{{disclaimerShow}}" class="disclaimer" catchtap="noop">
+    <view class="disclaimer-card">
+      <view class="disclaimer-title">使用提示</view>
+      <view class="disclaimer-body">
+        <view>诗海是一款古诗词阅读与检索工具。诗词数据来源于开源项目 chinese-poetry/chinese-poetry，并经本项目重新整理、切片、索引及字符清理后用于展示。</view>
+        <view>由于古籍版本、整理方式及数据处理可能存在差异，部分内容可能与其他版本有所不同，相关内容仅供阅读、学习与研究参考。</view>
+      </view>
+      <button class="btn primary disclaimer-ok" catchtap="onDismissDisclaimer">我已阅读，继续使用</button>
+    </view>
+  </view>
+
   <!-- 分享图离屏画布（canvas 2d） -->
   <canvas type="2d" id="shareCanvas" class="share-canvas"></canvas>
 </view>

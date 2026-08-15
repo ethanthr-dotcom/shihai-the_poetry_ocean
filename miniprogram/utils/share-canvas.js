@@ -218,29 +218,32 @@ async function drawShare(opts) {
     ctx.font = L.catFont + "px " + FONT;
     ctx.fillText(footerText, W / 2, y + L.catFont / 2);
   } else {
-    // ---------- 竖排：右标题列 → 诗句列 → 左作者列，竖版 logo 在作者列下方；全部元素不出边框 ----------
+    // ---------- 竖排：右标题列 → 诗句列 → 左作者列；竖版 logo 置于页面底部；全部元素不出边框 ----------
     const ADV = 1.35;
     const footerH = Math.round(W * 0.05);
-    const availH = H - M * 2 - footerH;
     const availW = W - M * 2;
+    const metaCol = authorMeta.replace(/ /g, ""); // 竖排作者列去掉空格，朝代与作者不隔太远
     const maxChars = Math.max(
-      title.length, authorMeta.length,
+      title.length, metaCol.length,
       ...verses.map((x) => x.length), 1
     );
-    let charSize = Math.min(
-      Math.floor(availH / (maxChars * ADV + 4.2)),
-      Math.floor(availW / ((verses.length + 1.15) * ADV + 1)),
-      Math.round(W * 0.04)
-    );
-    charSize = Math.max(charSize, 30);
+    const sizeFor = (ah) => Math.max(
+      Math.min(
+        Math.floor(ah / (maxChars * ADV + 4.2)),
+        Math.floor(availW / ((verses.length + 1.15) * ADV + 1)),
+        Math.round(W * 0.04)
+      ), 30);
+    // 先估算字号，再为底部 logo 预留空间重算，保证内容不与 logo 重叠
+    let charSize = sizeFor(H - M * 2 - footerH);
     const vLogoW = Math.round(charSize * 1.6);
     const vLogoH = Math.round(vLogoW / V_LOGO_RATIO);
     const vLogoGap = Math.round(charSize * 0.9);
-    const vBoxH = vLogoH;
+    const availH = H - M * 2 - footerH - vLogoH - vLogoGap;
+    charSize = sizeFor(availH);
     const colGap = Math.round(charSize * ADV);
     const totalW = colGap * (verses.length + 1.15);
     const topPad = charSize * 0.55;
-    const totalH = topPad + (maxChars - 1) * colGap + charSize * 0.85 + vLogoGap + vBoxH;
+    const totalH = topPad + (maxChars - 1) * colGap + charSize * 0.85;
     const startY = M + Math.max(0, (availH - totalH) / 2) + topPad;
 
     const drawVCol = (cx, text, size, weight, color) => {
@@ -261,15 +264,14 @@ async function drawShare(opts) {
       drawVCol(x, v, charSize, "400", textColor);
       x -= colGap;
     }
-    drawVCol(x, authorMeta, Math.round(charSize * 0.6), "400", metaColor);
-    // 诗海竖版 logo：竖放在作者列下方，与内容保持间距，不超出边框
-    const lastAuthorY = startY + ((authorMeta.length || maxChars) - 1) * colGap;
-    const vBoxY = Math.min(lastAuthorY + charSize * 0.3 + vLogoGap, H - M - footerH - vLogoH);
+    drawVCol(x, metaCol, Math.round(charSize * 0.6), "400", metaColor);
+    // 诗海竖版 logo：页面底部水平居中（页脚之上），与内容不重叠
+    const vBoxY = H - M - footerH - vLogoH;
     if (logoImg) {
-      ctx.drawImage(logoImg, x - vLogoW / 2, vBoxY, vLogoW, vLogoH);
+      ctx.drawImage(logoImg, W / 2 - vLogoW / 2, vBoxY, vLogoW, vLogoH);
     } else {
       ctx.fillStyle = sealColor;
-      roundRectPath(ctx, x - vLogoW / 2, vBoxY, vLogoW, vLogoH, vLogoH * 0.15);
+      roundRectPath(ctx, W / 2 - vLogoW / 2, vBoxY, vLogoW, vLogoH, vLogoH * 0.15);
       ctx.fill();
     }
     // 页脚：不超出内框——超宽自动缩字号

@@ -111,8 +111,8 @@ function shuffle(arr) {
   return arr;
 }
 
-// 随机抽取一首：加权选块 → 最多尝试 8 块 → 块内随机
-async function findRandomPoem(author, dynasty, type) {
+// 随机抽取一首：加权选块 → 块内随机；maxLen>0 时只取内容不超过 maxLen 字的诗（尝试块数放宽到 24）
+async function findRandomPoem(author, dynasty, type, maxLen) {
   const index = await loadIndex();
   if (!index) throw new Error("索引加载失败");
 
@@ -127,11 +127,13 @@ async function findRandomPoem(author, dynasty, type) {
   const first = weightedRandom(candidates);
   const rest = shuffle(candidates.filter((c) => c.file !== first.file));
   const order = [first].concat(rest);
-  const maxTries = Math.min(order.length, 8);
+  const maxTries = Math.min(order.length, maxLen ? 24 : 8);
 
   for (let i = 0; i < maxTries; i++) {
     const poems = await loadChunk(order[i].file);
-    const matched = poems.filter((p) => matchPoem(p, author, dynasty, type));
+    let matched = poems.filter((p) => matchPoem(p, author, dynasty, type));
+    // 竖排模式：内容超过 maxLen 字的不推荐，换一首短的
+    if (maxLen) matched = matched.filter((p) => Array.from(p.c || "").length <= maxLen);
     if (matched.length) {
       return matched[Math.floor(Math.random() * matched.length)];
     }

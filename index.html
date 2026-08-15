@@ -338,6 +338,30 @@
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: none; }
     }
+    /* ====== 首次使用提示 ====== */
+    #disclaimer {
+      position: fixed; inset: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0, 0, 0, .5); padding: 20px;
+    }
+    .disclaimer-card {
+      max-width: 480px; width: 100%; padding: 28px 26px;
+      background: var(--bg-color); color: var(--text-color);
+      border: 1px solid var(--accent-color); border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .25);
+    }
+    .disclaimer-title {
+      font-size: 18px; font-weight: 600; text-align: center; margin-bottom: 16px;
+    }
+    .disclaimer-body p {
+      margin: 0 0 12px; font-size: 14px; line-height: 1.9; color: var(--meta-color);
+    }
+    .disclaimer-body p:last-child { margin-bottom: 0; }
+    #disclaimerOk {
+      margin-top: 20px; width: 100%; padding: 12px; cursor: pointer;
+      font-size: 15px; border: 0; border-radius: 10px;
+      background: var(--accent-color); color: var(--button-text);
+    }
     /* ====== 主题切换面板 ====== */
     .theme-toggle {
       position: absolute;
@@ -466,6 +490,18 @@
     <path d="M40 60 C32 72 30 86 33 100 L77 100 C80 86 78 72 70 60"/>
     <path d="M77 96 C90 94 96 84 92 72"/>
   </svg>
+  <!-- 首次使用提示（确认一次后不再显示） -->
+  <div id="disclaimer" style="display:none">
+    <div class="disclaimer-card">
+      <div class="disclaimer-title">使用提示</div>
+      <div class="disclaimer-body">
+        <p>诗海是一款古诗词阅读与检索工具。诗词数据来源于开源项目 chinese-poetry/chinese-poetry，并经本项目重新整理、切片、索引及字符清理后用于展示。</p>
+        <p>由于古籍版本、整理方式及数据处理可能存在差异，部分内容可能与其他版本有所不同，相关内容仅供阅读、学习与研究参考。</p>
+      </div>
+      <button id="disclaimerOk" type="button">我已阅读，继续使用</button>
+    </div>
+  </div>
+
   <!-- 开屏动画：说明非营利初衷（每次会话显示一次，点击可跳过） -->
   <div id="splash">
     <div class="splash-box">
@@ -934,12 +970,15 @@
         const first = weightedRandom(candidates);
         const rest = shuffle(candidates.filter((c) => c.file !== first.file));
         const order = [first].concat(rest);
-        const maxTries = Math.min(order.length, 8);
+        // 竖排显示模式：不推荐内容超过 56 字的诗词
+        const vMax = currentTheme.direction === "vertical" ? 56 : 0;
+        const maxTries = Math.min(order.length, vMax ? 24 : 8);
 
         for (let i = 0; i < maxTries; i++) {
           const chunk = order[i];
           const poems = await loadChunk(chunk.file);
-          const matched = poems.filter((p) => matchPoem(p, author, dynasty, type));
+          let matched = poems.filter((p) => matchPoem(p, author, dynasty, type));
+          if (vMax) matched = matched.filter((p) => Array.from(p.c || "").length <= vMax);
           if (matched.length) {
             const poem = matched[Math.floor(Math.random() * matched.length)];
             renderPoem(poem);
@@ -1273,32 +1312,33 @@
           ctx.font = L.catFont + "px " + FONT;
           ctx.fillText(footerText, W / 2, y + L.catFont / 2);
         } else {
-          // ---------- 竖排：右标题列 → 诗句列 → 左作者列，竖版 logo 在作者列下方；全部元素不出边框 ----------
+          // ---------- 竖排：右标题列 → 诗句列 → 左作者列；竖版 logo 置于页面底部；全部元素不出边框 ----------
           const ADV = 1.35; // 字距/列距系数（适中，不过松散）
           const footerH = Math.round(W * 0.05);
-          const availH = H - M * 2 - footerH;
           const availW = W - M * 2;
+          const metaCol = authorMeta.replace(/ /g, ""); // 竖排作者列去掉空格，朝代与作者不隔太远
           const maxChars = Math.max(
-            title.length, authorMeta.length,
+            title.length, metaCol.length,
             ...verses.map((x) => x.length), 1
           );
-          // 高：最长列字符跨度 + 印章方框预留；宽：标题列(1.15 间距)+诗句列+作者列+半字余量
-          let charSize = Math.min(
-            Math.floor(availH / (maxChars * ADV + 4.2)),
-            Math.floor(availW / ((verses.length + 1.15) * ADV + 1)),
-            Math.round(W * 0.04)
-          );
-          charSize = Math.max(charSize, 30);
-          // 竖版 logo 放在作者列下方，与内容留出一段距离
+          const sizeFor = (ah) => Math.max(
+            Math.min(
+              Math.floor(ah / (maxChars * ADV + 4.2)),
+              Math.floor(availW / ((verses.length + 1.15) * ADV + 1)),
+              Math.round(W * 0.04)
+            ), 30);
+          // 先估算字号，再为底部 logo 预留空间重算，保证内容不与 logo 重叠
+          let charSize = sizeFor(H - M * 2 - footerH);
           const vLogoW = Math.round(charSize * 1.6);
           const vLogoH = Math.round(vLogoW / V_LOGO_RATIO);
           const vLogoGap = Math.round(charSize * 0.9);
-          const vBoxH = vLogoH;
+          const availH = H - M * 2 - footerH - vLogoH - vLogoGap;
+          charSize = sizeFor(availH);
           const colGap = Math.round(charSize * ADV);
           const totalW = colGap * (verses.length + 1.15);
-          // 垂直居中：首字顶部到 logo 底部的总高（含 logo 与内容的间距）
+          // 垂直居中：内容块（首字顶部到末字底部），不含底部 logo
           const topPad = charSize * 0.55;
-          const totalH = topPad + (maxChars - 1) * colGap + charSize * 0.85 + vLogoGap + vBoxH;
+          const totalH = topPad + (maxChars - 1) * colGap + charSize * 0.85;
           const startY = M + Math.max(0, (availH - totalH) / 2) + topPad;
 
           const drawVCol = (cx, text, size, weight, color) => {
@@ -1319,15 +1359,14 @@
             drawVCol(x, verse, charSize, "400", textColor);
             x -= colGap;
           }
-          drawVCol(x, authorMeta, Math.round(charSize * 0.6), "400", metaColor);
-          // 诗海竖版 logo：竖放在作者列下方，与内容保持间距，不超出边框
-          const lastAuthorY = startY + ((authorMeta.length || maxChars) - 1) * colGap;
-          const vBoxY = Math.min(lastAuthorY + charSize * 0.3 + vLogoGap, H - M - footerH - vLogoH);
+          drawVCol(x, metaCol, Math.round(charSize * 0.6), "400", metaColor);
+          // 诗海竖版 logo：页面底部水平居中（页脚之上），与内容不重叠
+          const vBoxY = H - M - footerH - vLogoH;
           if (logoImg) {
-            ctx.drawImage(logoImg, x - vLogoW / 2, vBoxY, vLogoW, vLogoH);
+            ctx.drawImage(logoImg, W / 2 - vLogoW / 2, vBoxY, vLogoW, vLogoH);
           } else {
             ctx.fillStyle = sealColor;
-            roundRectPath(ctx, x - vLogoW / 2, vBoxY, vLogoW, vLogoH, vLogoH * 0.15);
+            roundRectPath(ctx, W / 2 - vLogoW / 2, vBoxY, vLogoW, vLogoH, vLogoH * 0.15);
             ctx.fill();
           }
           // 页脚：不超出内框——超宽自动缩字号，位置收到内框线以内
@@ -1702,8 +1741,37 @@
         currentTheme[group] = value;
         applyTheme();
         saveTheme();
+        // 切到竖排且当前诗内容超 56 字：自动换一首短诗
+        if (group === "direction" && value === "vertical" && currentPoem &&
+            Array.from(currentPoem.c || "").length > 56) {
+          loadRandomPoem(false);
+        }
       });
     });
+
+    // ====== 首次使用提示（localStorage 记忆，确认后不再出现） ======
+    const DISCLAIMER_KEY = "shihai-disclaimer-v1";
+    let disclaimerPending = false;
+    try {
+      if (!localStorage.getItem(DISCLAIMER_KEY)) {
+        disclaimerPending = true;
+        const box = $("disclaimer");
+        box.style.display = "";
+        $("disclaimerOk").addEventListener("click", () => {
+          try { localStorage.setItem(DISCLAIMER_KEY, "1"); } catch (e) {}
+          box.remove();
+          disclaimerPending = false;
+          // 首次确认后直接结束开屏并显示设置按钮
+          const tg = $("themeToggle");
+          if (tg) tg.classList.add("ready");
+          const splash = $("splash");
+          if (splash) {
+            splash.classList.add("hide");
+            setTimeout(() => splash.remove(), 900);
+          }
+        });
+      }
+    } catch (e) {}
 
     // ====== 开屏动画（每次会话一次，点击可跳过） ======
     (function initSplash() {
@@ -1717,7 +1785,7 @@
         setTimeout(() => splash.remove(), 900);
       };
       splash.addEventListener("click", hide);
-      setTimeout(hide, 2600);
+      if (!disclaimerPending) setTimeout(hide, 2600);
     })();
 
     // ====== 启动 ======

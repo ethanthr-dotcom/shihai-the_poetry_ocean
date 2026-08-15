@@ -63,6 +63,7 @@ Page({
     shareRatio: "1:1",
     progressState: "", // "" | run | done
     splashShow: true,
+    disclaimerShow: false,
     uiReady: false
   },
 
@@ -74,8 +75,21 @@ Page({
   onLoad() {
     this.currentTheme = themes.loadTheme();
     this.applyTheme();
-    this.startSplash();
+    // 首次使用提示：确认过则照常开屏，否则先展示提示、暂缓开屏
+    let agreed = "";
+    try { agreed = wx.getStorageSync("shihai-disclaimer-v1"); } catch (e) {}
+    if (!agreed) {
+      this.setData({ disclaimerShow: true });
+    } else {
+      this.startSplash();
+    }
     this.boot();
+  },
+
+  onDismissDisclaimer() {
+    try { wx.setStorageSync("shihai-disclaimer-v1", "1"); } catch (e) {}
+    clearTimeout(this.splashTimer);
+    this.setData({ disclaimerShow: false, splashShow: false, uiReady: true });
   },
 
   // ====== 开屏动画（与网页版一致：2.6s 自动消失，点击可跳过） ======
@@ -150,7 +164,9 @@ Page({
         this.showStatus("诗词库尚未加载完成，请稍候……");
         return;
       }
-      const poem = await data.findRandomPoem(author, dynasty, type);
+      // 竖排显示模式：不推荐内容超过 56 字的诗词
+      const maxLen = this.currentTheme.direction === "vertical" ? 56 : 0;
+      const poem = await data.findRandomPoem(author, dynasty, type, maxLen);
       this.renderPoem(poem);
       if (userAction) {
         wx.pageScrollTo({ selector: ".card", duration: 300 });
@@ -319,6 +335,12 @@ Page({
     this.currentTheme[group] = value;
     this.applyTheme();
     themes.saveTheme(this.currentTheme);
+    // 切到竖排且当前诗内容超 56 字：自动换一首短诗
+    if (group === "direction" && value === "vertical" && this.currentPoem &&
+        Array.from(this.currentPoem.c || "").length > 56) {
+      this.loadRandomPoem(false);
+      return;
+    }
     if (this.currentPoem) this.renderPoem(this.currentPoem);
   },
 
