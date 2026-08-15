@@ -39,7 +39,7 @@
           <input class="input" placeholder="例如：五言绝句" placeholder-class="ph" value="{{type}}" bindinput="onTypeInput" />
         </view>
       </view>
-      <button class="btn primary" disabled="{{randomLoading}}" bindtap="onRandomTap">{{randomLoading ? "正在读取……" : "随机显示一首诗/词"}}</button>
+      <button class="btn primary" disabled="{{randomLoading}}" bindtap="onRandomTap">{{randomLoading ? "正在读取……" : "随机显示诗/词"}}</button>
       <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">{{shareLoading ? "生成中……" : "点击可下载或分享"}}</button>
       <view class="ratio-row">
         <text class="ratio-label">卡片比例</text>
