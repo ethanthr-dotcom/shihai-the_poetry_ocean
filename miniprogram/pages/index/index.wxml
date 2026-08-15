@@ -51,9 +51,12 @@
       </view>
       <view class="ratio-row">
         <text class="ratio-label">卡片比例</text>
-        <view wx:for="{{ratioOptions}}" wx:key="value"
-          class="ratio-opt {{item.active ? 'active' : ''}} {{item.disabled ? 'disabled' : ''}}"
-          data-value="{{item.value}}" bindtap="onRatioTap">{{item.label}}</view>
+        <view class="ratio-seg">
+          <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx)"></view>
+          <view wx:for="{{ratioOptions}}" wx:key="value"
+            class="ratio-seg-item {{item.active ? 'active' : ''}} {{item.disabled ? 'disabled' : ''}}"
+            data-value="{{item.value}}" bindtap="onRatioTap">{{item.label}}</view>
+        </view>
       </view>
     </view>
 
@@ -84,13 +87,9 @@
   </view>
 
   <!-- 主题设置按钮 -->
-  <!-- 设置图标：纯色滑块样式（跟随主题文字色） -->
-  <view class="theme-toggle {{uiReady ? 'ready' : ''}}" catchtap="onThemeToggle">
-    <view class="slider-icon">
-      <view class="sl-line"><view class="sl-dot pos-a"></view></view>
-      <view class="sl-line"><view class="sl-dot pos-b"></view></view>
-      <view class="sl-line"><view class="sl-dot pos-c"></view></view>
-    </view>
+  <!-- 设置图标：纯色齿轮（跟随主题文字色），点击绕中心旋转 -->
+  <view class="theme-toggle {{uiReady ? 'ready' : ''}} {{gearSpin ? 'spin' : ''}}" catchtap="onThemeToggle">
+    <view class="gear-icon"></view>
   </view>
 
   <!-- 主题面板（配色/文字方向，与网页版一致） -->
@@ -128,7 +127,7 @@
     <view class="share-sheet" catchtap="noop">
       <image class="share-preview" src="{{shareImg}}" mode="widthFix" bindtap="previewShareImg" />
       <view class="share-actions">
-        <button class="share-opt" open-type="share"><text class="opt-ico">💬</text>分享给朋友</button>
+        <button class="share-opt" open-type="share" bindtap="haptic"><text class="opt-ico">💬</text>分享给朋友</button>
         <button class="share-opt" bindtap="saveShare"><text class="opt-ico">🖼️</text>保存到相册</button>
       </view>
       <view class="share-tip">点图片可全屏预览 · 点空白处关闭</view>

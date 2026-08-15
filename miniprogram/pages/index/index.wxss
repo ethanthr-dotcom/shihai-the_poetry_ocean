@@ -102,16 +102,14 @@
 .btn.secondary[disabled] { background: transparent; color: var(--accent-color); }
 
 /* 卡片比例选择（居中） */
-.ratio-row { display: flex; align-items: center; justify-content: center; gap: 16rpx; margin-top: 24rpx; flex-wrap: wrap; }
+.ratio-row { display: flex; align-items: center; justify-content: center; gap: 16rpx; margin-top: 24rpx; }
 .ratio-label { font-size: 26rpx; color: var(--label-color); }
-.ratio-opt {
-  height: 72rpx; display: flex; align-items: center;
-  padding: 0 24rpx; font-size: 26rpx; border-radius: 16rpx;
-  border: 2rpx solid var(--input-border); background: var(--input-bg);
-  color: var(--text-color);
-}
-.ratio-opt.active { background: var(--accent-color); color: var(--button-text); border-color: var(--accent-color); }
-.ratio-opt.disabled { opacity: .45; }
+/* 分段控件：胶囊轨道 + 跟随选中项平滑滑动的底色块 */
+.ratio-seg { position: relative; display: flex; flex: 1; max-width: 480rpx; height: 64rpx; border-radius: 32rpx; border: 2rpx solid var(--input-border); background: var(--input-bg); }
+.ratio-thumb { position: absolute; top: 4rpx; bottom: 4rpx; width: calc(25% - 8rpx); border-radius: 28rpx; background: var(--accent-color); transition: left .25s cubic-bezier(.22,.61,.36,1); }
+.ratio-seg-item { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; font-size: 26rpx; color: var(--text-color); opacity: .75; transition: color .2s, opacity .2s; }
+.ratio-seg-item.active { color: var(--button-text); opacity: 1; }
+.ratio-seg-item.disabled { opacity: .3; }
 
 .tip {
   font-size: 26rpx;
@@ -263,18 +261,15 @@
   transition: opacity .5s ease;
 }
 .theme-toggle.ready { opacity: .8; }
-/* 纯色滑块设置图标（颜色跟随主题文字色） */
-.slider-icon { width: 44rpx; height: 40rpx; display: flex; flex-direction: column; justify-content: space-between; }
-.sl-line { position: relative; height: 4rpx; border-radius: 2rpx; background: var(--text-color); }
-.sl-dot {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  width: 14rpx; height: 14rpx; border-radius: 50%;
+/* 纯色齿轮设置图标：mask 着色跟随主题文字色；点击绕图标中心整周旋转 */
+.gear-icon {
+  width: 44rpx; height: 44rpx;
   background: var(--text-color);
-  border: 3rpx solid var(--bg-color);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M19.14%2012.94c.04-.3.06-.61.06-.94%200-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24%200-.43.17-.47.41l-.36%202.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47%200-.59.22L2.74%208.87c-.12.21-.08.47.12.61l2.03%201.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03%201.58c-.18.14-.23.41-.12.61l1.92%203.32c.12.22.37.29.59.22l2.39-.96c.5.38%201.03.7%201.62.94l.36%202.54c.05.24.24.41.48.41h3.84c.24%200%20.44-.17.47-.41l.36-2.54c.59-.24%201.13-.56%201.62-.94l2.39.96c.22.08.47%200%20.59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12%2015.6c-1.98%200-3.6-1.62-3.6-3.6s1.62-3.6%203.6-3.6%203.6%201.62%203.6%203.6-1.62%203.6-3.6%203.6z'/%3E%3C/svg%3E") no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M19.14%2012.94c.04-.3.06-.61.06-.94%200-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24%200-.43.17-.47.41l-.36%202.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47%200-.59.22L2.74%208.87c-.12.21-.08.47.12.61l2.03%201.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03%201.58c-.18.14-.23.41-.12.61l1.92%203.32c.12.22.37.29.59.22l2.39-.96c.5.38%201.03.7%201.62.94l.36%202.54c.05.24.24.41.48.41h3.84c.24%200%20.44-.17.47-.41l.36-2.54c.59-.24%201.13-.56%201.62-.94l2.39.96c.22.08.47%200%20.59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12%2015.6c-1.98%200-3.6-1.62-3.6-3.6s1.62-3.6%203.6-3.6%203.6%201.62%203.6%203.6-1.62%203.6-3.6%203.6z'/%3E%3C/svg%3E") no-repeat center / contain;
 }
-.sl-dot.pos-a { left: 2rpx; }
-.sl-dot.pos-b { right: 6rpx; }
-.sl-dot.pos-c { left: 14rpx; }
+.theme-toggle.spin .gear-icon { animation: gearSpin .55s cubic-bezier(.22,.61,.36,1); }
+@keyframes gearSpin { to { transform: rotate(360deg); } }
 .theme-panel {
   position: fixed;
   top: 132rpx; right: 16rpx; left: 16rpx;

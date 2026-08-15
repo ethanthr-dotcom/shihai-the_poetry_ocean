@@ -159,13 +159,17 @@
     /* ====== 卡片比例选择（居中） ====== */
     .ratio-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
     .ratio-label { font-size: 13px; color: var(--label-color); }
-    .ratio-opt:disabled { opacity: .45; cursor: not-allowed; }
+    /* 分段控件：胶囊轨道 + 跟随选中项平滑滑动的底色块 */
+    .ratio-seg { position: relative; display: flex; flex: 1; max-width: 320px; height: 34px; border-radius: 17px; border: 1px solid var(--input-border); background: var(--input-bg); }
+    .ratio-thumb { position: absolute; top: 2px; bottom: 2px; width: calc(25% - 4px); border-radius: 15px; background: var(--accent-color); transition: left .25s cubic-bezier(.22,.61,.36,1); }
+    .ratio-opt:disabled { opacity: .35; cursor: not-allowed; }
     .ratio-opt {
-      width: auto; padding: 5px 12px; font-size: 13px; border-radius: 8px;
-      border: 1px solid var(--input-border); background: var(--input-bg);
-      color: var(--text-color); cursor: pointer; font-family: inherit; transition: all .2s;
+      position: relative; flex: 1; width: auto; margin: 0; padding: 0;
+      border: 0; background: transparent; font-size: 13px;
+      color: var(--text-color); opacity: .75; cursor: pointer; font-family: inherit;
+      transition: color .2s, opacity .2s;
     }
-    .ratio-opt.active { background: var(--accent-color); color: var(--button-text); border-color: var(--accent-color); }
+    .ratio-opt.active { background: transparent; color: var(--button-text); opacity: 1; }
     /* 字体加载完成前隐藏卡片内容，加载完同时淡入，避免跳动 */
     .title, .meta, .content, .category { transition: opacity .4s ease; }
     .title.pending, .meta.pending, .content.pending, .category.pending { opacity: 0; }
@@ -394,7 +398,10 @@
     .theme-toggle.ready:hover { opacity: 1; }
     .theme-toggle svg { width: 26px; height: 26px; display: block; }
     .theme-toggle.ready:hover { transform: rotate(30deg); opacity: 1; }
-    .theme-toggle:active { transform: rotate(60deg) scale(.92); }
+    .theme-toggle:active { transform: scale(.92); }
+    /* 点击时齿轮绕中心整周旋转 */
+    .theme-toggle.spin svg { animation: gearSpin .55s cubic-bezier(.22,.61,.36,1); transform-origin: 50% 50%; }
+    @keyframes gearSpin { to { transform: rotate(360deg); } }
     .theme-panel {
       position: absolute;
       top: 66px;
@@ -543,10 +550,13 @@
       </div>
       <div class="ratio-row">
         <span class="ratio-label">卡片比例</span>
-        <button class="ratio-opt active" data-ratio="1:1" type="button">1:1</button>
-        <button class="ratio-opt" data-ratio="3:4" type="button">3:4</button>
-        <button class="ratio-opt" data-ratio="9:16" type="button">9:16</button>
-        <button class="ratio-opt" data-ratio="auto" type="button">自适应</button>
+        <div class="ratio-seg">
+          <div class="ratio-thumb" id="ratioThumb"></div>
+          <button class="ratio-opt active" data-ratio="1:1" type="button">1:1</button>
+          <button class="ratio-opt" data-ratio="3:4" type="button">3:4</button>
+          <button class="ratio-opt" data-ratio="9:16" type="button">9:16</button>
+          <button class="ratio-opt" data-ratio="auto" type="button">自适应</button>
+        </div>
       </div>
     </section>
 
@@ -562,7 +572,7 @@
     </footer>
   </main>
 
-  <button id="themeToggle" class="theme-toggle" title="主题设置" aria-label="主题设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  <button id="themeToggle" class="theme-toggle" title="主题设置" aria-label="主题设置"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
   <div id="themePanel" class="theme-panel">
     <div class="theme-section">
       <div class="theme-label">配色</div>
@@ -853,6 +863,9 @@
       fitTimer = setTimeout(() => { fitCardText(); fitButtons(); }, 120);
     });
 
+    // 轻触感震动反馈：短促有力的一下；仅安卓浏览器支持 navigator.vibrate，iOS 静默跳过
+    function haptic() { try { if (navigator.vibrate) navigator.vibrate(16); } catch (e) {} }
+
     // ====== 按钮标签自适应换行：太窄拆行，每行不少于两个字 ======
     function splitBtnLabel(text, availW, fontPx) {
       if (text.length * fontPx <= availW) return [text];
@@ -1107,17 +1120,27 @@
       } catch (e) {}
     }
 
-    button.addEventListener("click", loadRandomPoem);
+    button.addEventListener("click", () => { haptic(); loadRandomPoem(); });
 
     // ====== 分享：纯 Canvas 手绘诗词卡片（高分辨率、按句排版、间距自适应） ======
     let shareRatio = "1:1";
+    // 分段控件滑块：移动到当前选中项下方
+    const ratioThumb = $("ratioThumb");
+    function moveRatioThumb() {
+      const opts = Array.from(document.querySelectorAll(".ratio-opt"));
+      const idx = opts.findIndex((b) => b.classList.contains("active"));
+      if (idx >= 0 && ratioThumb) ratioThumb.style.left = "calc(" + idx * 25 + "% + 2px)";
+    }
+    moveRatioThumb();
     document.querySelectorAll(".ratio-opt").forEach((btn) => {
       btn.addEventListener("click", () => {
         if (btn.disabled) return;
+        haptic();
         shareRatio = btn.dataset.ratio;
         document.querySelectorAll(".ratio-opt").forEach((b) =>
           b.classList.toggle("active", b === btn)
         );
+        moveRatioThumb();
       });
     });
     // 竖排显示时强制使用自适应比例（按浏览器卡片实际宽高比）
@@ -1129,6 +1152,7 @@
         b.disabled = forceAuto && !isAuto;
         b.classList.toggle("active", forceAuto ? isAuto : b.dataset.ratio === shareRatio);
       });
+      moveRatioThumb();
     }
 
     // 圆角矩形路径（印章方框用）
@@ -1144,6 +1168,7 @@
 
     const shareButton = $("shareButton");
     shareButton.addEventListener("click", async () => {
+      haptic();
       if (!currentPoem) {
         showStatus("请先随机抽取一首诗，再分享", true);
         return;
@@ -1757,10 +1782,17 @@
     }
 
     // 主题面板开关
-    $("themeToggle").addEventListener("click", (e) => {
+    const themeToggleBtn = $("themeToggle");
+    themeToggleBtn.addEventListener("click", (e) => {
       e.stopPropagation();
+      haptic();
+      // 齿轮绕中心整周旋转（重触发用 reflow 重置动画）
+      themeToggleBtn.classList.remove("spin");
+      void themeToggleBtn.offsetWidth;
+      themeToggleBtn.classList.add("spin");
       $("themePanel").classList.toggle("open");
     });
+    themeToggleBtn.querySelector("svg").addEventListener("animationend", () => themeToggleBtn.classList.remove("spin"));
 
     // 点击页面空白处关闭面板
     document.addEventListener("click", (e) => {
@@ -1773,6 +1805,7 @@
     // 主题选项点击（配色/字体/排版/按钮效果通用）
     document.querySelectorAll(".theme-opt").forEach((btn) => {
       btn.addEventListener("click", () => {
+        haptic();
         const group = btn.closest(".theme-options").dataset.group;
         const value = btn.dataset.value;
         // 切到竖排：默认紧凑排版（竖版分享图按网页卡片自适应生成）；切回横排恢复原选择

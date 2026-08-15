@@ -64,11 +64,13 @@ Page({
     randomBtnLines: ["随机显示诗/词"],
     shareBtnLines: ["下载或分享诗卡"],
     ratioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === "1:1", disabled: false })),
+    ratioActiveIndex: 0,
     shareRatio: "1:1",
     progressState: "", // "" | run | done
     splashShow: true,
     disclaimerShow: false,
-    uiReady: false
+    uiReady: false,
+    gearSpin: false
   },
 
   currentPoem: null,
@@ -185,7 +187,7 @@ Page({
   onDynastyInput(e) { this.setData({ dynasty: e.detail.value }); },
   onTypeInput(e) { this.setData({ type: e.detail.value }); },
 
-  onRandomTap() { this.loadRandomPoem(true); },
+  onRandomTap() { this.haptic(); this.loadRandomPoem(true); },
 
   // ====== 随机抽取（与网页版 loadRandomPoem 一致） ======
   async loadRandomPoem(userAction) {
@@ -361,6 +363,11 @@ Page({
 
   // ====== 主题面板（对齐网页版 themePanel） ======
   onThemeToggle() {
+    this.haptic();
+    // 齿轮绕中心整周旋转（650ms 后复位类，供下次触发）
+    this.setData({ gearSpin: true });
+    clearTimeout(this._gearTimer);
+    this._gearTimer = setTimeout(() => this.setData({ gearSpin: false }), 650);
     this.setData({ themePanelOpen: !this.data.themePanelOpen });
   },
   onPageTap() {
@@ -368,6 +375,7 @@ Page({
   },
   noop() {},
   onThemeOptTap(e) {
+    this.haptic();
     const { group, value } = e.currentTarget.dataset;
     if (this.currentTheme[group] === value) return;
     // 切到竖排：默认紧凑排版；切回横排恢复原选择（与网页版一致）
@@ -418,22 +426,26 @@ Page({
         disabled: isVertical && o.value !== "auto",
         active: isVertical ? o.value === "auto" : o.value === shareRatio
       })),
+      ratioActiveIndex: RATIO_OPTIONS.findIndex((o) => o.value === (isVertical ? "auto" : shareRatio)),
       colorOptions: this.data.colorOptions.map((o) => ({ ...o, active: o.value === t.color })),
       directionOptions: this.data.directionOptions.map((o) => ({ ...o, active: o.value === t.direction }))
     });
   },
 
   onRatioTap(e) {
+    this.haptic();
     const value = e.currentTarget.dataset.value;
     if (this.currentTheme.direction === "vertical" && value !== "auto") return;
     this.setData({
       shareRatio: value,
-      ratioOptions: this.data.ratioOptions.map((o) => ({ ...o, active: o.value === value }))
+      ratioOptions: this.data.ratioOptions.map((o) => ({ ...o, active: o.value === value })),
+      ratioActiveIndex: RATIO_OPTIONS.findIndex((o) => o.value === value)
     });
   },
 
   // ====== 分享卡片（canvas 2d 手绘 → 预览/保存，等价网页版下载） ======
   async onShareTap() {
+    this.haptic();
     if (!this.currentPoem) {
       this.showStatus("请先随机抽取一首诗，再分享", true);
       return;
@@ -499,6 +511,11 @@ Page({
     }
   },
 
+  // 轻触感震动反馈：medium 档位（短促有力的一下），不支持 type 的设备退回默认 vibrateShort
+  haptic() {
+    wx.vibrateShort({ type: "medium", fail: () => wx.vibrateShort({ fail: () => {} }) });
+  },
+
   // 关闭分享浮层
   closeShareSheet() {
     this.setData({ shareSheetShow: false });
@@ -512,6 +529,7 @@ Page({
   },
 
   saveShare() {
+    this.haptic();
     const doSave = () =>
       wx.saveImageToPhotosAlbum({
         filePath: this._sharePath,
