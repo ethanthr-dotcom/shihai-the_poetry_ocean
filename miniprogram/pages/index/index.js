@@ -4,6 +4,30 @@ const verse = require("../../utils/verse");
 const themes = require("../../utils/themes");
 const { drawShare } = require("../../utils/share-canvas");
 
+// 均分换行：先算需要几行，再按行均分字数，断点优先落在标点之后（±2 字内）
+function splitTitleLines(chars, unitW, innerW) {
+  const PUNCT = "，、。！？；： ";
+  const n = chars.length;
+  const count = Math.max(2, Math.ceil((n * unitW) / innerW));
+  const lines = [];
+  let start = 0;
+  for (let i = 1; i < count; i++) {
+    const ideal = Math.round((n * i) / count);
+    let pos = -1;
+    for (let d = 0; d <= 2 && pos < 0; d++) {
+      for (const p of [ideal + d, ideal - d]) {
+        if (p <= start || p >= n) continue;
+        if (PUNCT.includes(chars[p - 1])) { pos = p; break; }
+      }
+    }
+    if (pos < 0) pos = Math.min(Math.max(ideal, start + 1), n - 1);
+    lines.push(chars.slice(start, pos).join(""));
+    start = pos;
+  }
+  lines.push(chars.slice(start).join(""));
+  return lines;
+}
+
 const RATIO_OPTIONS = [
   { value: "1:1", label: "1:1" },
   { value: "3:4", label: "3:4" },
@@ -24,7 +48,7 @@ Page({
     author: "",
     dynasty: "",
     type: "",
-    libTip: "共收录 34 万余首古诗词 · 非营利项目 · 按需加载即时抽取",
+    libTip: "共收录 34 万余首古诗词",
     statusText: "正在加载诗词库……",
     statusError: false,
     hasPoem: false,
@@ -85,7 +109,7 @@ Page({
       const total = (index && index.total) || 0;
       if (total) {
         this.setData({
-          libTip: "共收录 " + Math.floor(total / 10000) + " 万余首古诗词 · 非营利项目 · 按需加载即时抽取"
+          libTip: "共收录 " + Math.floor(total / 10000) + " 万余首古诗词"
         });
       }
       this.setData({
@@ -156,32 +180,22 @@ Page({
     }, () => this.fitCardText());
   },
 
-  // 标题排版：放得下则单行；超宽则换行为上下对称的两行（优先在标点处断句，
-  // 否则按字数均分、上行多一字），换行后仍超宽才等比缩小字号（最小 50%）
+  // 标题排版：放得下则单行；超宽则均分为多行（优先在标点处断句），
+  // 换行后仍超宽才等比缩小字号（最小 50%）——文字绝不触碰卡片内框
   _buildTitle(title) {
     const winW = wx.getSystemInfoSync().windowWidth;
     const scale = winW / 750;
     const fontRpx = parseFloat(themes.THEMES.size[this.currentTheme.size].vars["--title-font-size"]) * 2;
     const innerW = this._cardInnerW();
     const chars = Array.from(title);
-    const lineW = (n) => n * fontRpx * scale;
-    if (lineW(chars.length) <= innerW) return { lines: [title], style: "" };
-    // 选离中点最近的标点断点（断在标点之后，且两行都不少于 2 字）
-    const mid = chars.length / 2;
-    let split = -1;
-    chars.forEach((ch, i) => {
-      const pos = i + 1;
-      if (!"，、。！？；： ".includes(ch)) return;
-      if (pos < 2 || pos > chars.length - 2) return;
-      if (split < 0 || Math.abs(pos - mid) < Math.abs(split - mid)) split = pos;
-    });
-    if (split < 0) split = Math.ceil(chars.length / 2);
-    const lines = [chars.slice(0, split).join(""), chars.slice(split).join("")];
+    const unitW = fontRpx * scale;
+    if (chars.length * unitW <= innerW) return { lines: [title], style: "" };
+    const lines = splitTitleLines(chars, unitW, innerW);
     // 换行后某行仍超宽：等比缩小字号兜底
-    const maxN = Math.max(Array.from(lines[0]).length, Array.from(lines[1]).length);
+    const maxN = Math.max(...lines.map((l) => Array.from(l).length));
     let style = "";
-    if (lineW(maxN) > innerW) {
-      const shrunk = Math.max((fontRpx * innerW) / lineW(maxN), fontRpx * 0.5);
+    if (maxN * unitW > innerW) {
+      const shrunk = Math.max((fontRpx * innerW) / (maxN * unitW), fontRpx * 0.5);
       style = "font-size:" + shrunk + "rpx;";
     }
     return { lines, style };

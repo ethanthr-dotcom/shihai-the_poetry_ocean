@@ -23,6 +23,7 @@
       <image class="site-logo" src="/assets/logo-yang.png" mode="aspectFit"></image>
     </view>
     <view class="subtitle">在线古诗词浏览器</view>
+    <view class="tip">{{libTip}}</view>
 
     <view class="controls">
       <view class="row">
@@ -47,7 +48,6 @@
           class="ratio-opt {{item.active ? 'active' : ''}} {{item.disabled ? 'disabled' : ''}}"
           data-value="{{item.value}}" bindtap="onRatioTap">{{item.label}}</view>
       </view>
-      <view class="tip">{{libTip}}</view>
     </view>
 
     <view class="card">
