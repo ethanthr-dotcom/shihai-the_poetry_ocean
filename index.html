@@ -136,7 +136,7 @@
       font-family: inherit;
       transition: background 0.3s, border-color 0.3s;
     }
-    input::placeholder { color: var(--label-color); opacity: .6; }
+    input::placeholder { color: var(--label-color); opacity: .6; font-family: "Noto Serif SC", serif; font-style: italic; }
     button {
       width: 100%;
       border: 0;
@@ -280,6 +280,104 @@
     }
     /* 页脚：阴刻 logo → 宣传语 → 版权，全部居中 */
     .site-footer { margin: 42px auto 12px; text-align: center; }
+
+    /* 随机按钮下的小字提示 + 卡片下方工具区 */
+    .random-tip { font-size: 11px; opacity: .5; text-align: center; margin-top: 8px; }
+    .card-tools-inner { margin-top: 26px; position: relative; z-index: 2; }
+    .card-tools-inner #shareButton { width: 100%; }
+
+    /* 体裁选择触发框 */
+    .type-field { display: flex; align-items: center; cursor: pointer; min-height: 20px; position: relative; padding-right: 22px; }
+    .type-field .ph { opacity: .6; }
+
+    /* 通用弹层 */
+    .sheet-overlay { position: fixed; inset: 0; z-index: 1200; display: none; align-items: flex-end; }
+    .sheet-overlay.open { display: flex; }
+    .sheet-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+    .sheet-box { position: relative; width: 100%; background: var(--bg-color); border-radius: 18px 18px 0 0; padding: 22px 22px calc(20px + env(safe-area-inset-bottom)); animation: sheetUp .28s ease-out; }
+    @keyframes sheetUp { from { transform: translateY(100%); } }
+    .sheet-head { font-size: 16px; letter-spacing: 3px; text-align: center; margin-bottom: 14px; }
+    .sheet-search { width: 100%; margin-bottom: 12px; text-align: left; }
+    .sheet-empty { padding: 20px 0; opacity: .5; font-size: 13px; text-align: center; width: 100%; }
+
+    /* 体裁网格 */
+    #typeGrid { display: flex; flex-wrap: wrap; gap: 8px; max-height: 46vh; overflow-y: auto; }
+    .type-tag { padding: 6px 16px; border: 1px solid var(--card-border); border-radius: 18px; cursor: pointer; font-size: 13px; }
+    .type-tag:hover { opacity: .65; }
+    .type-tag.active { background: var(--button-bg); color: var(--button-text); border-color: var(--button-bg); }
+
+    /* 搜索结果列表 */
+    .results-count { font-size: 11px; opacity: .55; margin-left: 6px; letter-spacing: 0; }
+    .results-list { max-height: 56vh; overflow-y: auto; }
+    .result-item { border-bottom: 1px solid var(--card-border); }
+    .result-head { position: relative; padding: 12px 22px 12px 2px; cursor: pointer; }
+    .result-head:hover { opacity: .7; }
+    .result-t { font-size: 15px; }
+    .result-m { font-size: 11px; opacity: .55; margin-top: 3px; }
+    .result-arrow { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); opacity: .4; font-size: 12px; transition: transform .2s; }
+    .result-item.open .result-arrow { transform: translateY(-50%) rotate(180deg); }
+    .result-body { display: none; padding: 2px 2px 14px; }
+    .result-item.open .result-body { display: block; }
+    .result-verse { font-size: 13px; line-height: 2; white-space: pre-wrap; word-break: break-all; padding: 4px 10px 10px; border-left: 2px solid var(--card-border); }
+    .result-tools { margin-top: 6px; }
+    .result-tools .ratio-row { justify-content: flex-start; margin: 0 0 8px; }
+    .result-share { width: 100%; }
+    .results-foot { text-align: center; font-size: 11px; opacity: .5; padding: 10px 0 2px; }
+
+    /* 体裁下拉菜单 */
+    .type-caret { margin-left: auto; opacity: .5; font-size: 12px; transition: transform .2s; }
+    .type-caret.up { transform: rotate(180deg); }
+    .type-panel { margin-top: 10px; border: 1px solid var(--card-border); background: var(--bg-color); border-radius: 14px; padding: 12px; display: none; text-align: left; }
+    .type-panel.open { display: block; }
+    .type-panel .sheet-search { margin-bottom: 10px; }
+    .dd-list { max-height: 38vh; overflow-y: auto; }
+
+    /* 卡片内收藏符号 */
+    .card-body { position: relative; }
+    .card-fav { position: absolute; top: -8px; right: -6px; z-index: 3; background: none; border: 0; font-size: 21px; line-height: 1; padding: 6px; cursor: pointer; color: var(--meta-color); opacity: .55; transition: opacity .2s, color .2s; font-family: inherit; }
+    .card-fav:hover { opacity: .95; }
+    .card-fav.on { color: var(--seal-color, #a3382f); opacity: 1; }
+
+    /* 搜索结果就地列表 */
+    .results-panel { margin-top: 22px; }
+    .results-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px solid var(--card-border); margin-bottom: 4px; }
+    .results-head-r { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .result-head { display: flex; align-items: center; gap: 10px; }
+    .result-hm { flex: 1; min-width: 0; }
+    .result-fav { flex: none; font-size: 17px; line-height: 1; color: var(--meta-color); opacity: .5; cursor: pointer; padding: 4px 6px 4px 20px; }
+    .result-fav:hover { opacity: .95; }
+    .result-fav.on { color: var(--seal-color, #a3382f); opacity: 1; }
+
+    /* 复选框 / 迷你操作按钮 */
+    .chk { flex: none; width: 20px; height: 20px; border: 1.5px solid var(--meta-color); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: transparent; cursor: pointer; }
+    .chk.on { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+    .mini-btn { font-size: 12px; padding: 5px 12px; border: 1px solid var(--card-border); border-radius: 999px; cursor: pointer; opacity: .85; background: transparent; color: var(--text-color); font-family: inherit; white-space: nowrap; }
+    .mini-btn:hover { opacity: 1; }
+    .mini-btn.accent { border-color: var(--accent-color); color: var(--accent-color); }
+    .mini-btn.danger { border-color: var(--seal-color, #a3382f); color: var(--seal-color, #a3382f); }
+    .mini-btn.solid { background: var(--button-bg, #8b2c2c); border-color: var(--button-bg, #8b2c2c); color: var(--button-text, #fff); opacity: 1; }
+    .search-tip { font-size: 11px; opacity: .6; text-align: center; margin: 6px 0 14px; line-height: 1.7; }
+    .card-fav, .result-fav, .fav-heart { font-style: normal; flex: none; line-height: 1; }
+    input { font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; }
+
+    /* 收藏夹入口（设置齿轮旁） */
+    .fav-toggle { position: absolute; top: 18px; right: 56px; width: 26px; height: 26px; background: transparent; border: 0; color: var(--text-color); cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; opacity: 0; pointer-events: none; transition: opacity .5s ease; }
+    .fav-toggle.ready { opacity: .7; pointer-events: auto; }
+    .fav-toggle.ready:hover { opacity: 1; }
+    .fav-toggle svg { width: 22px; height: 22px; display: block; }
+    .fav-toggle:active { transform: scale(.92); }
+
+    /* 收藏夹抽屉 */
+    .fav-tip { font-size: 11px; opacity: .55; margin: 4px 0 10px; line-height: 1.7; }
+    .fav-bar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .fav-list { max-height: 48vh; overflow-y: auto; }
+    .fav-item { display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid var(--card-border); cursor: pointer; }
+    .fav-item:hover { opacity: .7; }
+    .fav-heart { flex: none; color: var(--seal-color, #a3382f); }
+
+    /* 轻提示 */
+    #toast { position: fixed; left: 50%; bottom: 12vh; transform: translateX(-50%); background: rgba(0,0,0,.72); color: #fff; padding: 9px 20px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 2000; }
+    #toast.show { opacity: 1; }
 
     
     .slogan {
@@ -535,26 +633,57 @@
   <main class="page">
     <h1><img class="site-logo" src="assets/logo-yang.svg" alt="诗海"></h1>
     <div class="subtitle" id="libTip">在线诗词浏览器 · 收录 34 万余首古诗词</div>
+    <div class="search-tip">三个条件框均可留空：全部留空将随机推荐一首，填写任意一项即按条件搜索</div>
 
     <section class="controls">
       <div class="row">
         <div>
-          <label for="author">作者（可留空）</label>
+          <label for="author">作者</label>
           <input id="author" placeholder="例如：李白">
         </div>
         <div>
-          <label for="dynasty">朝代（可留空）</label>
+          <label for="dynasty">朝代</label>
           <input id="dynasty" placeholder="例如：唐">
         </div>
-        <div>
-          <label for="type">体裁（可留空）</label>
-          <input id="type" placeholder="例如：五言绝句">
+        <div class="type-wrap">
+          <label>体裁</label>
+          <div id="typePicker" class="input type-field" tabindex="0" role="button"><span class="ph">点击选择体裁</span><span id="typeCaret" class="type-caret">▾</span></div>
         </div>
+      </div>
+      <!-- 体裁选择面板：整行内联展开（推挤布局，稳定可靠） -->
+      <div id="typeDropdown" class="type-panel">
+        <input id="typeQuery" class="input sheet-search" placeholder="搜索体裁，如：绝句">
+        <div class="dd-list"><div id="typeGrid" class="type-grid"></div></div>
       </div>
       <div class="btn-row">
         <button id="randomButton" type="button">今日与诗相逢</button>
-        <button id="shareButton" type="button" class="secondary">下载或分享卡片</button>
       </div>
+      <div class="random-tip">读到心动的一首，可在下方生成卡片保存或分享</div>
+    </section>
+
+    <section class="card" id="card">
+      <div class="status">正在加载诗词库……</div>
+    </section>
+
+    <!-- 搜索结果列表：就地替换诗词卡片（再随机单首时换回）；页面触底自动翻页 -->
+    <section id="resultsPanel" class="results-panel" style="display:none">
+      <div class="results-head">
+        <div class="results-head-l">匹配结果<span id="resultsCount" class="results-count"></span></div>
+        <div class="results-head-r">
+          <button class="mini-btn" id="selModeEnter" type="button">批量收藏</button>
+          <button class="mini-btn solid" id="listModeExit" type="button">返回</button>
+          <button class="mini-btn" id="selAll" type="button" style="display:none">全选</button>
+          <button class="mini-btn accent" id="selFav" type="button" style="display:none">收藏所选(0)</button>
+          <button class="mini-btn" id="selModeExit" type="button" style="display:none">取消</button>
+        </div>
+      </div>
+      <div id="resultsList"></div>
+      <div id="resultsFoot" class="results-foot"></div>
+    </section>
+
+    <!-- 分享与比例：渲染诗词后由 JS 移入卡片内部 -->
+    <div id="cardToolsInner" class="card-tools-inner" style="display:none">
+      <button id="shareButton" type="button" class="secondary">下载或分享卡片</button>
       <div class="ratio-row">
         <span class="ratio-label">卡片比例</span>
         <div class="ratio-seg">
@@ -562,22 +691,34 @@
           <button class="ratio-opt active" data-ratio="1:1" type="button">1:1</button>
           <button class="ratio-opt" data-ratio="3:4" type="button">3:4</button>
           <button class="ratio-opt" data-ratio="9:16" type="button">9:16</button>
-          <button class="ratio-opt" data-ratio="auto" type="button">自适应</button>
+          <button class="ratio-opt" data-ratio="auto" type="button">自动</button>
         </div>
       </div>
-    </section>
-
-    <section class="card" id="card">
-      <div class="status">正在加载诗词库……</div>
-    </section>
+    </div>
 
     <footer class="site-footer">
       <img class="footer-logo" src="assets/logo-yin.svg" alt="诗海">
       <div class="slogan">诗海 · 非营利古诗词共享项目</div>
-      <div class="copyright">版权所有 © Ethan 2026 · 非营利项目 · 诗词数据来源于 chinese-poetry 开源项目</div>
-      <div class="copyright">数据来源：chinese-poetry/chinese-poetry · MIT License</div>
+      <div class="copyright">版权所有 © Ethan 2026 · 非营利项目 · 数据来源：chinese-poetry 开源项目（MIT License）</div>
     </footer>
   </main>
+
+
+  <button id="favToggle" class="fav-toggle" title="收藏夹" aria-label="收藏夹"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>
+  <div id="favSheet" class="sheet-overlay">
+    <div class="sheet-backdrop" id="favSheetBackdrop"></div>
+    <div class="sheet-box">
+      <div class="sheet-head">收藏夹<span id="favCount" class="results-count"></span></div>
+      <div class="fav-tip">★ 收藏仅保存在本浏览器本地缓存（cookie / localStorage）中，清除浏览器缓存后会丢失</div>
+      <div class="fav-bar">
+        <button class="mini-btn" id="favManage" type="button">批量管理</button>
+        <button class="mini-btn" id="favSelAll" type="button" style="display:none">全选</button>
+        <button class="mini-btn danger" id="favDelete" type="button" style="display:none">删除所选(0)</button>
+        <button class="mini-btn" id="favManageDone" type="button" style="display:none">完成</button>
+      </div>
+      <div id="favList" class="fav-list"></div>
+    </div>
+  </div>
 
   <button id="themeToggle" class="theme-toggle" title="主题设置" aria-label="主题设置"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
   <div id="themePanel" class="theme-panel">
@@ -639,9 +780,11 @@
     const $ = (id) => document.getElementById(id);
     const button = $("randomButton");
     const card = $("card");
+    const cardToolsInner = $("cardToolsInner");
     const authorInput = $("author");
     const dynastyInput = $("dynasty");
-    const typeInput = $("type");
+    let typeValue = "";
+    const typeInput = { get value() { return typeValue; } };
     const progressEl = $("progress");
     function progressStart() {
       if (!progressEl) return;
@@ -670,6 +813,7 @@
     }
 
     function showStatus(message, isError) {
+      cardToolsInner.style.display = "none";
       card.innerHTML =
         '<div class="status' + (isError ? " error" : "") + '">' +
         escapeHtml(message) +
@@ -873,6 +1017,62 @@
     // 轻触感震动反馈：短促有力的一下；仅安卓浏览器支持 navigator.vibrate，iOS 静默跳过
     function haptic() { try { if (navigator.vibrate) navigator.vibrate(16); } catch (e) {} }
 
+    // 轻提示（底部浮起的圆角气泡）
+    function toast(msg) {
+      let t = $("toast");
+      if (!t) { t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t); }
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(t._h);
+      t._h = setTimeout(() => t.classList.remove("show"), 1600);
+    }
+
+    // ====== 收藏：仅存本浏览器本地缓存（cookie/localStorage），清缓存即丢失 ======
+    const FAV_KEY = "shihai-favs-v1";
+    let favs = [];
+    try { favs = JSON.parse(localStorage.getItem(FAV_KEY) || "[]") || []; } catch (e) { favs = []; }
+    const favSet = new Set(favs.map((p) => p.id));
+    function favId(p) {
+      const s = (p.t || "") + "|" + (p.a || "") + "|" + (p.c || "");
+      let h = 5381;
+      for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+      return h.toString(36);
+    }
+    function saveFavs() { try { localStorage.setItem(FAV_KEY, JSON.stringify(favs)); } catch (e) {} }
+    function addFavs(poems) {
+      let added = 0;
+      poems.forEach((p) => {
+        const id = p.id || favId(p);
+        if (favSet.has(id)) return;
+        favSet.add(id);
+        favs.unshift({ id, t: p.t || "", a: p.a || "", d: p.d || "", y: p.y || "", c: p.c || "" });
+        added++;
+      });
+      if (added) saveFavs();
+      return added;
+    }
+    function toggleFav(poem) {
+      const id = poem.id || favId(poem);
+      if (favSet.has(id)) {
+        favSet.delete(id);
+        favs = favs.filter((p) => p.id !== id);
+        saveFavs();
+        toast("已取消收藏");
+        return false;
+      }
+      addFavs([{ ...poem, id }]);
+      toast("已收藏");
+      return true;
+    }
+    // 收藏状态变化后同步结果列表里的小爱心
+    function syncResultsFav() {
+      document.querySelectorAll("#resultsList .result-fav").forEach((el) => {
+        const on = favSet.has(el.dataset.id);
+        el.classList.toggle("on", on);
+        el.textContent = on ? "★" : "☆";
+      });
+    }
+
     // ====== 按钮标签自适应换行：太窄拆行，每行不少于两个字 ======
     function splitBtnLabel(text, availW, fontPx) {
       if (text.length * fontPx <= availW) return [text];
@@ -913,11 +1113,18 @@
       const contentHtml = verses.length
         ? verses.map((x) => '<div class="verse-line">' + verseHtml(x) + "</div>").join("")
         : "未找到正文";
+      const isFav = favSet.has(favId(poem));
       card.innerHTML =
+        '<button id="cardFav" class="card-fav' + (isFav ? " on" : "") + '" type="button" title="收藏">' + (isFav ? "★" : "☆") + "</button>" +
+        '<div class="card-body">' +
         '<div class="title">' + escapeHtml(title || "无题") + "</div>" +
         '<div class="meta">' + escapeHtml(meta) + "</div>" +
         '<div class="content">' + contentHtml + "</div>" +
-        (type ? '<div class="category">体裁：' + escapeHtml(type) + "</div>" : "");
+        (type ? '<div class="category">体裁：' + escapeHtml(type) + "</div>" : "") +
+        "</div>";
+      // 分享按钮与卡片比例放进诗词卡片内部
+      card.appendChild(cardToolsInner);
+      cardToolsInner.style.display = "";
 
       // 字体加载完成前隐藏全部卡片内容，加载完同时淡入，避免跳动
       const pendingEls = card.querySelectorAll(".title, .meta, .content, .category");
@@ -936,6 +1143,17 @@
           });
         });
     }
+
+    // 卡片右上角收藏符号
+    card.addEventListener("click", (e) => {
+      const btn = e.target.closest("#cardFav");
+      if (!btn || !currentPoem) return;
+      haptic();
+      const fav = toggleFav(currentPoem);
+      btn.classList.toggle("on", fav);
+      btn.textContent = fav ? "★" : "☆";
+      syncResultsFav();
+    });
 
     function weightedRandom(items) {
       const total = items.reduce((s, c) => s + c.count, 0);
@@ -982,6 +1200,8 @@
     }
 
     function matchPoem(poem, author, dynasty, type) {
+      // 过滤标题/作者含缺字符（□/替换符）的残损条目，避免显示为方块
+      if (/[\u25a1\ufffd]/.test((poem.t ?? "") + (poem.a ?? ""))) return false;
       if (author && (poem.a ?? "").trim() !== author) return false;
       if (dynasty && (poem.d ?? "").trim() !== dynasty) return false;
       if (type && (poem.y ?? "").trim() !== type) return false;
@@ -1127,7 +1347,15 @@
       } catch (e) {}
     }
 
-    button.addEventListener("click", () => { haptic(); loadRandomPoem(); });
+    button.addEventListener("click", () => {
+      haptic();
+      const author = authorInput.value.trim();
+      const dynasty = dynastyInput.value.trim();
+      const type = typeValue.trim();
+      // 填了任一筛选条件 → 浮层列出全部匹配结果（无限分页）；未填 → 随机一首
+      if (author || dynasty || type) openResults(author, dynasty, type);
+      else { setListMode(false); loadRandomPoem(); }
+    });
 
     // ====== 分享：纯 Canvas 手绘诗词卡片（高分辨率、按句排版、间距自适应） ======
     let shareRatio = "1:1";
@@ -1203,8 +1431,10 @@
         const W = 3000;
         let H;
         if (shareRatio === "auto") {
-          const cw = card.clientWidth || 1;
-          const ch = card.clientHeight || cw;
+          // 自适应比例只看诗文正文区域（不含卡片内的分享按钮）
+          const bodyEl = card.querySelector(".card-body") || card;
+          const cw = bodyEl.clientWidth || 1;
+          const ch = bodyEl.clientHeight || cw;
           H = Math.round((W * ch) / cw);
         } else {
           const [rw, rh] = shareRatio.split(":").map(Number);
@@ -1788,6 +2018,338 @@
       } catch (e) {}
     }
 
+    // ====== 体裁选择器：数据库全部体裁，按常见度排序，支持搜索 ======
+    let typeOptions = [];
+    function updateTypePickerLabel() {
+      $("typePicker").innerHTML = typeValue
+        ? "" : '<span class="ph">点击选择体裁</span>';
+      if (typeValue) $("typePicker").textContent = typeValue;
+    }
+    function renderTypeGrid() {
+      const grid = $("typeGrid");
+      const q = $("typeQuery").value.trim();
+      // 首项固定「无」= 清除体裁条件
+      const shown = ["无"].concat((q ? typeOptions.filter((t) => t.includes(q)) : typeOptions).slice(0, 299));
+      grid.innerHTML = "";
+      shown.forEach((t) => {
+        const el = document.createElement("span");
+        el.className = "type-tag" + ((t === "无" ? !typeValue : t === typeValue) ? " active" : "");
+        el.textContent = t;
+        el.addEventListener("click", () => {
+          haptic();
+          typeValue = t === "无" ? "" : (t === typeValue ? "" : t);
+          updateTypePickerLabel();
+          $("typeDropdown").classList.remove("open");
+          $("typeCaret").classList.remove("up");
+        });
+        grid.appendChild(el);
+      });
+    }
+    $("typePicker").addEventListener("click", async () => {
+      haptic();
+      if ($("typeDropdown").classList.contains("open")) { $("typeDropdown").classList.remove("open"); $("typeCaret").classList.remove("up"); return; }
+      if (!INDEX) { showStatus("诗词库尚未加载完成，请稍候……"); return; }
+      if (!typeOptions.length) {
+        const full = await ensureFullIndex();
+        const counts = new Map();
+        ((full && full.chunks) || []).forEach((c) =>
+          (c.types || []).forEach((t) => {
+            if (!t || t.charAt(0) === "□" || t.includes("“")) return;
+            counts.set(t, (counts.get(t) || 0) + 1);
+          })
+        );
+        typeOptions = [...counts.entries()].sort((a, b) => b[1] - a[1]).map((x) => x[0]);
+      }
+      $("typeQuery").value = "";
+      renderTypeGrid();
+      $("typeDropdown").classList.add("open");
+      $("typeCaret").classList.add("up");
+    });
+    $("typeQuery").addEventListener("input", renderTypeGrid);
+    // 下拉之外任意点击收起
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest("#typeDropdown") && !e.target.closest("#typePicker")) {
+        $("typeDropdown").classList.remove("open");
+        $("typeCaret").classList.remove("up");
+      }
+    });
+
+    // ====== 搜索结果列表：就地替换诗词卡片；页面触底翻页；手风琴；批量收藏 ======
+    let resultChunks = [], resultCursor = 0, resultFilter = {}, resultBusy = false;
+    let results = [], resultsDone = false;
+    let listMode = false, selMode = false, openItem = null;
+    const selIds = new Set();
+    const resultsPanel = $("resultsPanel");
+    function setListMode(on) {
+      listMode = on;
+      card.style.display = on ? "none" : "";
+      resultsPanel.style.display = on ? "" : "none";
+    }
+    function updateResultsCount() {
+      $("resultsCount").textContent = resultsDone
+        ? " · 共 " + results.length + " 首"
+        : " · 已加载 " + results.length + " 首";
+    }
+    function updateSelBar() {
+      $("selAll").style.display = selMode ? "" : "none";
+      $("selFav").style.display = selMode ? "" : "none";
+      $("selModeExit").style.display = selMode ? "" : "none";
+      $("selModeEnter").style.display = selMode ? "none" : "";
+      $("listModeExit").style.display = selMode ? "none" : "";
+      $("selFav").textContent = "收藏所选(" + selIds.size + ")";
+      $("selAll").textContent = selIds.size >= results.length && results.length ? "取消全选" : "全选";
+    }
+    function toggleSel(id, chk) {
+      haptic();
+      if (selIds.has(id)) selIds.delete(id); else selIds.add(id);
+      if (chk) chk.classList.toggle("on", selIds.has(id));
+      updateSelBar();
+    }
+    function syncSelChk() {
+      resultsPanel.querySelectorAll(".chk").forEach((el, i) => {
+        const p = results[i];
+        if (p) el.classList.toggle("on", selIds.has(p.id));
+      });
+    }
+    function makeResultItem(p) {
+      const item = document.createElement("div");
+      item.className = "result-item";
+      const head = document.createElement("div");
+      head.className = "result-head";
+      const chk = document.createElement("div");
+      chk.className = "chk" + (selIds.has(p.id) ? " on" : "");
+      chk.textContent = "✓";
+      chk.style.display = selMode ? "" : "none";
+      const hm = document.createElement("div");
+      hm.className = "result-hm";
+      const t = document.createElement("div");
+      t.className = "result-t";
+      t.textContent = p.t || "无题";
+      const m = document.createElement("div");
+      m.className = "result-m";
+      m.textContent = (p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : "");
+      hm.append(t, m);
+      const star = document.createElement("div");
+      star.className = "result-fav" + (favSet.has(p.id) ? " on" : "");
+      star.dataset.id = p.id;
+      star.textContent = favSet.has(p.id) ? "★" : "☆";
+      star.title = "收藏";
+      star.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        haptic();
+        const fav = toggleFav(p);
+        star.classList.toggle("on", fav);
+        star.textContent = fav ? "★" : "☆";
+        if (currentPoem && favId(currentPoem) === p.id) updateCardFavBtn();
+      });
+      const arrow = document.createElement("div");
+      arrow.className = "result-arrow";
+      arrow.textContent = "▾";
+      head.append(chk, hm, star, arrow);
+      const body = document.createElement("div");
+      body.className = "result-body";
+      const verse = document.createElement("div");
+      verse.className = "result-verse";
+      verse.textContent = p.c || "";
+      const tools = document.createElement("div");
+      tools.className = "result-tools";
+      const share = document.createElement("button");
+      share.type = "button";
+      share.className = "secondary result-share";
+      share.textContent = "下载或分享卡片";
+      share.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        haptic();
+        setListMode(false);
+        currentPoem = p;
+        renderPoem(p);
+        window.scrollTo({ top: Math.max(card.offsetTop - 20, 0), behavior: "smooth" });
+        setTimeout(() => shareButton.click(), 350);
+      });
+      tools.appendChild(share);
+      body.append(verse, tools);
+      head.addEventListener("click", () => {
+        if (selMode) { toggleSel(p.id, chk); return; }
+        haptic();
+        // 手风琴：同一时间只展开一首
+        if (openItem && openItem !== item) openItem.classList.remove("open");
+        item.classList.toggle("open");
+        openItem = item.classList.contains("open") ? item : null;
+      });
+      item.append(head, body);
+      return item;
+    }
+    async function loadMoreResults() {
+      if (resultBusy || resultsDone) return;
+      resultBusy = true;
+      $("resultsFoot").textContent = "正在加载……";
+      const { author, dynasty, type } = resultFilter;
+      let added = 0;
+      try {
+        while (added < 30 && resultCursor < resultChunks.length) {
+          const poems = await loadChunk(resultChunks[resultCursor++].file);
+          const matched = poems.filter((p) => matchPoem(p, author, dynasty, type));
+          if (matched.length) {
+            const list = $("resultsList");
+            matched.forEach((p) => {
+              const withId = { ...p, id: favId(p) };
+              results.push(withId);
+              list.appendChild(makeResultItem(withId));
+            });
+            added += matched.length;
+          }
+        }
+        resultsDone = resultCursor >= resultChunks.length;
+        updateResultsCount();
+        $("resultsFoot").textContent = resultsDone
+          ? "已全部加载 · 共 " + results.length + " 首"
+          : "上滑自动加载更多";
+      } catch (err) {
+        showStatus("读取失败：" + (err && err.message ? err.message : err), true);
+      } finally {
+        resultBusy = false;
+      }
+    }
+    async function openResults(author, dynasty, type) {
+      if (!INDEX) { showStatus("诗词库尚未加载完成，请稍候……"); return; }
+      if (author || type) {
+        const full = await ensureFullIndex();
+        if (!full) { showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
+      }
+      const candidates = filterChunks(author, dynasty, type);
+      if (!candidates.length) { showStatus("未找到匹配条件的诗词", true); return; }
+      resultChunks = candidates; resultCursor = 0; resultFilter = { author, dynasty, type };
+      results = []; resultsDone = false; resultBusy = false; openItem = null;
+      selMode = false; selIds.clear(); updateSelBar();
+      $("resultsList").innerHTML = "";
+      updateResultsCount();
+      setListMode(true);
+      resultsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      loadMoreResults();
+    }
+    // 页面触底自动翻页
+    window.addEventListener("scroll", () => {
+      if (!listMode || resultsDone || resultBusy) return;
+      if (window.innerHeight + window.scrollY > document.body.scrollHeight - 600) loadMoreResults();
+    }, { passive: true });
+    $("listModeExit").addEventListener("click", () => { haptic(); setListMode(false); });
+    $("selModeEnter").addEventListener("click", () => {
+      haptic(); selMode = true; updateSelBar();
+      resultsPanel.querySelectorAll(".chk").forEach((el) => el.style.display = "");
+    });
+    $("selModeExit").addEventListener("click", () => {
+      haptic(); selMode = false; selIds.clear(); updateSelBar();
+      resultsPanel.querySelectorAll(".chk").forEach((el) => { el.style.display = "none"; el.classList.remove("on"); });
+    });
+    $("selAll").addEventListener("click", () => {
+      haptic();
+      if (selIds.size >= results.length && results.length) selIds.clear();
+      else results.forEach((p) => selIds.add(p.id));
+      syncSelChk(); updateSelBar();
+    });
+    $("selFav").addEventListener("click", () => {
+      if (!selIds.size) return;
+      haptic();
+      const poems = results.filter((p) => selIds.has(p.id));
+      const added = addFavs(poems);
+      syncResultsFav();
+      toast(added ? "已收藏 " + added + " 首" : "均已在收藏夹中");
+      selMode = false; selIds.clear(); updateSelBar();
+      resultsPanel.querySelectorAll(".chk").forEach((el) => { el.style.display = "none"; el.classList.remove("on"); });
+    });
+
+    // ====== 收藏夹抽屉：批量管理/删除；收藏仅存本机缓存 ======
+    let favSelMode = false;
+    const favSelIds = new Set();
+    function updateCardFavBtn() {
+      const btn = $("cardFav");
+      if (!btn || !currentPoem) return;
+      const fav = favSet.has(favId(currentPoem));
+      btn.classList.toggle("on", fav);
+      btn.textContent = fav ? "★" : "☆";
+    }
+    function updateFavBar() {
+      $("favSelAll").style.display = favSelMode ? "" : "none";
+      $("favDelete").style.display = favSelMode ? "" : "none";
+      $("favManageDone").style.display = favSelMode ? "" : "none";
+      $("favManage").style.display = favSelMode ? "none" : "";
+      $("favDelete").textContent = "删除所选(" + favSelIds.size + ")";
+      $("favSelAll").textContent = favSelIds.size >= favs.length && favs.length ? "取消全选" : "全选";
+    }
+    function renderFavList() {
+      const list = $("favList");
+      list.innerHTML = "";
+      $("favCount").textContent = " · " + favs.length + " 首";
+      if (!favs.length) {
+        list.innerHTML = '<div class="sheet-empty">还没有收藏 · 在诗词右上角点 ☆ 即可收藏到这里</div>';
+        return;
+      }
+      favs.forEach((p) => {
+        const item = document.createElement("div");
+        item.className = "fav-item";
+        const chk = document.createElement("div");
+        chk.className = "chk" + (favSelIds.has(p.id) ? " on" : "");
+        chk.textContent = "✓";
+        chk.style.display = favSelMode ? "" : "none";
+        const hm = document.createElement("div");
+        hm.className = "result-hm";
+        const t = document.createElement("div");
+        t.className = "result-t";
+        t.textContent = p.t || "无题";
+        const m = document.createElement("div");
+        m.className = "result-m";
+        m.textContent = (p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : "");
+        hm.append(t, m);
+        const heart = document.createElement("span");
+        heart.className = "fav-heart";
+        heart.textContent = "★";
+        item.append(chk, hm, heart);
+        item.addEventListener("click", () => {
+          if (favSelMode) {
+            haptic();
+            if (favSelIds.has(p.id)) favSelIds.delete(p.id); else favSelIds.add(p.id);
+            chk.classList.toggle("on", favSelIds.has(p.id));
+            updateFavBar();
+            return;
+          }
+          haptic();
+          $("favSheet").classList.remove("open");
+          setListMode(false);
+          currentPoem = p;
+          renderPoem(p);
+          window.scrollTo({ top: Math.max(card.offsetTop - 20, 0), behavior: "smooth" });
+        });
+        list.appendChild(item);
+      });
+    }
+    $("favToggle").addEventListener("click", () => {
+      haptic();
+      favSelMode = false; favSelIds.clear();
+      renderFavList(); updateFavBar();
+      $("favSheet").classList.add("open");
+    });
+    $("favSheetBackdrop").addEventListener("click", () => $("favSheet").classList.remove("open"));
+    $("favManage").addEventListener("click", () => { haptic(); favSelMode = true; favSelIds.clear(); renderFavList(); updateFavBar(); });
+    $("favManageDone").addEventListener("click", () => { haptic(); favSelMode = false; favSelIds.clear(); renderFavList(); updateFavBar(); });
+    $("favSelAll").addEventListener("click", () => {
+      haptic();
+      if (favSelIds.size >= favs.length && favs.length) favSelIds.clear();
+      else favs.forEach((p) => favSelIds.add(p.id));
+      renderFavList(); updateFavBar();
+    });
+    $("favDelete").addEventListener("click", () => {
+      if (!favSelIds.size) return;
+      if (!confirm("确定删除选中的 " + favSelIds.size + " 首收藏诗词？")) return;
+      favs = favs.filter((p) => !favSelIds.has(p.id));
+      favSelIds.forEach((id) => favSet.delete(id));
+      favSelIds.clear();
+      saveFavs();
+      syncResultsFav();
+      updateCardFavBtn();
+      renderFavList(); updateFavBar();
+      toast("已删除");
+    });
+
     // 主题面板开关
     const themeToggleBtn = $("themeToggle");
     themeToggleBtn.addEventListener("click", (e) => {
@@ -1849,9 +2411,11 @@
           try { localStorage.setItem(DISCLAIMER_KEY, "1"); } catch (e) {}
           box.remove();
           disclaimerPending = false;
-          // 首次确认后直接结束开屏并显示设置按钮
+          // 首次确认后直接结束开屏并显示设置按钮与收藏夹入口
           const tg = $("themeToggle");
           if (tg) tg.classList.add("ready");
+          const fv = $("favToggle");
+          if (fv) fv.classList.add("ready");
           const splash = $("splash");
           if (splash) {
             splash.classList.add("hide");
@@ -1867,9 +2431,11 @@
       if (!splash) return;
       const hide = () => {
         splash.classList.add("hide");
-        // 开屏结束后才显示设置按钮
+        // 开屏结束后才显示设置按钮与收藏夹入口
         const tg = $("themeToggle");
         if (tg) tg.classList.add("ready");
+        const fv = $("favToggle");
+        if (fv) fv.classList.add("ready");
         setTimeout(() => splash.remove(), 900);
       };
       splash.addEventListener("click", hide);

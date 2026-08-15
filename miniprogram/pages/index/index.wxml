@@ -25,67 +25,147 @@
       <image class="site-logo" src="/assets/logo-yang.png" mode="aspectFit"></image>
     </view>
     <view class="subtitle">在线诗词浏览器 · {{libTip}}</view>
+    <view class="search-tip">三个条件框均可留空：全部留空将随机推荐一首，填写任意一项即按条件搜索</view>
 
     <view class="controls">
       <view class="row">
         <view class="field">
-          <view class="label">作者（可留空）</view>
+          <view class="label">作者</view>
           <input class="input" placeholder="例如：李白" placeholder-class="ph" value="{{author}}" bindinput="onAuthorInput" />
         </view>
         <view class="field">
-          <view class="label">朝代（可留空）</view>
+          <view class="label">朝代</view>
           <input class="input" placeholder="例如：唐" placeholder-class="ph" value="{{dynasty}}" bindinput="onDynastyInput" />
         </view>
-        <view class="field">
-          <view class="label">体裁（可留空）</view>
-          <input class="input" placeholder="例如：五言绝句" placeholder-class="ph" value="{{type}}" bindinput="onTypeInput" />
+        <view class="field type-wrap">
+          <view class="label">体裁</view>
+          <view class="input type-field" catchtap="onTypeFieldTap">
+            <text wx:if="{{type}}">{{type}}</text>
+            <text wx:else class="ph">点击选择体裁</text>
+            <text class="type-caret {{typeDropdownShow ? 'up' : ''}}">▾</text>
+          </view>
         </view>
+      </view>
+      <!-- 体裁选择面板：整行内联展开（推挤布局，任何机型都稳定显示） -->
+      <view wx:if="{{typeDropdownShow}}" class="type-panel" catchtap="noop">
+        <input class="input dd-search" placeholder="搜索体裁，如：绝句" placeholder-class="ph" value="{{typeQuery}}" bindinput="onTypeQuery" />
+        <scroll-view class="dd-list" scroll-y>
+          <view class="type-grid">
+            <view wx:for="{{typeOptionsShown}}" wx:key="*this"
+              class="type-tag {{(item === '无' && !type) || item === type ? 'active' : ''}}" data-value="{{item}}" bindtap="onTypeOptTap">{{item}}</view>
+          </view>
+        </scroll-view>
       </view>
       <view class="btn-row">
         <button class="btn primary" disabled="{{randomLoading}}" bindtap="onRandomTap">
           <block wx:if="{{randomLoading}}">正在读取……</block>
           <block wx:else><text class="btn-line" wx:for="{{randomBtnLines}}" wx:key="index">{{item}}</text></block>
         </button>
-        <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">
-          <block wx:if="{{shareLoading}}">生成中……</block>
-          <block wx:else><text class="btn-line" wx:for="{{shareBtnLines}}" wx:key="index">{{item}}</text></block>
-        </button>
       </view>
-      <view class="ratio-row">
-        <text class="ratio-label">卡片比例</text>
-        <view class="ratio-seg">
-          <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx)"></view>
-          <view wx:for="{{ratioOptions}}" wx:key="value"
-            class="ratio-seg-item {{item.active ? 'active' : ''}} {{item.disabled ? 'disabled' : ''}}"
-            data-value="{{item.value}}" bindtap="onRatioTap">{{item.label}}</view>
-        </view>
-      </view>
+      <view class="random-tip">{{randomTip}}</view>
     </view>
 
-    <view class="card">
+    <view wx:if="{{!listMode}}" class="card">
       <view class="card-frame"></view>
       <text class="card-watermark">詩</text>
       <block wx:if="{{hasPoem}}">
-        <view class="title" style="{{titleStyle}}">
-          <view wx:for="{{titleLines}}" wx:key="index" class="title-line">{{item}}</view>
+        <view class="card-fav {{currentFav ? 'on' : ''}}" catchtap="onCardFavTap">{{currentFav ? '★' : '☆'}}</view>
+        <view class="card-body">
+          <view class="title" style="{{titleStyle}}">
+            <view wx:for="{{titleLines}}" wx:key="index" class="title-line">{{item}}</view>
+          </view>
+          <view class="meta" style="{{metaStyle}}">{{poem.meta}}</view>
+          <view class="content {{isVertical ? 'vertical' : ''}}">
+            <view wx:for="{{verseLines}}" wx:key="index" class="verse-line {{item.wrap ? 'wrap' : ''}}">
+              <text>{{item.text}}</text><text wx:if="{{item.punct}}" class="hang-punct">{{item.punct}}</text>
+            </view>
+          </view>
+          <view wx:if="{{poem.type}}" class="category" style="{{categoryStyle}}">体裁：{{poem.type}}</view>
         </view>
-        <view class="meta" style="{{metaStyle}}">{{poem.meta}}</view>
-        <view class="content {{isVertical ? 'vertical' : ''}}">
-          <view wx:for="{{verseLines}}" wx:key="index" class="verse-line {{item.wrap ? 'wrap' : ''}}">
-            <text>{{item.text}}</text><text wx:if="{{item.punct}}" class="hang-punct">{{item.punct}}</text>
+        <view class="card-tools">
+          <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">
+            <block wx:if="{{shareLoading}}">生成中……</block>
+            <block wx:else><text class="btn-line" wx:for="{{shareBtnLines}}" wx:key="index">{{item}}</text></block>
+          </button>
+          <view class="ratio-row">
+            <text class="ratio-label">卡片比例</text>
+            <view class="ratio-seg">
+              <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx)"></view>
+              <view wx:for="{{ratioOptions}}" wx:key="value"
+                class="ratio-seg-item {{item.active ? 'active' : ''}} {{item.disabled ? 'disabled' : ''}}"
+                data-value="{{item.value}}" bindtap="onRatioTap">{{item.label}}</view>
+            </view>
           </view>
         </view>
-        <view wx:if="{{poem.type}}" class="category" style="{{categoryStyle}}">体裁：{{poem.type}}</view>
       </block>
       <view wx:else class="status {{statusError ? 'error' : ''}}">{{statusText}}</view>
+    </view>
+
+    <!-- 搜索结果列表：就地替换诗词卡片（再随机单首时换回卡片）；页面触底自动翻页 -->
+    <view wx:if="{{listMode}}" class="results-panel">
+      <view class="results-head">
+        <view class="results-head-l">
+          <text class="results-title">匹配结果</text>
+          <text class="results-count">{{resultsDone ? ' · 共 ' + resultsCount + ' 首' : ' · 已加载 ' + resultsCount + ' 首'}}</text>
+        </view>
+        <view class="results-head-r">
+          <block wx:if="{{!selMode}}">
+            <view class="mini-btn" bindtap="onSelModeEnter">批量收藏</view>
+            <view class="mini-btn solid" bindtap="onListModeExit">返回</view>
+          </block>
+          <block wx:else>
+            <view class="mini-btn" bindtap="onSelAll">{{selCount >= resultsList.length && resultsList.length ? '取消全选' : '全选'}}</view>
+            <view class="mini-btn accent {{selCount ? '' : 'disabled'}}" bindtap="onSelFav">收藏所选({{selCount}})</view>
+            <view class="mini-btn" bindtap="onSelModeExit">取消</view>
+          </block>
+        </view>
+      </view>
+      <view wx:for="{{resultsList}}" wx:key="id" class="result-item {{item.open ? 'open' : ''}}">
+        <view class="result-head" data-index="{{index}}" bindtap="onResultItemTap">
+          <view wx:if="{{selMode}}" class="chk {{selIds[item.id] ? 'on' : ''}}">✓</view>
+          <view class="result-hm">
+            <view class="result-t">{{item.t || '无题'}}</view>
+            <view class="result-m">{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</view>
+          </view>
+          <view wx:if="{{!selMode}}" class="result-fav {{item.fav ? 'on' : ''}}" data-index="{{index}}" catchtap="onResultFavTap">{{item.fav ? '★' : '☆'}}</view>
+          <view class="result-arrow {{item.open ? 'open' : ''}}">▾</view>
+        </view>
+        <view wx:if="{{item.open}}" class="result-body">
+          <view class="result-verse">{{item.c}}</view>
+          <view class="result-tools">
+            <view class="ratio-row">
+              <text class="ratio-label">卡片比例</text>
+              <view class="ratio-seg">
+                <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx)"></view>
+                <view wx:for="{{ratioOptions}}" wx:for-item="r" wx:key="value"
+                  class="ratio-seg-item {{r.active ? 'active' : ''}} {{r.disabled ? 'disabled' : ''}}"
+                  data-value="{{r.value}}" bindtap="onRatioTap">{{r.label}}</view>
+              </view>
+            </view>
+            <button class="btn secondary result-share" data-index="{{index}}" catchtap="onResultShareTap">
+              <block wx:if="{{shareLoading}}">生成中……</block>
+              <block wx:else>下载或分享卡片</block>
+            </button>
+          </view>
+        </view>
+      </view>
+      <view class="results-foot">
+        <block wx:if="{{resultsLoading}}">正在加载……</block>
+        <block wx:elif="{{resultsDone}}">已全部加载 · 共 {{resultsCount}} 首</block>
+        <block wx:else>上滑自动加载更多</block>
+      </view>
     </view>
 
     <view class="site-footer">
       <image class="footer-logo" src="/assets/logo-yin.png" mode="aspectFit"></image>
       <view class="slogan">诗海 · 非营利古诗词共享项目</view>
-      <view class="copyright" bindlongpress="onDevEntry">版权所有 © Ethan 2026 · 非营利项目 · 诗词数据来源于 chinese-poetry 开源项目</view>
-      <view class="copyright">数据来源：chinese-poetry/chinese-poetry · MIT License</view>
+      <view class="copyright" bindlongpress="onDevEntry">版权所有 © Ethan 2026 · 非营利项目 · 数据来源：chinese-poetry 开源项目（MIT License）</view>
     </view>
+  </view>
+
+  <!-- 收藏夹入口（设置图标旁） -->
+  <view class="fav-toggle {{uiReady ? 'ready' : ''}}" catchtap="onFavToggle">
+    <view class="fav-icon"></view>
   </view>
 
   <!-- 主题设置按钮 -->
@@ -138,6 +218,32 @@
       </scroll-view>
       <button class="btn primary dev-btn" catchtap="onDevReshowDisclaimer">重新显示开屏使用提示</button>
       <button class="btn secondary dev-btn" catchtap="onDevClose">关闭面板</button>
+    </view>
+  </view>
+
+  <!-- 收藏夹抽屉：批量管理/删除；收藏仅存本机缓存 -->
+  <view wx:if="{{favSheetShow}}" class="picker-mask" bindtap="onFavSheetClose">
+    <view class="fav-sheet" catchtap="noop">
+      <view class="sheet-head">收藏夹<text class="results-count"> · {{favList.length}} 首</text></view>
+      <view class="fav-tip">★ 收藏仅保存在本机本地缓存（相当于浏览器 cookie），清除缓存或卸载小程序后会丢失</view>
+      <view class="fav-bar">
+        <view class="mini-btn" bindtap="onFavManage">{{favSelMode ? '完成' : '批量管理'}}</view>
+        <block wx:if="{{favSelMode}}">
+          <view class="mini-btn" bindtap="onFavSelAll">{{favSelCount >= favList.length && favList.length ? '取消全选' : '全选'}}</view>
+          <view class="mini-btn danger {{favSelCount ? '' : 'disabled'}}" bindtap="onFavDelete">删除所选({{favSelCount}})</view>
+        </block>
+      </view>
+      <scroll-view class="fav-list" scroll-y>
+        <view wx:if="{{!favList.length}}" class="sheet-empty">还没有收藏 · 在诗词右上角点 ☆ 即可收藏到这里</view>
+        <view wx:for="{{favList}}" wx:key="id" class="fav-item" data-index="{{index}}" bindtap="onFavItemTap">
+          <view wx:if="{{favSelMode}}" class="chk {{favSelIds[item.id] ? 'on' : ''}}">✓</view>
+          <view class="result-hm">
+            <view class="result-t">{{item.t || '无题'}}</view>
+            <view class="result-m">{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</view>
+          </view>
+          <text class="fav-heart">★</text>
+        </view>
+      </scroll-view>
     </view>
   </view>
 

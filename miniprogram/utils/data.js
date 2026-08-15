@@ -87,6 +87,8 @@ function filterChunks(author, dynasty, type) {
 
 // 块内逐首精确匹配
 function matchPoem(poem, author, dynasty, type) {
+  // 过滤标题/作者含缺字符（□/替换符）的残损条目，避免显示为方块
+  if (/[\u25a1\ufffd]/.test((poem.t || "") + (poem.a || ""))) return false;
   if (author && (poem.a || "").trim() !== author) return false;
   if (dynasty && (poem.d || "").trim() !== dynasty) return false;
   if (type && (poem.y || "").trim() !== type) return false;
@@ -141,6 +143,24 @@ async function findRandomPoem(author, dynasty, type, maxLen) {
   throw new Error("未找到匹配条件的诗");
 }
 
+// 收集全部体裁（按出现的分块数降序，过滤乱码条目），体裁选择器用；带缓存
+let TYPES_LIST = null;
+function collectTypes() {
+  if (TYPES_LIST) return TYPES_LIST;
+  if (!FULL_INDEX) return [];
+  const counts = new Map();
+  FULL_INDEX.chunks.forEach((c) =>
+    (c.types || []).forEach((t) => {
+      if (!t || t.charAt(0) === "□" || t.indexOf("“") >= 0) return;
+      counts.set(t, (counts.get(t) || 0) + 1);
+    })
+  );
+  TYPES_LIST = Array.from(counts.entries())
+    .sort((x, y) => y[1] - x[1])
+    .map((x) => x[0]);
+  return TYPES_LIST;
+}
+
 // 开发者调试：内存分块缓存统计
 function cacheStats() {
   return { count: chunkCache.size, chunks: Array.from(chunkCache.keys()) };
@@ -153,5 +173,6 @@ module.exports = {
   filterChunks,
   matchPoem,
   findRandomPoem,
+  collectTypes,
   cacheStats
 };

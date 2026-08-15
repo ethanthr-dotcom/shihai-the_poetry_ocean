@@ -5,6 +5,15 @@ const verse = require("../../utils/verse");
 const themes = require("../../utils/themes");
 const { drawShare } = require("../../utils/share-canvas");
 
+// ====== 收藏：仅存本机本地缓存（等同浏览器 cookie/storage），清缓存即丢失 ======
+const FAV_KEY = "shihai-favs-v1";
+function favId(p) {
+  const s = (p.t || "") + "|" + (p.a || "") + "|" + (p.c || "");
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
 // 均分换行：先算需要几行，再按行均分字数，断点优先落在标点之后（±2 字内）
 function splitTitleLines(chars, unitW, innerW) {
   const PUNCT = "，、。！？；： ";
@@ -33,7 +42,7 @@ const RATIO_OPTIONS = [
   { value: "1:1", label: "1:1" },
   { value: "3:4", label: "3:4" },
   { value: "9:16", label: "9:16" },
-  { value: "auto", label: "自适应" }
+  { value: "auto", label: "自动" }
 ];
 
 Page({
@@ -65,6 +74,25 @@ Page({
     devRows: [],
     shareImg: "",
     randomBtnLines: ["今日与诗相逢"],
+    randomTip: "读到心动的一首，可在下方生成卡片保存或分享",
+    typeOptions: [],
+    typeQuery: "",
+    typeOptionsShown: [],
+    resultsList: [],
+    resultsLoading: false,
+    resultsDone: false,
+    resultsCount: 0,
+    listMode: false,
+    selMode: false,
+    selIds: {},
+    selCount: 0,
+    currentFav: false,
+    typeDropdownShow: false,
+    favSheetShow: false,
+    favList: [],
+    favSelMode: false,
+    favSelIds: {},
+    favSelCount: 0,
     shareBtnLines: ["下载或分享卡片"],
     mottoChars: "掬古人之诗·养今时之心".split(""),
     ratioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === "1:1", disabled: false })),
@@ -93,6 +121,7 @@ Page({
     } else {
       this.startSplash();
     }
+    this.loadFavs();
     this.boot();
     this.fitBtnLabels();
   },
@@ -192,7 +221,302 @@ Page({
   onDynastyInput(e) { this.setData({ dynasty: e.detail.value }); },
   onTypeInput(e) { this.setData({ type: e.detail.value }); },
 
-  onRandomTap() { this.haptic(); this.loadRandomPoem(true); },
+  onRandomTap() {
+    this.haptic();
+    const author = (this.data.author || "").trim();
+    const dynasty = (this.data.dynasty || "").trim();
+    const type = (this.data.type || "").trim();
+    // 填了任一筛选条件 → 结果列表替换诗词卡片；未填 → 随机一首（恢复卡片）
+    if (author || dynasty || type) { this.openResults(author, dynasty, type); return; }
+    this.setData({ listMode: false });
+    this.loadRandomPoem(true);
+  },
+
+  // ====== 体裁选择器（数据库全部体裁，按常见度排序，支持搜索） ======
+  onTypeFieldTap() {
+    this.haptic();
+    if (this.data.typeDropdownShow) { this.setData({ typeDropdownShow: false }); return; }
+    if (!this.indexReady) { this.showStatus("诗词库尚未加载完成，请稍候……"); return; }
+    if (!this.data.typeOptions.length) {
+      data.ensureFullIndex().then(() => {
+        this.setData({ typeOptions: data.collectTypes() });
+        this._applyTypeQuery();
+      });
+    }
+    this.setData({ typeDropdownShow: true, typeQuery: "" });
+    this._applyTypeQuery();
+  },
+  onTypeQuery(e) {
+    this.setData({ typeQuery: e.detail.value });
+    this._applyTypeQuery();
+  },
+  _applyTypeQuery() {
+    const q = (this.data.typeQuery || "").trim();
+    const list = this.data.typeOptions || [];
+    // 首项固定「无」= 清除体裁条件
+    this.setData({ typeOptionsShown: ["无"].concat((q ? list.filter((t) => t.indexOf(q) >= 0) : list).slice(0, 299)) });
+  },
+  onTypeOptTap(e) {
+    const v = e.currentTarget.dataset.value;
+    this.haptic();
+    if (v === "无") { this.setData({ type: "", typeDropdownShow: false }); return; }
+    this.setData({ type: v === this.data.type ? "" : v, typeDropdownShow: false });
+  },
+
+  // ====== 收藏（本地缓存） ======
+  loadFavs() {
+    let list = [];
+    try { list = wx.getStorageSync(FAV_KEY) || []; } catch (e) {}
+    this._favs = Array.isArray(list) ? list : [];
+    this._favSet = new Set(this._favs.map((p) => p.id));
+  },
+  saveFavs() {
+    try { wx.setStorageSync(FAV_KEY, this._favs); } catch (e) {}
+  },
+  addFavs(poems) {
+    let added = 0;
+    poems.forEach((p) => {
+      const id = p.id || favId(p);
+      if (this._favSet.has(id)) return;
+      this._favSet.add(id);
+      this._favs.unshift({ id, t: p.t || "", a: p.a || "", d: p.d || "", y: p.y || "", c: p.c || "" });
+      added++;
+    });
+    if (added) this.saveFavs();
+    return added;
+  },
+  removeFav(id) {
+    this._favSet.delete(id);
+    this._favs = this._favs.filter((p) => p.id !== id);
+    this.saveFavs();
+  },
+  toggleFav(poem) {
+    const id = poem.id || favId(poem);
+    if (this._favSet.has(id)) {
+      this.removeFav(id);
+      wx.showToast({ title: "已取消收藏", icon: "none" });
+      return false;
+    }
+    this.addFavs([{ ...poem, id }]);
+    wx.showToast({ title: "已收藏", icon: "none" });
+    return true;
+  },
+  // 收藏状态变化后同步列表中所有小爱心
+  _syncResultsFav() {
+    const updates = {};
+    this.data.resultsList.forEach((it, i) => {
+      const f = this._favSet.has(it.id);
+      if (f !== it.fav) updates["resultsList[" + i + "].fav"] = f;
+    });
+    if (Object.keys(updates).length) this.setData(updates);
+  },
+  onCardFavTap() {
+    if (!this.currentPoem) return;
+    this.haptic();
+    this.setData({ currentFav: this.toggleFav(this.currentPoem) });
+  },
+  onResultFavTap(e) {
+    const idx = e.currentTarget.dataset.index;
+    const item = this.data.resultsList[idx];
+    if (!item) return;
+    this.haptic();
+    const fav = this.toggleFav(item);
+    this.setData({ ["resultsList[" + idx + "].fav"]: fav });
+    if (this.currentPoem && this.currentPoem.id === item.id) this.setData({ currentFav: fav });
+  },
+
+  // ====== 收藏夹面板（设置图标旁入口；批量管理/删除） ======
+  onFavToggle() {
+    this.haptic();
+    if (this.data.favSheetShow) { this.setData({ favSheetShow: false }); return; }
+    this.openFavSheet();
+  },
+  openFavSheet() {
+    this.setData({
+      favSheetShow: true,
+      favList: this._favs.map((p) => ({ ...p })),
+      favSelMode: false, favSelIds: {}, favSelCount: 0,
+      themePanelOpen: false, typeDropdownShow: false
+    });
+  },
+  onFavSheetClose() { this.setData({ favSheetShow: false }); },
+  onFavItemTap(e) {
+    if (this.data.favSelMode) { this.onFavSelToggle(e); return; }
+    const idx = e.currentTarget.dataset.index;
+    const poem = this._favs[idx];
+    if (!poem) return;
+    this.haptic();
+    this.setData({ favSheetShow: false, listMode: false });
+    poem.id = poem.id || favId(poem);
+    this.renderPoem(poem);
+    setTimeout(() => wx.pageScrollTo({ selector: ".card", duration: 300 }), 80);
+  },
+  onFavManage() {
+    this.haptic();
+    if (this.data.favSelMode) { this.setData({ favSelMode: false, favSelIds: {}, favSelCount: 0 }); return; }
+    this.setData({ favSelMode: true, favSelIds: {}, favSelCount: 0 });
+  },
+  onFavSelToggle(e) {
+    const idx = e.currentTarget.dataset.index;
+    const item = this.data.favList[idx];
+    if (!item) return;
+    this.haptic();
+    const selIds = { ...this.data.favSelIds };
+    if (selIds[item.id]) delete selIds[item.id]; else selIds[item.id] = true;
+    this.setData({ favSelIds: selIds, favSelCount: Object.keys(selIds).length });
+  },
+  onFavSelAll() {
+    this.haptic();
+    const selIds = {};
+    if (!(this.data.favSelCount >= this.data.favList.length && this.data.favList.length)) {
+      this.data.favList.forEach((p) => { selIds[p.id] = true; });
+    }
+    this.setData({ favSelIds: selIds, favSelCount: Object.keys(selIds).length });
+  },
+  onFavDelete() {
+    const ids = this.data.favSelIds;
+    const targets = this._favs.filter((p) => ids[p.id]);
+    if (!targets.length) return;
+    wx.showModal({
+      title: "删除收藏",
+      content: "确定删除选中的 " + targets.length + " 首收藏诗词？",
+      success: (r) => {
+        if (!r.confirm) return;
+        targets.forEach((p) => this.removeFav(p.id));
+        this._syncResultsFav();
+        if (this.currentPoem && !this._favSet.has(favId(this.currentPoem))) this.setData({ currentFav: false });
+        this.setData({
+          favList: this._favs.map((p) => ({ ...p })),
+          favSelIds: {}, favSelCount: 0
+        });
+        wx.showToast({ title: "已删除", icon: "success" });
+      }
+    });
+  },
+
+  // ====== 搜索结果列表：就地替换诗词卡片；无限分页（页面触底）；手风琴；批量收藏 ======
+  async openResults(author, dynasty, type) {
+    if (!this.indexReady) { this.showStatus("诗词库尚未加载完成，请稍候……"); return; }
+    if (author || type) {
+      const full = await data.ensureFullIndex();
+      if (!full) { this.showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
+    }
+    const candidates = data.filterChunks(author, dynasty, type);
+    if (!candidates.length) { this.showStatus("未找到匹配条件的诗词", true); return; }
+    this._resultChunks = candidates;
+    this._resultCursor = 0;
+    this._resultFilter = { author, dynasty, type };
+    this._resultsBusy = false;
+    this._openIdx = null;
+    this.setData({
+      listMode: true, resultsList: [], resultsDone: false, resultsCount: 0,
+      selMode: false, selIds: {}, selCount: 0
+    });
+    setTimeout(() => wx.pageScrollTo({ selector: ".results-panel", duration: 300 }), 80);
+    this.loadMoreResults();
+  },
+  async loadMoreResults() {
+    if (this._resultsBusy || this.data.resultsDone || !this.data.listMode) return;
+    this._resultsBusy = true;
+    this.setData({ resultsLoading: true });
+    const { author, dynasty, type } = this._resultFilter;
+    let added = 0;
+    try {
+      while (added < 30 && this._resultCursor < this._resultChunks.length) {
+        const chunk = this._resultChunks[this._resultCursor++];
+        const poems = await data.loadChunk(chunk.file);
+        const matched = poems.filter((p) => data.matchPoem(p, author, dynasty, type));
+        if (matched.length) {
+          const items = matched.map((p) => {
+            const id = favId(p);
+            return { id, t: p.t, a: p.a, d: p.d, y: p.y, c: p.c, open: false, fav: this._favSet.has(id) };
+          });
+          this.setData({ resultsList: this.data.resultsList.concat(items) });
+          added += items.length;
+        }
+      }
+      this.setData({
+        resultsDone: this._resultCursor >= this._resultChunks.length,
+        resultsCount: this.data.resultsList.length
+      });
+    } catch (err) {
+      this.showStatus("读取失败：" + (err && err.message ? err.message : err), true);
+    } finally {
+      this._resultsBusy = false;
+      this.setData({ resultsLoading: false });
+    }
+  },
+  // 页面触底自动加载下一页
+  onReachBottom() {
+    if (this.data.listMode && !this.data.resultsDone && !this.data.resultsLoading) this.loadMoreResults();
+  },
+  onResultItemTap(e) {
+    const idx = e.currentTarget.dataset.index;
+    // 多选模式下点整行 = 勾选/取消
+    if (this.data.selMode) { this.onSelToggle(e); return; }
+    this.haptic();
+    const list = this.data.resultsList;
+    const updates = {};
+    // 手风琴：同一时间只展开一首
+    if (this._openIdx != null && this._openIdx !== idx && list[this._openIdx] && list[this._openIdx].open) {
+      updates["resultsList[" + this._openIdx + "].open"] = false;
+    }
+    const willOpen = !list[idx].open;
+    updates["resultsList[" + idx + "].open"] = willOpen;
+    this._openIdx = willOpen ? idx : null;
+    this.setData(updates);
+  },
+  onResultShareTap(e) {
+    const idx = e.currentTarget.dataset.index;
+    const item = this.data.resultsList[idx];
+    if (!item) return;
+    this.haptic();
+    this.setData({ listMode: false });
+    this.currentPoem = item;
+    this.renderPoem(item);
+    this._cardRect = null; // 让分享流程重新测量卡片尺寸
+    setTimeout(() => this.onShareTap(), 350);
+  },
+  onListModeExit() {
+    this.haptic();
+    this.setData({ listMode: false });
+  },
+  // 多选（批量收藏）
+  onSelModeEnter() {
+    this.haptic();
+    this.setData({ selMode: true, selIds: {}, selCount: 0 });
+  },
+  onSelModeExit() {
+    this.haptic();
+    this.setData({ selMode: false, selIds: {}, selCount: 0 });
+  },
+  onSelToggle(e) {
+    const idx = e.currentTarget.dataset.index;
+    const item = this.data.resultsList[idx];
+    if (!item) return;
+    this.haptic();
+    const selIds = { ...this.data.selIds };
+    if (selIds[item.id]) delete selIds[item.id]; else selIds[item.id] = true;
+    this.setData({ selIds, selCount: Object.keys(selIds).length });
+  },
+  onSelAll() {
+    this.haptic();
+    const selIds = {};
+    if (!(this.data.selCount >= this.data.resultsList.length && this.data.resultsList.length)) {
+      this.data.resultsList.forEach((it) => { selIds[it.id] = true; });
+    }
+    this.setData({ selIds, selCount: Object.keys(selIds).length });
+  },
+  onSelFav() {
+    const ids = this.data.selIds;
+    const poems = this.data.resultsList.filter((it) => ids[it.id]);
+    if (!poems.length) return;
+    this.haptic();
+    const added = this.addFavs(poems);
+    this._syncResultsFav();
+    wx.showToast({ title: added ? "已收藏 " + added + " 首" : "均已在收藏夹中", icon: "none" });
+    this.setData({ selMode: false, selIds: {}, selCount: 0 });
+  },
 
   // ====== 随机抽取（与网页版 loadRandomPoem 一致） ======
   async loadRandomPoem(userAction) {
@@ -233,6 +557,7 @@ Page({
     const tt = this._buildTitle(poem.t || "无题");
     this.setData({
       hasPoem: true,
+      currentFav: !!(this._favSet && this._favSet.has(favId(poem))),
       statusText: "",
       statusError: false,
       poem: { t: poem.t || "无题", meta, type: poem.y || "" },
@@ -344,7 +669,7 @@ Page({
   fitCardText() {
     if (!this.currentPoem) return;
     wx.createSelectorQuery()
-      .select(".card")
+      .select(".card-body")
       .boundingClientRect()
       .select(".content")
       .boundingClientRect()
@@ -378,7 +703,10 @@ Page({
     this.setData({ themePanelOpen: !this.data.themePanelOpen });
   },
   onPageTap() {
-    if (this.data.themePanelOpen) this.setData({ themePanelOpen: false });
+    const patch = {};
+    if (this.data.themePanelOpen) patch.themePanelOpen = false;
+    if (this.data.typeDropdownShow) patch.typeDropdownShow = false;
+    if (Object.keys(patch).length) this.setData(patch);
   },
   // ====== 开发者入口：长按设置齿轮 5s ======
   onGearTouchStart(e) {
@@ -540,7 +868,7 @@ Page({
       let rect = this._cardRect;
       if (!rect) {
         rect = await new Promise((resolve) => {
-          wx.createSelectorQuery().select(".card").boundingClientRect().exec((r) => resolve(r && r[0]));
+          wx.createSelectorQuery().select(".card-body").boundingClientRect().exec((r) => resolve(r && r[0]));
         });
       }
       const vertical = t.direction === "vertical";
@@ -601,8 +929,6 @@ Page({
   closeShareSheet() {
     this.setData({ shareSheetShow: false });
   },
-
-  noop() {},
 
   // 点预览图 → 全屏预览
   previewShareImg() {
