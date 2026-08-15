@@ -99,6 +99,12 @@ Page({
     mottoChars: "掬古人之诗·养今时之心".split(""),
     ratioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === "1:1", disabled: false })),
     ratioActiveIndex: 0,
+    thumbDragTransform: "",
+    liquidGlass: true,
+    fxOptions: [
+      { label: "液态玻璃", value: "on", active: true },
+      { label: "关闭特效", value: "off", active: false }
+    ],
     shareRatio: "1:1",
     progressState: "", // "" | run | done
     splashShow: true,
@@ -114,6 +120,14 @@ Page({
 
   onLoad() {
     this.currentTheme = themes.loadTheme();
+    // 液态玻璃特效开关（设置 > 特效；关闭后滑块拖动一并停用）
+    let lgOn = true;
+    try { lgOn = wx.getStorageSync("shihai-lg") !== "0"; } catch (e) {}
+    this._lgOn = lgOn;
+    this.setData({
+      liquidGlass: lgOn,
+      fxOptions: this.data.fxOptions.map((o) => ({ ...o, active: (o.value === "on") === lgOn }))
+    });
     this.applyTheme();
     // 首次使用提示：确认过则照常开屏；首次只展示提示抽屉，同意后直进主页（不再播开屏动画）
     let agreed = "";
@@ -862,6 +876,7 @@ Page({
   },
 
   onRatioTap(e) {
+    if (this._justDragged) return;
     this.haptic();
     const value = e.currentTarget.dataset.value;
     if (this.currentTheme.direction === "vertical" && value !== "auto") return;
@@ -870,6 +885,70 @@ Page({
       ratioOptions: this.data.ratioOptions.map((o) => ({ ...o, active: o.value === value })),
       ratioActiveIndex: RATIO_OPTIONS.findIndex((o) => o.value === value)
     });
+  },
+
+  // ====== 特效开关（液态玻璃；关闭后恢复原样式并停用滑块拖动） ======
+  onFxOptTap(e) {
+    const on = e.currentTarget.dataset.value === "on";
+    if (this._lgOn === on) return;
+    this.haptic();
+    this._lgOn = on;
+    try { wx.setStorageSync("shihai-lg", on ? "1" : "0"); } catch (err) {}
+    this.setData({
+      liquidGlass: on,
+      fxOptions: this.data.fxOptions.map((o) => ({ ...o, active: (o.value === "on") === on }))
+    });
+  },
+
+  // ====== 液态玻璃滑块：按住横向拖动选比例（苹果式拉伸；仅特效开启时，rAF 级节流防卡顿） ======
+  onSegTouchStart(e) {
+    if (!this._lgOn || this.currentTheme.direction === "vertical") return;
+    const t = e.touches[0];
+    this._segDrag = { startX: t.clientX, moved: false };
+    // in(this) + currentTarget：卡片与列表两处滑块各查自身，且把 px→rpx 系数一并带回
+    const id = e.currentTarget.id;
+    if (!id) return;
+    this.createSelectorQuery().in(this).select("#" + id + " .ratio-thumb").boundingClientRect().exec((r) => {
+      if (this._segDrag && r && r[0]) {
+        this._segDrag.rect = r[0];
+        this._segDrag.itemW = r[0].width + 2; // thumb 宽 = 25% - 4rpx，补回 4rpx 间隙即单格宽
+      }
+    });
+  },
+  onSegTouchMove(e) {
+    const d = this._segDrag;
+    if (!d || !d.rect) return;
+    const t = e.touches[0];
+    const now = Date.now();
+    if (now - (d.last || 0) < 16) return;
+    d.last = now;
+    const rect = d.rect;
+    const itemW = d.itemW || rect.width / 4, pad = 2;
+    const base = this.data.ratioActiveIndex * itemW + pad;
+    const target0 = base + (t.clientX - d.startX);
+    let target = target0;
+    const max = rect.width - itemW + 2;
+    target = Math.max(pad, Math.min(max, target));
+    const dx = target - base;
+    if (Math.abs(dx) > 3) d.moved = true;
+    d.target = target;
+    const sx = 1 + Math.min(0.18, Math.abs(dx) / rect.width);
+    this.setData({ thumbDragTransform: "transition:none; left:" + target.toFixed(1) + "px; transform:scaleX(" + sx.toFixed(3) + ");" });
+  },
+  onSegTouchEnd() {
+    const d = this._segDrag;
+    this._segDrag = null;
+    if (!d) return;
+    if (!d.moved || d.target == null) { this.setData({ thumbDragTransform: "" }); return; }
+    const itemW = d.itemW || d.rect.width / 4, pad = 2;
+    let idx = Math.round((d.target - pad) / itemW);
+    idx = Math.max(0, Math.min(RATIO_OPTIONS.length - 1, idx));
+    const value = RATIO_OPTIONS[idx].value;
+    this.setData({ thumbDragTransform: "" });
+    // 先应用再置位：避免自身守卫拦截；随后 400ms 内的合成 tap 不再重复触发
+    if (value !== this.data.shareRatio) this.onRatioTap({ currentTarget: { dataset: { value } } });
+    this._justDragged = true;
+    setTimeout(() => { this._justDragged = false; }, 400);
   },
 
   // ====== 分享卡片（canvas 2d 手绘 → 预览/保存，等价网页版下载） ======

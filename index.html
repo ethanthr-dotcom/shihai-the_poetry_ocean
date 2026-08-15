@@ -372,6 +372,27 @@
     /* 按钮按压缩放回弹（iOS 风格；toggle 类在各自规则里合并 transition） */
     button:not(.fav-toggle):not(.theme-toggle):not(.guide-toggle), .mini-btn, .type-tag, .ratio-opt { transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
     button:active, .mini-btn:active, .type-tag:active, .ratio-opt:active, .fav-toggle:active, .theme-toggle:active, .guide-toggle:active { transform: scale(.92); }
+
+    /* ===== 液态玻璃（设置 > 特效 可关闭；关闭后滑块拖动一并停用，恢复原样式） ===== */
+    .lg-on button:not(.ratio-opt):not(.fav-toggle):not(.theme-toggle):not(.guide-toggle), .lg-on .mini-btn, .lg-on input, .lg-on .ratio-seg, .lg-on .type-panel, .lg-on .theme-panel, .lg-on .sheet-box {
+      background: color-mix(in srgb, var(--bg-color) 62%, transparent);
+      backdrop-filter: blur(12px) saturate(1.6) brightness(1.04);
+      -webkit-backdrop-filter: blur(12px) saturate(1.6) brightness(1.04);
+      border-color: color-mix(in srgb, var(--text-color) 22%, transparent);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.32), inset 0 -1px 0 rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.10);
+    }
+    .lg-on button.secondary, .lg-on .mini-btn.accent { background: color-mix(in srgb, var(--accent-color) 42%, transparent); }
+    .lg-on .mini-btn.solid { background: color-mix(in srgb, var(--accent-color) 78%, transparent); }
+    .lg-on .ratio-thumb {
+      background: color-mix(in srgb, var(--accent-color) 80%, transparent);
+      backdrop-filter: blur(6px) saturate(1.4);
+      -webkit-backdrop-filter: blur(6px) saturate(1.4);
+      box-shadow: inset 0 1px 3px rgba(255,255,255,.45), inset 0 -1px 3px rgba(0,0,0,.12), 0 3px 10px rgba(0,0,0,.18);
+      will-change: transform, left;
+    }
+    /* 查询结果 / 查询区：□ 现象说明（显眼内联提示，非弹窗） */
+    .results-note { margin: 10px 0 4px; padding: 8px 11px; font-size: 11.5px; line-height: 1.65; color: var(--seal-color); border: 1px dashed var(--seal-color); border-radius: 7px; }
+    .data-note { margin: 0 0 12px; padding: 7px 10px; font-size: 11px; line-height: 1.65; color: var(--seal-color); border: 1px dashed var(--seal-color); border-radius: 7px; text-align: left; }
     button:disabled:active { transform: none; }
     /* 顶部灯泡：使用指南入口 */
     .guide-toggle { position: absolute; top: 18px; left: 18px; width: 26px; height: 26px; background: transparent; border: 0; color: var(--text-color); cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; opacity: 0; pointer-events: none; transition: opacity .5s ease, transform .18s cubic-bezier(.34,1.56,.64,1); }
@@ -659,6 +680,7 @@
     <h1><img class="site-logo" src="assets/logo-yang.svg" alt="诗海"></h1>
     <div class="subtitle" id="libTip">在线诗词浏览器 · 收录 34 万余首古诗词</div>
     <div class="search-tip">三个条件框均可留空：全部留空将随机推荐一首，填写任意一项即按条件搜索</div>
+    <div class="data-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</div>
 
     <section class="controls">
       <div class="row">
@@ -702,6 +724,7 @@
           <button class="mini-btn" id="selModeExit" type="button" style="display:none">取消</button>
         </div>
       </div>
+      <div class="results-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</div>
       <div id="resultsList"></div>
       <div id="resultsFoot" class="results-foot"></div>
     </section>
@@ -800,6 +823,13 @@
       <div class="theme-options" data-group="direction">
         <button class="theme-opt active" data-value="horizontal">横排</button>
         <button class="theme-opt" data-value="vertical">竖排</button>
+      </div>
+    </div>
+    <div class="theme-section">
+      <div class="theme-label">特效</div>
+      <div class="theme-options" data-group="fx">
+        <button class="theme-opt active" data-value="on">液态玻璃</button>
+        <button class="theme-opt" data-value="off">关闭特效</button>
       </div>
     </div>
   </div>
@@ -1436,6 +1466,59 @@
         moveRatioThumb();
       });
     });
+    // 液态玻璃滑块：按住横向拖动选比例（苹果式拉伸；仅特效开启时生效，rAF 节流防卡顿）
+    let segDrag = null, segRaf = 0;
+    const ratioSeg = ratioThumb ? ratioThumb.parentElement : null;
+    if (ratioSeg) {
+      ratioSeg.addEventListener("pointerdown", (e) => {
+        if (!document.body.classList.contains("lg-on")) return;
+        if (currentTheme.direction === "vertical") return;
+        const idx = Array.from(document.querySelectorAll(".ratio-opt")).findIndex((b) => b.classList.contains("active"));
+        segDrag = { startX: e.clientX, x: e.clientX, idx: Math.max(0, idx), rect: ratioSeg.getBoundingClientRect(), moved: false, target: null };
+      });
+      window.addEventListener("pointermove", (e) => {
+        if (!segDrag) return;
+        segDrag.x = e.clientX;
+        if (segRaf) return;
+        segRaf = requestAnimationFrame(() => {
+          segRaf = 0;
+          const d = segDrag;
+          if (!d) return;
+          const rect = d.rect, itemW = rect.width / 4, pad = 2;
+          const base = d.idx * itemW + pad;
+          let target = base + (d.x - d.startX);
+          target = Math.max(pad, Math.min(rect.width - itemW - pad, target));
+          if (Math.abs(target - base) > 3) d.moved = true;
+          d.target = target;
+          const sx = 1 + Math.min(0.18, Math.abs(target - base) / rect.width);
+          ratioThumb.style.transition = "none";
+          ratioThumb.style.left = target.toFixed(1) + "px";
+          ratioThumb.style.transform = "scaleX(" + sx.toFixed(3) + ")";
+        });
+      });
+      const segEnd = () => {
+        if (!segDrag) return;
+        const d = segDrag;
+        segDrag = null;
+        if (segRaf) { cancelAnimationFrame(segRaf); segRaf = 0; }
+        ratioThumb.style.transition = "";
+        ratioThumb.style.transform = "";
+        if (!d.moved || d.target == null) { moveRatioThumb(); return; }
+        const itemW = d.rect.width / 4, pad = 2;
+        let idx = Math.round((d.target - pad) / itemW);
+        idx = Math.max(0, Math.min(3, idx));
+        const btns = document.querySelectorAll(".ratio-opt");
+        const btn = btns[idx];
+        if (btn && !btn.disabled && !btn.classList.contains("active")) {
+          haptic();
+          shareRatio = btn.dataset.ratio;
+          btns.forEach((b) => b.classList.toggle("active", b === btn));
+        }
+        moveRatioThumb();
+      };
+      window.addEventListener("pointerup", segEnd);
+      window.addEventListener("pointercancel", segEnd);
+    }
     // 竖排显示时强制使用自适应比例（按浏览器卡片实际宽高比）
     function syncRatioOptions() {
       const forceAuto = currentTheme.direction === "vertical";
@@ -2027,7 +2110,7 @@
       }
     };
 
-    let currentTheme = { color: "warm", layout: "centered", size: "large", direction: "horizontal" };
+    let currentTheme = { color: "warm", layout: "centered", size: "large", direction: "horizontal", fx: "on" };
     // 竖排默认紧凑排版；切回横排时恢复之前的选择
     let prevHorzTheme = null;
 
@@ -2052,6 +2135,8 @@
           btn.classList.toggle("active", btn.dataset.value === value);
         });
       });
+      // 液态玻璃特效开关（关闭后滑块拖动一并停用，恢复原样式）
+      document.body.classList.toggle("lg-on", currentTheme.fx !== "off");
       // 字号/方向变化后重新自适应
       requestAnimationFrame(fitCardText);
     }
@@ -2068,6 +2153,7 @@
           if (p.color && THEMES.color[p.color]) currentTheme.color = p.color;
           if (p.layout && THEMES.layout[p.layout]) currentTheme.layout = p.layout;
           if (p.direction === "vertical" || p.direction === "horizontal") currentTheme.direction = p.direction;
+          if (p.fx === "off") currentTheme.fx = "off";
           // 竖排分享图默认紧凑排版
           if (currentTheme.direction === "vertical") {
             currentTheme.layout = "compact";

@@ -1,4 +1,4 @@
-<view class="app" style="{{varsStyle}}" bindtap="onPageTap">
+<view class="app {{liquidGlass ? 'lg-on' : ''}}" style="{{varsStyle}}" bindtap="onPageTap">
   <!-- 顶部加载进度条 -->
   <view class="progress {{progressState}}"></view>
 
@@ -26,6 +26,7 @@
     </view>
     <view class="subtitle">在线诗词浏览器 · {{libTip}}</view>
     <view class="search-tip">三个条件框均可留空：全部留空将随机推荐一首，填写任意一项即按条件搜索</view>
+    <view class="data-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</view>
 
     <view class="controls">
       <view class="row">
@@ -89,8 +90,8 @@
           </button>
           <view class="ratio-row">
             <text class="ratio-label">卡片比例</text>
-            <view class="ratio-seg">
-              <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx)"></view>
+            <view id="cardSeg" class="ratio-seg" catchtouchstart="onSegTouchStart" catchtouchmove="onSegTouchMove" catchtouchend="onSegTouchEnd">
+              <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx); {{thumbDragTransform}}"></view>
               <view wx:for="{{ratioOptions}}" wx:key="value"
                 class="ratio-seg-item {{item.active ? 'active' : ''}} {{item.disabled ? 'disabled' : ''}}"
                 data-value="{{item.value}}" bindtap="onRatioTap">{{item.label}}</view>
@@ -120,6 +121,7 @@
           </block>
         </view>
       </view>
+      <view class="results-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</view>
       <view wx:for="{{resultsList}}" wx:key="id" class="result-item {{item.open ? 'open' : ''}}">
         <view class="result-head" data-index="{{index}}" bindtap="onResultItemTap">
           <view wx:if="{{selMode}}" class="chk {{selIds[item.id] ? 'on' : ''}}">✓</view>
@@ -136,8 +138,8 @@
           <view class="result-tools">
             <view class="ratio-row">
               <text class="ratio-label">卡片比例</text>
-              <view class="ratio-seg">
-                <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx)"></view>
+              <view id="listSeg" class="ratio-seg" catchtouchstart="onSegTouchStart" catchtouchmove="onSegTouchMove" catchtouchend="onSegTouchEnd">
+                <view class="ratio-thumb" style="left: calc({{ratioActiveIndex * 25}}% + 4rpx); {{thumbDragTransform}}"></view>
                 <view wx:for="{{ratioOptions}}" wx:for-item="r" wx:key="value"
                   class="ratio-seg-item {{r.active ? 'active' : ''}} {{r.disabled ? 'disabled' : ''}}"
                   data-value="{{r.value}}" bindtap="onRatioTap">{{r.label}}</view>
@@ -195,6 +197,13 @@
       <view class="theme-options">
         <view wx:for="{{directionOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
           data-group="direction" data-value="{{item.value}}" bindtap="onThemeOptTap">{{item.label}}</view>
+      </view>
+    </view>
+    <view class="theme-section">
+      <view class="theme-label">特效</view>
+      <view class="theme-options">
+        <view wx:for="{{fxOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
+          data-value="{{item.value}}" bindtap="onFxOptTap">{{item.label}}</view>
       </view>
     </view>
     <view class="panel-hint">点击页面空白处即可关闭</view>
