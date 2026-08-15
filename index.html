@@ -478,8 +478,7 @@
 
   <main class="page">
     <h1><img class="site-logo" src="assets/logo-yang.svg" alt="诗海"></h1>
-    <div class="subtitle">在线古诗词浏览器</div>
-    <div class="tip" id="libTip">共收录 34 万余首古诗词</div>
+    <div class="subtitle" id="libTip">在线古诗词浏览器 · 共收录 34 万余首古诗词</div>
 
     <section class="controls">
       <div class="row">
@@ -996,7 +995,8 @@
         const libTip = $("libTip");
         if (libTip && TOTAL) {
           libTip.textContent =
-            "共收录 " + Math.floor(TOTAL / 10000) + " 万余首古诗词";
+            "在线古诗词浏览器 · 共收录 " + Math.floor(TOTAL / 10000) +
+            " 万余首古诗词";
         }
         showStatus(
           "共收录 " + TOTAL.toLocaleString("zh-CN") + " 首诗词，点击下方按钮随机抽取"

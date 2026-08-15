@@ -22,8 +22,7 @@
     <view class="header">
       <image class="site-logo" src="/assets/logo-yang.png" mode="aspectFit"></image>
     </view>
-    <view class="subtitle">在线古诗词浏览器</view>
-    <view class="tip">{{libTip}}</view>
+    <view class="subtitle">在线古诗词浏览器 · {{libTip}}</view>
 
     <view class="controls">
       <view class="row">
