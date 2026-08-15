@@ -1401,18 +1401,33 @@
     });
 
     // ====== 网络字体（固定：思源宋体，jsDelivr 国内可访问） ======
-    const FONT_CSS_URLS = [
-      "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.css",
-      "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css"
+    // 主源 jsDelivr；加载失败自动切备用 CDN（unpkg，固定版本），都失败回退系统字体
+    const FONT_CSS_PAIRS = [
+      [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/400.css",
+        "https://unpkg.com/@fontsource/noto-serif-sc@5.3.0/400.css"
+      ],
+      [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/600.css",
+        "https://unpkg.com/@fontsource/noto-serif-sc@5.3.0/600.css"
+      ]
     ];
 
     function ensureFonts() {
-      for (const url of FONT_CSS_URLS) {
-        if (document.querySelector('link[data-fontcss="' + url + '"]')) continue;
+      for (const [primary, mirror] of FONT_CSS_PAIRS) {
+        if (document.querySelector('link[data-fontcss="' + primary + '"]')) continue;
         const link = document.createElement("link");
         link.rel = "stylesheet";
-        link.href = url;
-        link.dataset.fontcss = url;
+        link.href = primary;
+        link.dataset.fontcss = primary;
+        link.onerror = () => {
+          link.remove();
+          const fb = document.createElement("link");
+          fb.rel = "stylesheet";
+          fb.href = mirror;
+          fb.dataset.fontcss = primary;
+          document.head.appendChild(fb);
+        };
         document.head.appendChild(link);
       }
     }
@@ -1635,19 +1650,19 @@
       layout: {
         centered: {
           vars: {
-            "--max-width": "none", "--page-padding": "48px 16px",
+            "--max-width": "900px", "--page-padding": "48px 16px",
             "--card-padding": "42px 25px"
           }
         },
         wide: {
           vars: {
-            "--max-width": "none", "--page-padding": "48px 16px",
+            "--max-width": "1200px", "--page-padding": "48px 16px",
             "--card-padding": "42px 25px"
           }
         },
         compact: {
           vars: {
-            "--max-width": "none", "--page-padding": "32px 16px",
+            "--max-width": "700px", "--page-padding": "32px 16px",
             "--card-padding": "30px 25px"
           }
         }

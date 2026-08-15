@@ -19,7 +19,15 @@ function fetchCloudJson(relPath) {
         if (r.code === 200) resolve(r.data);
         else reject(new Error("云函数返回错误：" + (r.code || "unknown")));
       },
-      fail: (err) => reject(new Error((err && err.errMsg) || "云函数调用失败"))
+      fail: (err) => {
+        const msg = (err && err.errMsg) || "";
+        // -601002：当前 appid 未获云环境授权（常见于多端应用/换 appid 后）
+        if (msg.indexOf("-601002") >= 0) {
+          reject(new Error("云环境未授权当前小程序：请在云开发控制台「设置-环境」为当前 AppID 开通权限"));
+        } else {
+          reject(new Error(msg || "云函数调用失败"));
+        }
+      }
     });
   });
 }
