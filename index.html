@@ -2735,20 +2735,23 @@
       let added = 0;
       try {
         while (added < 20 && resultCursor < resultChunks.length) {
-          // 并行拉取 5 个数据块，明显提速
+          // 并行拉取 6 个数据块；每块加载完成立即上屏命中项（命中一个弹出一个）
           const batch = resultChunks.slice(resultCursor, resultCursor + 6);
           resultCursor += batch.length;
-          const lists = await Promise.all(batch.map((c) => loadChunk(c.file)));
-          await new Promise((r) => setTimeout(r, 0)); // 让出渲染：搜到即显示
           const listEl = $("resultsList");
-          lists.forEach((poems) => {
-            poems.filter((p) => matchKw(p, kw, type, mode)).forEach((p) => {
+          await Promise.all(batch.map(async (c) => {
+            const poems = await loadChunk(c.file);
+            const hits = poems.filter((p) => matchKw(p, kw, type, mode));
+            if (!hits.length) return;
+            await new Promise((r) => setTimeout(r, 0)); // 让出渲染
+            hits.forEach((p) => {
               const withId = { ...p, id: favId(p) };
               results.push(withId);
               listEl.appendChild(makeResultItem(withId));
               added += 1;
             });
-          });
+            if (pg) pg.textContent = "正在检索：" + Math.min(resultCursor, resultChunks.length) + " / " + resultChunks.length + " 个数据块 · 已命中 " + results.length + " 首";
+          }));
           if (pg) pg.textContent = "正在检索：" + Math.min(resultCursor, resultChunks.length) + " / " + resultChunks.length + " 个数据块 · 已命中 " + results.length + " 首";
         }
         resultsDone = resultCursor >= resultChunks.length;
