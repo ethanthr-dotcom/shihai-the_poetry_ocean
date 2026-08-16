@@ -1,4 +1,12 @@
-# 🌊 诗海 · The Poetry Ocean
+
+<h1 align="center">
+🌊 诗海 · The Poetry Ocean
+</h1>
+
+<p align="center">
+[简体中文](README.md) | [English](README_EN.md)
+
+![Language](https://img.shields.io/badge/language-Chinese%20%7C%20English-blue)![License](https://img.shields.io/github/license/ethanthr-dotcom/shihai-the_poetry_ocean)
 
 ![License](https://img.shields.io/github/license/ethanthr-dotcom/shihai-the_poetry_ocean)
 
