@@ -202,20 +202,25 @@ Page({
     this.haptic();
     try { wx.setStorageSync("shihai-disclaimer-v1", "1"); } catch (e) {}
     clearTimeout(this.splashTimer);
-    this.setData({ disclaimerShow: false, splashShow: false, uiReady: true });
+    this.setData({ uiReady: true });
+    this.hideSheet("disclaimerShow");
+    this.hideSheet("splashShow");
   },
 
   // ====== 开屏动画（与网页版一致：3.2s 自动消失，点击可跳过） ======
   startSplash() {
     const hide = () => {
       if (!this.data.splashShow) return;
-      this.setData({ splashShow: false, uiReady: true });
+      this.setData({ uiReady: true });
+    this.hideSheet("splashShow");
     };
     this.splashTimer = setTimeout(hide, 3200);
   },
   onTapSplash() {
+    this.haptic();
     clearTimeout(this.splashTimer);
-    this.setData({ splashShow: false, uiReady: true });
+    this.setData({ uiReady: true });
+    this.hideSheet("splashShow");
   },
 
   // ====== 顶部进度条 ======
@@ -293,7 +298,7 @@ Page({
   // ====== 体裁选择器（数据库全部体裁，按常见度排序，支持搜索） ======
   onTypeFieldTap() {
     this.haptic();
-    if (this.data.typeDropdownShow) { this.setData({ typeDropdownShow: false }); return; }
+    if (this.data.typeDropdownShow) { this.hideSheet("typeDropdownShow"); return; }
     if (!this.indexReady) { this.showStatus("诗词库尚未加载完成，请稍候……"); return; }
     if (!this.data.typeOptions.length) {
       data.ensureFullIndex().then(() => {
@@ -317,8 +322,9 @@ Page({
   onTypeOptTap(e) {
     const v = e.currentTarget.dataset.value;
     this.haptic();
-    if (v === "无") { this.setData({ type: "", typeDropdownShow: false }); return; }
-    this.setData({ type: v === this.data.type ? "" : v, typeDropdownShow: false });
+    if (v === "无") { this.setData({ type: "" }); this.hideSheet("typeDropdownShow"); return; }
+    this.setData({ type: v === this.data.type ? "" : v });
+    this.hideSheet("typeDropdownShow");
   },
 
   // ====== 收藏（本地缓存） ======
@@ -415,8 +421,7 @@ Page({
       noteRatio: r,
       noteRatioIndex: RATIO_OPTIONS.findIndex((o) => o.value === r),
       noteRatioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === r })),
-      themePanelOpen: false,
-      typeDropdownShow: false
+      themePanelOpen: false
     });
   },
   onCardNoteTap() {
@@ -443,7 +448,7 @@ Page({
       noteRatioOptions: this.data.noteRatioOptions.map((o) => ({ ...o, active: o.value === value }))
     });
   },
-  onNoteEditClose() { this.setData({ noteEditShow: false }); },
+  onNoteEditClose() { this.hideSheet("noteEditShow"); },
   onNoteRemove() {
     const poem = this._noteEditPoem;
     if (!poem) return;
@@ -452,7 +457,7 @@ Page({
     this._notes = this._notes.filter((n) => n.id !== id);
     this._noteMap.delete(id);
     this.saveNotes();
-    this.setData({ noteEditShow: false });
+    this.hideSheet("noteEditShow");
     if (this.currentPoem && (this.currentPoem.id || favId(this.currentPoem)) === id) this.setData({ currentNote: false });
     this._syncResultsNote();
     wx.showToast({ title: "批注已删除", icon: "none" });
@@ -472,7 +477,7 @@ Page({
       this._noteMap.set(id, rec);
     }
     this.saveNotes();
-    this.setData({ noteEditShow: false });
+    this.hideSheet("noteEditShow");
     if (this.currentPoem && (this.currentPoem.id || favId(this.currentPoem)) === id) this.setData({ currentNote: true });
     this._syncResultsNote();
     // 提醒总开关关闭：只保存并告知查看位置
@@ -483,14 +488,14 @@ Page({
     this._noteAskId = id;
     this.setData({ noteAskShow: true, noteAskRemember: false });
   },
-  onNoteAskRememberToggle() { this.setData({ noteAskRemember: !this.data.noteAskRemember }); },
+  onNoteAskRememberToggle() { this.haptic(); this.setData({ noteAskRemember: !this.data.noteAskRemember }); },
   _noteAskFinish(action) {
     if (this.data.noteAskRemember) {
       this._noteAskMode = action;
       try { wx.setStorageSync(NOTE_ASK_KEY, action); } catch (e) {}
     }
     const id = this._noteAskId;
-    this.setData({ noteAskShow: false });
+    this.hideSheet("noteAskShow");
     if (action === "yes") this.openNoteRatioSheet(id);
     else wx.showToast({ title: "批注已保存 · 右上角批注本可查看", icon: "none", duration: 2200 });
   },
@@ -498,7 +503,7 @@ Page({
   onNoteAskNo() { this.haptic(); this._noteAskFinish("no"); },
   onNoteToggle() {
     this.haptic();
-    if (this.data.noteSheetShow) { this.setData({ noteSheetShow: false }); return; }
+    if (this.data.noteSheetShow) { this.hideSheet("noteSheetShow"); return; }
     this.openNoteSheet();
   },
   openNoteSheet() {
@@ -506,17 +511,17 @@ Page({
       noteSheetShow: true,
       noteListData: this._notes.map((n) => ({ ...n, date: this._noteDate(n.ts) })),
       noteSelMode: false, noteSelIds: {}, noteSelCount: 0,
-      themePanelOpen: false, typeDropdownShow: false
+      themePanelOpen: false
     });
   },
-  onNoteSheetClose() { this.setData({ noteSheetShow: false }); },
+  onNoteSheetClose() { this.hideSheet("noteSheetShow"); },
   onNoteItemTap(e) {
     if (this.data.noteSelMode) { this.onNoteSelToggle(e); return; }
     const idx = e.currentTarget.dataset.index;
     const rec = this._notes[idx];
     if (!rec) return;
     this.haptic();
-    this.setData({ noteSheetShow: false });
+    this.hideSheet("noteSheetShow");
     this.openNoteEditor(rec);
   },
   onNoteItemCard(e) {
@@ -524,7 +529,7 @@ Page({
     const rec = this._notes[idx];
     if (!rec) return;
     this.haptic();
-    this.setData({ noteSheetShow: false });
+    this.hideSheet("noteSheetShow");
     this.openNoteRatioSheet(rec.id);
   },
   // 生成批注卡片前选择比例（编辑器内不再选比例）
@@ -538,11 +543,11 @@ Page({
       noteRatioOptions: RATIO_OPTIONS.map((o) => ({ ...o, active: o.value === r }))
     });
   },
-  onNoteRatioClose() { this.setData({ noteRatioShow: false }); },
+  onNoteRatioClose() { this.hideSheet("noteRatioShow"); },
   onNoteRatioConfirm() {
     this.haptic();
     const id = this._noteRatioId;
-    this.setData({ noteRatioShow: false });
+    this.hideSheet("noteRatioShow");
     this.generateNoteShare(id);
   },
   onNoteManage() {
@@ -568,6 +573,7 @@ Page({
     this.setData({ noteSelIds: selIds, noteSelCount: Object.keys(selIds).length });
   },
   onNoteDelete() {
+    this.haptic();
     const ids = this.data.noteSelIds;
     const targets = this._notes.filter((n) => ids[n.id]);
     if (!targets.length) return;
@@ -676,13 +682,14 @@ Page({
     this.setData({ guideShow: true });
   },
   onGuideClose() {
-    this.setData({ guideShow: false });
+    this.haptic();
+    this.hideSheet("guideShow");
   },
 
   // ====== 收藏夹面板（设置图标旁入口；批量管理/删除） ======
   onFavToggle() {
     this.haptic();
-    if (this.data.favSheetShow) { this.setData({ favSheetShow: false }); return; }
+    if (this.data.favSheetShow) { this.hideSheet("favSheetShow"); return; }
     this.openFavSheet();
   },
   openFavSheet() {
@@ -690,17 +697,18 @@ Page({
       favSheetShow: true,
       favList: this._favs.map((p) => ({ ...p })),
       favSelMode: false, favSelIds: {}, favSelCount: 0,
-      themePanelOpen: false, typeDropdownShow: false
+      themePanelOpen: false
     });
   },
-  onFavSheetClose() { this.setData({ favSheetShow: false }); },
+  onFavSheetClose() { this.hideSheet("favSheetShow"); },
   onFavItemTap(e) {
     if (this.data.favSelMode) { this.onFavSelToggle(e); return; }
     const idx = e.currentTarget.dataset.index;
     const poem = this._favs[idx];
     if (!poem) return;
     this.haptic();
-    this.setData({ favSheetShow: false, listMode: false });
+    this.setData({ listMode: false });
+    this.hideSheet("favSheetShow");
     poem.id = poem.id || favId(poem);
     this.renderPoem(poem);
     setTimeout(() => wx.pageScrollTo({ selector: ".card", duration: 300 }), 80);
@@ -728,6 +736,7 @@ Page({
     this.setData({ favSelIds: selIds, favSelCount: Object.keys(selIds).length });
   },
   onFavDelete() {
+    this.haptic();
     const ids = this.data.favSelIds;
     const targets = this._favs.filter((p) => ids[p.id]);
     if (!targets.length) return;
@@ -1060,8 +1069,8 @@ Page({
   onPageTap() {
     const patch = {};
     if (this.data.themePanelOpen) patch.themePanelOpen = false;
-    if (this.data.typeDropdownShow) patch.typeDropdownShow = false;
     if (Object.keys(patch).length) this.setData(patch);
+    if (this.data.typeDropdownShow) this.hideSheet("typeDropdownShow");
   },
   // ====== 开发者入口：长按设置齿轮 5s ======
   onGearTouchStart(e) {
@@ -1174,11 +1183,12 @@ Page({
   onDevReshowDisclaimer() {
     this.haptic();
     clearInterval(this._devInterval);
-    this.setData({ devShow: false, disclaimerShow: true });
+    this.hideSheet("devShow");
+    this.setData({ disclaimerShow: true });
   },
   onDevClose() {
     clearInterval(this._devInterval);
-    this.setData({ devShow: false });
+    this.hideSheet("devShow");
   },
   noop() {},
   onThemeOptTap(e) {
@@ -1319,13 +1329,23 @@ Page({
   },
 
   // 轻触感震动反馈：medium 档位（短促有力的一下），不支持 type 的设备退回默认 vibrateShort
+  // 浮层关闭退场动画：立即翻转显示标志（逻辑不阻塞），240ms 后卸载节点
+  hideSheet(key) {
+    if (!this.data[key]) return;
+    const closing = key + "Closing";
+    this.setData({ [key]: false, [closing]: true });
+    this._sheetCloseTimers = this._sheetCloseTimers || {};
+    clearTimeout(this._sheetCloseTimers[key]);
+    this._sheetCloseTimers[key] = setTimeout(() => this.setData({ [closing]: false }), 240);
+  },
+
   haptic() {
     wx.vibrateShort({ type: "medium", fail: () => wx.vibrateShort({ fail: () => {} }) });
   },
 
   // 关闭分享浮层
   closeShareSheet() {
-    this.setData({ shareSheetShow: false });
+    this.hideSheet("shareSheetShow");
   },
 
   // 点预览图 → 全屏预览

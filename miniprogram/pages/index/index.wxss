@@ -373,6 +373,15 @@
 .dev-k { font-size: 26rpx; color: var(--meta-color); flex-shrink: 0; }
 .dev-v { font-size: 26rpx; color: var(--text-color); text-align: right; word-break: break-all; }
 .dev-btn { margin-top: 16rpx; }
+
+/* ====== 浮层关闭退场动画（遮罩淡出 + 盒子下滑） ====== */
+.sheet-closing.picker-mask, .sheet-closing.share-mask, .sheet-closing.dev-mask, .sheet-closing.disclaimer { animation: maskOut .22s ease-in forwards; }
+.sheet-closing .guide-box, .sheet-closing .fav-sheet, .sheet-closing .note-edit-box, .sheet-closing .note-ask-box, .sheet-closing .share-sheet, .sheet-closing .dev-sheet, .sheet-closing .disclaimer-sheet { animation: sheetDrop .22s ease-in forwards; }
+.sheet-closing.type-panel { animation: dropOut .18s ease-in forwards; }
+.splash.sheet-closing { animation: maskOut .35s ease-in forwards; }
+@keyframes maskOut { to { opacity: 0; } }
+@keyframes sheetDrop { to { transform: translateY(60rpx); opacity: 0; } }
+@keyframes dropOut { to { transform: translateY(-12rpx); opacity: 0; } }
 /* ====== 分享浮层：底部滑出，预览图上浮出面板，圆角带阴影 ====== */
 .share-mask { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 300; display: flex; align-items: flex-end; }
 .share-sheet { width: 100%; background: var(--sheet-bg, var(--card-bg)); border-top: 2rpx solid var(--card-border); border-radius: 36rpx 36rpx 0 0; padding: 0 48rpx calc(24rpx + env(safe-area-inset-bottom)); animation: sheetUp .28s ease-out; }

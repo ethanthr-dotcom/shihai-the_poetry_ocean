@@ -9,7 +9,7 @@
   </view>
 
   <!-- 开屏动画（与网页版一致：2.6s 自动消失，点击可跳过） -->
-  <view wx:if="{{splashShow}}" class="splash" catchtap="onTapSplash">
+  <view wx:if="{{splashShow || splashShowClosing}}" class="splash {{splashShowClosing ? ' sheet-closing' : ''}}" catchtap="onTapSplash">
     <view class="splash-box">
       <image class="splash-logo" src="/assets/logo-yang.png" mode="aspectFit"></image>
       <view class="splash-rule"></view>
@@ -48,7 +48,7 @@
         </view>
       </view>
       <!-- 体裁选择面板：整行内联展开（推挤布局，任何机型都稳定显示） -->
-      <view wx:if="{{typeDropdownShow}}" class="type-panel" catchtap="noop" catchtouchmove="noop">
+      <view wx:if="{{typeDropdownShow || typeDropdownShowClosing}}" class="type-panel {{typeDropdownShowClosing ? ' sheet-closing' : ''}}" catchtap="noop" catchtouchmove="noop">
         <input class="input dd-search" placeholder="搜索体裁，如：绝句" placeholder-class="ph" value="{{typeQuery}}" bindinput="onTypeQuery" />
         <scroll-view class="dd-list" scroll-y>
           <view class="type-grid">
@@ -215,7 +215,7 @@
   </view>
 
   <!-- 首次使用提示（确认一次后不再显示） -->
-  <view wx:if="{{disclaimerShow}}" class="disclaimer" catchtap="noop" catchtouchmove="noop">
+  <view wx:if="{{disclaimerShow || disclaimerShowClosing}}" class="disclaimer {{disclaimerShowClosing ? ' sheet-closing' : ''}}" catchtap="noop" catchtouchmove="noop">
     <view class="disclaimer-sheet">
       <image class="disclaimer-seal" src="/assets/logo-yin.png" mode="aspectFit"></image>
       <view class="disclaimer-title">使用提示</view>
@@ -227,7 +227,7 @@
   </view>
 
   <!-- 开发者面板：长按设置齿轮 5s 呼出 -->
-  <view wx:if="{{devShow}}" class="dev-mask" catchtap="noop" catchtouchmove="noop">
+  <view wx:if="{{devShow || devShowClosing}}" class="dev-mask {{devShowClosing ? ' sheet-closing' : ''}}" catchtap="noop" catchtouchmove="noop">
     <view class="dev-sheet" catchtap="noop">
       <view class="dev-title">🛠 开发者面板</view>
       <scroll-view scroll-y class="dev-list">
@@ -247,7 +247,7 @@
 
   <!-- 收藏夹抽屉：批量管理/删除；收藏仅存本机缓存 -->
   <!-- 使用指南（顶部灯泡图标呼出） -->
-  <view wx:if="{{guideShow}}" class="picker-mask" catchtouchmove="noop" bindtap="onGuideClose">
+  <view wx:if="{{guideShow || guideShowClosing}}" class="picker-mask {{guideShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onGuideClose">
     <view class="guide-box" catchtap="noop">
       <view class="sheet-head">使用指南</view>
       <view class="guide-list">
@@ -265,7 +265,7 @@
       <button class="btn primary guide-ok" bindtap="onGuideClose">我知道了</button>
     </view>
   </view>
-  <view wx:if="{{favSheetShow}}" class="picker-mask" catchtouchmove="noop" bindtap="onFavSheetClose">
+  <view wx:if="{{favSheetShow || favSheetShowClosing}}" class="picker-mask {{favSheetShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onFavSheetClose">
     <view class="fav-sheet" catchtap="noop">
       <view class="sheet-head">收藏夹<text class="results-count"> · {{favList.length}} 首</text></view>
       <view class="fav-tip">★ 收藏仅保存在本机本地缓存（相当于浏览器 cookie），清除缓存或卸载小程序后会丢失</view>
@@ -291,7 +291,7 @@
   </view>
 
   <!-- 批注编辑器（纸笔图标；批注卡片比例四档可选） -->
-  <view wx:if="{{noteEditShow}}" class="picker-mask" catchtouchmove="noop" bindtap="onNoteEditClose">
+  <view wx:if="{{noteEditShow || noteEditShowClosing}}" class="picker-mask {{noteEditShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onNoteEditClose">
     <view class="note-edit-box" catchtap="noop">
       <view class="sheet-head">{{noteEditTitle}}</view>
       <view class="note-edit-meta">{{noteEditMeta}}</view>
@@ -306,7 +306,7 @@
   </view>
 
   <!-- 批注本：批量管理 / 生成卡片 -->
-  <view wx:if="{{noteSheetShow}}" class="picker-mask" catchtouchmove="noop" bindtap="onNoteSheetClose">
+  <view wx:if="{{noteSheetShow || noteSheetShowClosing}}" class="picker-mask {{noteSheetShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onNoteSheetClose">
     <view class="fav-sheet" catchtap="noop">
       <view class="sheet-head">批注本<text class="results-count"> · {{noteListData.length}} 条</text></view>
       <view class="fav-tip">✎ 批注仅保存在本机本地缓存（相当于 cookie），清除缓存或卸载小程序后会丢失</view>
@@ -332,7 +332,7 @@
   </view>
 
   <!-- 保存批注后：询问是否生成卡片（可勾选「不再询问」） -->
-  <view wx:if="{{noteAskShow}}" class="picker-mask" catchtouchmove="noop" bindtap="onNoteAskNo">
+  <view wx:if="{{noteAskShow || noteAskShowClosing}}" class="picker-mask {{noteAskShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onNoteAskNo">
     <view class="note-ask-box" catchtap="noop">
       <view class="sheet-head">生成批注卡片？</view>
       <view class="note-ask-tip">批注已保存。可将批注与诗词同框生成分享卡片（批注大、诗词小），便于保存与转发。勾选「记住选择」后不再询问；也可在设置 →「批注卡片提醒」中选择关闭。</view>
@@ -348,7 +348,7 @@
   </view>
 
   <!-- 生成批注卡片前：选择比例（编辑器内不再选比例） -->
-  <view wx:if="{{noteRatioShow}}" class="picker-mask" catchtouchmove="noop" bindtap="onNoteRatioClose">
+  <view wx:if="{{noteRatioShow || noteRatioShowClosing}}" class="picker-mask {{noteRatioShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onNoteRatioClose">
     <view class="note-ask-box" catchtap="noop">
       <view class="sheet-head">选择卡片比例</view>
       <view wx:if="{{noteRatioAuto}}" class="note-ask-tip">已按你的设置，保存批注后自动生成卡片；如需调整，可在设置 →「批注卡片提醒」中修改。</view>
@@ -366,7 +366,7 @@
   </view>
 
   <!-- 分享浮层：生成图上浮预览（圆角），下方三选项 -->
-  <view wx:if="{{shareSheetShow}}" class="share-mask" bindtap="closeShareSheet">
+  <view wx:if="{{shareSheetShow || shareSheetShowClosing}}" class="share-mask {{shareSheetShowClosing ? ' sheet-closing' : ''}}" bindtap="closeShareSheet">
     <view class="share-sheet" catchtap="noop">
       <image class="share-preview" src="{{shareImg}}" mode="widthFix" bindtap="previewShareImg" />
       <view class="share-actions">
