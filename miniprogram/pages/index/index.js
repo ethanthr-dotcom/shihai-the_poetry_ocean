@@ -70,7 +70,6 @@ Page({
     sgStyleClosed: false,
     sgOptsClosed: false,
     favQuery: "",
-    readProg: 0,
     optPreview: true,
     optShake: false,
     optBrief: false,
@@ -213,18 +212,6 @@ Page({
 
   onResize() {
     this.fitBtnLabels();
-  },
-
-  // 顶部阅读进度条（节流测量页面高度）
-  onPageScroll(e) {
-    const now = Date.now();
-    if (this._progTs && now - this._progTs < 150) return;
-    this._progTs = now;
-    wx.createSelectorQuery().select(".app").boundingClientRect((r) => {
-      const winH = this._winH || wx.getSystemInfoSync().windowHeight;
-      const max = (r ? r.height : 0) - winH;
-      this.setData({ readProg: max > 0 ? Math.round(Math.min(100, (e.scrollTop / max) * 100)) : 0 });
-    }).exec();
   },
 
   // 按钮标签自适应换行：太窄时拆行，硬性保证每行不少于两个字
@@ -1514,13 +1501,6 @@ Page({
     this.haptic();
     this.setData({ keyword: a });
     this.openResults(a, "");
-  },
-  onCopyPoemTap() {
-    const p = this.currentPoem;
-    if (!p) return;
-    this.haptic();
-    const text = "《" + (p.t || "无题") + "》 " + [p.d, p.a].filter(Boolean).join(" · ") + "\n" + (p.c || "");
-    wx.setClipboardData({ data: text, success: () => wx.showToast({ title: "已复制全诗", icon: "none" }) });
   },
   _startShake() {
     if (this._shakeOn) return;

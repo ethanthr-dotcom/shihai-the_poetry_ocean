@@ -1,7 +1,6 @@
 <view class="app" style="{{varsStyle}}" bindtap="onPageTap" bindtouchstart="onRippleTouch">
   <!-- 顶部加载进度条 -->
   <view class="progress {{progressState}}"></view>
-  <view class="reading-progress" style="width: {{readProg}}%"></view>
   <view wx:if="{{ripple}}" class="ink-ripple" style="left:{{ripple.x}}px;top:{{ripple.y}}px"></view>
 
   <!-- 点缀：山峦（CSS clip-path 简化版，跟随主题色） -->
@@ -27,15 +26,14 @@
       <image class="site-logo" src="/assets/logo-yang.png" mode="aspectFit"></image>
     </view>
     <view class="subtitle">在线诗词浏览器 · {{libTip}}</view>
-    <view class="search-tip">留空即随机推荐 · 自动识别或指定 作者 / 朝代 / 标题（模糊）搜索</view>
     <view class="data-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</view>
 
     <view class="controls">
       <view class="row">
         <view class="field">
-          <view class="label">搜索</view>
+          <view class="label">搜索<text class="label-tip">留空即随机推荐 · 作者 / 朝代 / 标题（模糊）</text></view>
           <view class="input-wrap">
-            <input class="input" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜" placeholder-class="ph" value="{{keyword}}" bindinput="onKeywordInput" />
+            <input class="input" placeholder-class="ph" value="{{keyword}}" bindinput="onKeywordInput" />
             <text wx:if="{{kwStateText}}" class="kw-state {{kwStateMuted ? 'muted' : ''}}">{{kwStateText}}</text>
           </view>
           <view class="mode-seg">
@@ -101,7 +99,6 @@
         <view class="card-tools">
           <view class="card-sub-tools">
             <view wx:if="{{poem.pa}}" class="sub-tool" hover-class="sub-tool-hover" bindtap="onMetaAuthorTap">同作者再来一首 · {{poem.pa}}</view>
-            <view class="sub-tool" hover-class="sub-tool-hover" bindtap="onCopyPoemTap">复制全诗</view>
           </view>
           <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">
             <block wx:if="{{shareLoading}}">生成中……</block>
@@ -226,7 +223,7 @@
       <view class="theme-label">配色</view>
       <view class="theme-options">
         <view wx:for="{{colorOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
-          data-group="color" data-value="{{item.value}}" bindtap="onThemeOptTap"><view wx:if="{{optPreview && item.dot}}" class="opt-dot" style="background:{{item.dot}}"></view>{{item.label}}</view>
+          data-group="color" data-value="{{item.value}}" bindtap="onThemeOptTap">{{item.label}}</view>
       </view>
     </view>
     <view class="theme-section">
@@ -241,45 +238,11 @@
     <view class="settings-group">
       <view class="settings-group-h" bindtap="onSgOptsToggle">体验开关<text class="settings-caret {{sgOptsClosed ? 'closed' : ''}}">▾</text></view>
       <view wx:if="{{!sgOptsClosed}}" class="settings-body">
-    <view class="settings-row">
     <view class="theme-section">
       <view class="theme-label">批注卡片提醒</view>
       <view class="theme-options">
         <view class="theme-opt {{notePromptOn ? 'active' : ''}}" data-value="on" bindtap="onNotePromptTap">开</view>
         <view class="theme-opt {{notePromptOn ? '' : 'active'}}" data-value="off" bindtap="onNotePromptTap">关</view>
-      </view>
-    </view>
-    <view class="theme-section">
-      <view class="theme-label">主题小预览</view>
-      <view class="theme-options">
-        <view class="theme-opt {{optPreview ? 'active' : ''}}" data-key="preview" data-value="on" bindtap="onOptToggle">开</view>
-        <view class="theme-opt {{optPreview ? '' : 'active'}}" data-key="preview" data-value="off" bindtap="onOptToggle">关</view>
-      </view>
-    </view>
-    </view>
-    <view class="settings-row">
-    <view class="theme-section">
-      <view class="theme-label">摇一摇抽诗</view>
-      <view class="theme-options">
-        <view class="theme-opt {{optShake ? 'active' : ''}}" data-key="shake" data-value="on" bindtap="onOptToggle">开</view>
-        <view class="theme-opt {{optShake ? '' : 'active'}}" data-key="shake" data-value="off" bindtap="onOptToggle">关</view>
-      </view>
-    </view>
-    <view class="theme-section">
-      <view class="theme-label">名句速览</view>
-      <view class="theme-options">
-        <view class="theme-opt {{optBrief ? 'active' : ''}}" data-key="brief" data-value="on" bindtap="onOptToggle">开</view>
-        <view class="theme-opt {{optBrief ? '' : 'active'}}" data-key="brief" data-value="off" bindtap="onOptToggle">关</view>
-      </view>
-    </view>
-    </view>
-    <view class="theme-section">
-      <view class="theme-label">搜索方式</view>
-      <view class="theme-options">
-        <view class="theme-opt {{searchMode === 'auto' ? 'active' : ''}}" data-mode="auto" bindtap="onSearchModeTap">智能识别</view>
-        <view class="theme-opt {{searchMode === 'author' ? 'active' : ''}}" data-mode="author" bindtap="onSearchModeTap">按作者</view>
-        <view class="theme-opt {{searchMode === 'dynasty' ? 'active' : ''}}" data-mode="dynasty" bindtap="onSearchModeTap">按朝代</view>
-        <view class="theme-opt {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
       </view>
     </view>
     <view class="theme-section">
@@ -332,7 +295,7 @@
       <view class="sheet-head">使用指南</view>
       <view class="guide-stats">{{statsLine}}</view>
       <view class="guide-list">
-        <view class="guide-item"><text class="guide-k">精致体验</text>设置可开启<text class="guide-b">摇一摇抽诗</text>与<text class="guide-b">名句速览</text>；卡片下方可<text class="guide-b">复制全诗</text>、<text class="guide-b">同作者再来一首</text>；点作者名<text class="guide-b">搜全部同作者诗词</text>。</view>
+        <view class="guide-item"><text class="guide-k">精致体验</text>卡片下方可<text class="guide-b">同作者再来一首</text>；点作者名<text class="guide-b">搜全部同作者诗词</text>。</view>
         <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「与诗相逢」<text class="guide-b">随机推荐一首</text>。</view>
         <view class="guide-item"><text class="guide-k">手势</text>在诗词卡片上<text class="guide-b">左右轻滑</text>换一首随机诗；<text class="guide-b">双击卡片</text>快速收藏；<text class="guide-b">长按诗句</text>即可复制该句。</view>
         <view class="guide-item"><text class="guide-k">足迹</text>顶栏时钟图标查看<text class="guide-b">最近读过</text>；收藏夹支持一键<text class="guide-b">导出</text>。</view>

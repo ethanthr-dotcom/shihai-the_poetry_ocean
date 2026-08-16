@@ -125,6 +125,7 @@
       color: var(--label-color);
       margin-bottom: 6px;
     }
+    .label-tip { font-size: 11px; opacity: .62; margin-left: 8px; letter-spacing: .5px; }
     input {
       width: 100%;
       padding: 10px 12px;
@@ -248,6 +249,8 @@
     }
     .content {
       margin: 0 auto;
+      user-select: text;
+      -webkit-user-select: text;
       font-family: var(--font-content);
       font-size: var(--content-font-size);
       line-height: 2;
@@ -332,7 +335,7 @@
     /* 体裁下拉菜单 */
     .type-caret { margin-left: auto; opacity: .5; font-size: 12px; transition: transform .2s; }
     .type-caret.up { transform: rotate(180deg); }
-    .type-panel { margin-top: 10px; border: 1px solid var(--card-border); background: var(--bg-color); border-radius: 14px; padding: 12px; display: none; text-align: left; }
+    .type-panel { margin-top: 10px; margin-bottom: 14px; border: 1px solid var(--card-border); background: var(--bg-color); border-radius: 14px; padding: 12px; display: none; text-align: left; }
     .type-panel.open { display: block; }
     .type-panel .sheet-search { margin-bottom: 10px; }
     .dd-list { max-height: 38vh; overflow-y: auto; }
@@ -361,8 +364,7 @@
     .mini-btn.accent { border-color: var(--accent-color); color: var(--accent-color); }
     .mini-btn.danger { border-color: var(--seal-color, #a3382f); color: var(--seal-color, #a3382f); }
     .mini-btn.solid { background: var(--button-bg, #8b2c2c); border-color: var(--button-bg, #8b2c2c); color: var(--button-text, #fff); opacity: 1; }
-    .search-tip { font-size: 11px; opacity: .6; text-align: center; margin: 4px 0 6px; line-height: 1.7; }
-    .input-wrap { position: relative; }
+        .input-wrap { position: relative; }
     .input-wrap input { padding-right: 100px; }
     .kw-state { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 11px; letter-spacing: 1px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--accent-color); color: var(--accent-color); background: color-mix(in srgb, var(--accent-color) 9%, transparent); white-space: nowrap; pointer-events: none; }
     .kw-state.muted { border-color: var(--input-border); color: var(--meta-color); background: transparent; }
@@ -706,8 +708,7 @@
     .ink-ripple { position: fixed; z-index: 400; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, color-mix(in srgb, var(--seal-color) 28%, transparent) 0%, transparent 70%); opacity: .85; animation: inkRipple .65s ease-out forwards; }
     @keyframes inkRipple { to { transform: scale(10); opacity: 0; } }
     .card { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23p)'/%3E%3C/svg%3E"); }
-    .reading-progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--seal-color); opacity: .8; z-index: 350; pointer-events: none; }
-
+    
     .meta-link { cursor: pointer; border-bottom: 1px dashed currentColor; }
     .brief-quote .verse-line { font-size: 1.12em; }
     .brief-more { margin-top: 16px; font-size: 13px; }
@@ -789,19 +790,17 @@
     </div>
   </div>
 
-  <div id="readingProgress" class="reading-progress"></div>
   <main class="page">
     <h1><img class="site-logo" src="assets/logo-yang.svg" alt="诗海"></h1>
     <div class="subtitle" id="libTip">在线诗词浏览器 · 收录 34 万余首古诗词</div>
-    <div class="search-tip">留空即随机推荐 · 自动识别或指定 作者 / 朝代 / 标题（模糊）搜索</div>
     <div class="data-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</div>
 
     <section class="controls">
       <div class="row">
         <div>
-          <label for="keyword">搜索</label>
+          <label for="keyword">搜索<span class="label-tip">留空即随机推荐 · 作者 / 朝代 / 标题（模糊）</span></label>
           <div class="input-wrap">
-            <input id="keyword" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜">
+            <input id="keyword">
             <span id="kwState" class="kw-state" style="display:none"></span>
           </div>
           <div class="mode-seg">
@@ -855,7 +854,6 @@
     <div id="cardToolsInner" class="card-tools-inner" style="display:none">
       <div class="card-sub-tools">
         <button id="sameAuthorButton" class="sub-tool" type="button" style="display:none"></button>
-        <button id="copyPoemButton" class="sub-tool" type="button">复制全诗</button>
       </div>
       <button id="shareButton" type="button" class="secondary">下载或分享卡片</button>
       <div class="ratio-row">
@@ -889,7 +887,7 @@
       <div class="sheet-head">使用指南</div>
       <div class="guide-stats" id="guideStats"></div>
       <div class="guide-list">
-        <div class="guide-item"><span class="guide-k">精致体验</span>设置可开启<b class="guide-b">摇一摇抽诗</b>与<b class="guide-b">名句速览</b>；卡片下方可<b class="guide-b">复制全诗</b>、<b class="guide-b">同作者再来一首</b>；点作者名<b class="guide-b">搜全部同作者诗词</b>。</div>
+        <div class="guide-item"><span class="guide-k">精致体验</span>卡片下方可<b class="guide-b">同作者再来一首</b>；点作者名<b class="guide-b">搜全部同作者诗词</b>。</div>
         <div class="guide-item"><span class="guide-k">随机邂逅</span>不填任何条件，点「与诗相逢」<b class="guide-b">随机推荐一首</b>。</div>
         <div class="guide-item"><span class="guide-k">手势</span>在诗词卡片上<b class="guide-b">左右轻滑</b>换一首随机诗；<b class="guide-b">双击卡片</b>快速收藏；<b class="guide-b">长按诗句</b>即可复制该句。</div>
         <div class="guide-item"><span class="guide-k">足迹</span>顶栏时钟图标查看<b class="guide-b">最近读过</b>；收藏夹支持一键<b class="guide-b">导出</b>。</div>
@@ -1065,7 +1063,6 @@
     <div class="settings-group" data-sg="opts">
       <div class="settings-group-h" data-sg-toggle="opts">体验开关<span class="settings-caret">▾</span></div>
       <div class="settings-body">
-    <div class="settings-row">
     <div class="theme-section">
       <div class="theme-label">批注卡片提醒</div>
       <div class="theme-options" data-group="notePrompt">
@@ -1074,41 +1071,8 @@
       </div>
     </div>
     <div class="theme-section">
-      <div class="theme-label">主题小预览</div>
-      <div class="theme-options" data-group="optPreview">
-        <button class="theme-opt active" data-value="on">开</button>
-        <button class="theme-opt" data-value="off">关</button>
-      </div>
-    </div>
-    </div>
-    <div class="settings-row">
-    <div class="theme-section">
-      <div class="theme-label">摇一摇抽诗</div>
-      <div class="theme-options" data-group="optShake">
-        <button class="theme-opt" data-value="on">开</button>
-        <button class="theme-opt active" data-value="off">关</button>
-      </div>
-    </div>
-    <div class="theme-section">
-      <div class="theme-label">名句速览</div>
-      <div class="theme-options" data-group="optBrief">
-        <button class="theme-opt" data-value="on">开</button>
-        <button class="theme-opt active" data-value="off">关</button>
-      </div>
-    </div>
-    </div>
-    <div class="theme-section">
       <div class="theme-label">分享签名</div>
       <input id="optSignInput" class="input opt-sign" maxlength="20" placeholder="展示在分享卡片页脚（可留空）">
-    </div>
-    <div class="theme-section">
-      <div class="theme-label">搜索方式</div>
-      <div class="theme-options" data-group="optSearchMode">
-        <button class="theme-opt active" data-value="auto">智能识别</button>
-        <button class="theme-opt" data-value="author">按作者</button>
-        <button class="theme-opt" data-value="dynasty">按朝代</button>
-        <button class="theme-opt" data-value="title">按标题</button>
-      </div>
     </div>
       </div>
     </div>
@@ -2263,12 +2227,6 @@
       }
       generateShare(currentPoem, shareButton);
     });
-    $("copyPoemButton").addEventListener("click", () => {
-      if (!currentPoem) return;
-      haptic();
-      const text = "《" + (currentPoem.t || "无题") + "》 " + [(currentPoem.d || ""), (currentPoem.a || "")].filter(Boolean).join(" · ") + "\n" + (currentPoem.c || "");
-      copyText(text).then((ok) => toast(ok ? "已复制全诗" : "复制失败，请重试"));
-    });
     $("sameAuthorButton").addEventListener("click", () => {
       const a = currentPoem && (currentPoem.a || "").trim();
       if (!a) return;
@@ -3198,14 +3156,6 @@
       setTimeout(() => r.remove(), 700);
     });
 
-    // ====== 顶部阅读进度条 ======
-    window.addEventListener("scroll", () => {
-      const el = $("readingProgress");
-      if (!el) return;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      el.style.width = max > 0 ? Math.min(100, (window.scrollY / max) * 100) + "%" : "0";
-    }, { passive: true });
-
     // ====== 设置面板：小预览点 / 选项同步 / 摇一摇 / 首次引导 ======
     function addColorDots() {
       document.querySelectorAll('.theme-options[data-group="color"] .theme-opt').forEach((b) => {
@@ -4032,7 +3982,6 @@
       signInput.value = appOpts.sign || "";
       signInput.addEventListener("input", () => { appOpts.sign = signInput.value.trim(); saveOpts(); });
     }
-    addColorDots();
     syncOptsUI();
     if (appOpts.shake) setShake(true);
     setTimeout(maybeOnboard, 4200);
