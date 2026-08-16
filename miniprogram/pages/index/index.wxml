@@ -34,7 +34,7 @@
       <view class="row">
         <view class="field">
           <view class="label">搜索</view>
-          <input class="input" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜" placeholder-class="ph" value="{{keyword}}" bindinput="onKeywordInput" />
+          <input class="input" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜" placeholder-class="ph" value="{{keyword}}" bindinput="onKeywordInput" bindfocus="onKwFocus" bindblur="onKwBlur" />
           <view class="mode-chips">
             <view class="mode-chip {{searchMode === 'auto' ? 'active' : ''}}" data-mode="auto" bindtap="onSearchModeTap">智能识别</view>
             <view class="mode-chip {{searchMode === 'author' ? 'active' : ''}}" data-mode="author" bindtap="onSearchModeTap">按作者</view>
@@ -45,17 +45,16 @@
             <text wx:if="{{kwHintTag}}" class="kw-badge">{{kwHintTag}}</text>
             <text class="kw-hint-t">{{kwHintText}}</text>
           </view>
-          <view wx:if="{{kwHist.length}}" class="kw-hist">
+          <view wx:if="{{kwHist.length && kwHistShow}}" class="kw-hist">
             <view wx:for="{{kwHist}}" wx:key="*this" class="kw-hist-chip" data-kw="{{item}}" bindtap="onKwHistTap">{{item}}</view>
             <view class="kw-hist-clear" bindtap="onKwHistClear">✕</view>
           </view>
         </view>
         <view class="field type-wrap">
           <view class="label">体裁</view>
-          <view class="type-chips">
-            <view wx:for="{{typeChips}}" wx:key="t"
-              class="type-chip {{(item.t === '无' && !type) || item.t === type ? 'active' : ''}}" data-value="{{item.t}}" bindtap="onTypeChipTap">{{item.t}}</view>
-            <view class="type-chip more" bindtap="onTypeMoreTap">全部 {{typeTotal}} ▾</view>
+          <view class="type-field" hover-class="type-field-hover" bindtap="onTypeMoreTap">
+            <text class="{{type ? '' : 'ph'}}">{{type ? ('体裁：' + type) : '体裁：点击选择'}}</text>
+            <text class="caret">▾</text>
           </view>
         </view>
       </view>
@@ -106,8 +105,8 @@
         </view>
         <view class="card-tools">
           <view class="card-sub-tools">
-            <view wx:if="{{poem.pa}}" class="sub-tool" hover-class="sub-tool-hover" bindtap="onMetaAuthorTap"><text class="st-ico">⇄</text>同作者再来一首 · {{poem.pa}}</view>
-            <view class="sub-tool" hover-class="sub-tool-hover" bindtap="onCopyPoemTap"><text class="st-ico">⧉</text>复制全诗</view>
+            <block wx:if="{{poem.pa}}"><text class="sub-link" hover-class="sub-link-hover" bindtap="onMetaAuthorTap">同作者再来一首 · {{poem.pa}}</text><text class="sl-sep">·</text></block>
+            <text class="sub-link" hover-class="sub-link-hover" bindtap="onCopyPoemTap">复制全诗</text>
           </view>
           <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">
             <block wx:if="{{shareLoading}}">生成中……</block>
@@ -224,6 +223,7 @@
 
   <!-- 主题面板（配色/文字方向，与网页版一致） -->
   <view class="theme-panel {{themePanelOpen ? 'open' : ''}}" catchtap="noop" catchtouchmove="noop">
+    <scroll-view class="tp-scroll" scroll-y="true" enhanced="true" show-scrollbar="false">
     <view class="settings-group">
       <view class="settings-group-h" bindtap="onSgStyleToggle">主题样式<text class="settings-caret {{sgStyleClosed ? 'closed' : ''}}">▾</text></view>
       <view wx:if="{{!sgStyleClosed}}" class="settings-body">
@@ -246,20 +246,12 @@
     <view class="settings-group">
       <view class="settings-group-h" bindtap="onSgOptsToggle">体验开关<text class="settings-caret {{sgOptsClosed ? 'closed' : ''}}">▾</text></view>
       <view wx:if="{{!sgOptsClosed}}" class="settings-body">
+    <view class="settings-row">
     <view class="theme-section">
       <view class="theme-label">批注卡片提醒</view>
       <view class="theme-options">
         <view class="theme-opt {{notePromptOn ? 'active' : ''}}" data-value="on" bindtap="onNotePromptTap">开</view>
         <view class="theme-opt {{notePromptOn ? '' : 'active'}}" data-value="off" bindtap="onNotePromptTap">关</view>
-      </view>
-    </view>
-    <view class="theme-section">
-      <view class="theme-label">搜索方式</view>
-      <view class="theme-options">
-        <view class="theme-opt {{searchMode === 'auto' ? 'active' : ''}}" data-mode="auto" bindtap="onSearchModeTap">智能识别</view>
-        <view class="theme-opt {{searchMode === 'author' ? 'active' : ''}}" data-mode="author" bindtap="onSearchModeTap">按作者</view>
-        <view class="theme-opt {{searchMode === 'dynasty' ? 'active' : ''}}" data-mode="dynasty" bindtap="onSearchModeTap">按朝代</view>
-        <view class="theme-opt {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
       </view>
     </view>
     <view class="theme-section">
@@ -269,6 +261,8 @@
         <view class="theme-opt {{optPreview ? '' : 'active'}}" data-key="preview" data-value="off" bindtap="onOptToggle">关</view>
       </view>
     </view>
+    </view>
+    <view class="settings-row">
     <view class="theme-section">
       <view class="theme-label">摇一摇抽诗</view>
       <view class="theme-options">
@@ -283,12 +277,23 @@
         <view class="theme-opt {{optBrief ? '' : 'active'}}" data-key="brief" data-value="off" bindtap="onOptToggle">关</view>
       </view>
     </view>
+    </view>
+    <view class="theme-section">
+      <view class="theme-label">搜索方式</view>
+      <view class="theme-options">
+        <view class="theme-opt {{searchMode === 'auto' ? 'active' : ''}}" data-mode="auto" bindtap="onSearchModeTap">智能识别</view>
+        <view class="theme-opt {{searchMode === 'author' ? 'active' : ''}}" data-mode="author" bindtap="onSearchModeTap">按作者</view>
+        <view class="theme-opt {{searchMode === 'dynasty' ? 'active' : ''}}" data-mode="dynasty" bindtap="onSearchModeTap">按朝代</view>
+        <view class="theme-opt {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
+      </view>
+    </view>
     <view class="theme-section">
       <view class="theme-label">分享签名</view>
       <input class="input opt-sign" maxlength="20" placeholder="展示在分享卡片页脚（可留空）" value="{{optSign}}" bindinput="onSignInput" />
     </view>
       </view>
     </view>
+    </scroll-view>
     <view class="panel-hint">点击页面空白处即可关闭</view>
   </view>
 

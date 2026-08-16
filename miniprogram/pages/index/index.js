@@ -67,8 +67,6 @@ Page({
     kwHist: [],
     kwHintTag: "",
     kwHintText: "",
-    typeChips: [],
-    typeTotal: 0,
     sgStyleClosed: false,
     sgOptsClosed: false,
     favQuery: "",
@@ -79,6 +77,7 @@ Page({
     optSign: "",
     statsLine: "",
     onboardShow: false,
+    kwHistShow: false,
     briefQuote: "",
     briefFull: false,
     ripple: null,
@@ -203,8 +202,6 @@ Page({
     // 体裁全量内嵌：常见体裁 chips 直达 + 完整面板分组可搜索
     this.setData({
       typeOptions: TYPE_LIST_ALL,
-      typeChips: ["无"].concat(TYPE_LIST_ALL.slice(0, 12)).map((t) => ({ t })),
-      typeTotal: TYPE_LIST_ALL.length
     });
     data.ensureSearchIndex();
     this._stats = { total: 0, dates: [], streak: 0, last: "" };
@@ -421,12 +418,8 @@ Page({
     if (/^(五|七|六|四|三|杂)言/.test(t) || /(绝句|律诗|古风|排律|乐府|歌行)$/.test(t) || t === "诗经" || t === "楚辞" || t === "元曲" || t === "民谣") return "诗";
     return "词牌 · 曲牌";
   },
-  onTypeChipTap(e) {
-    const v = e.currentTarget.dataset.value;
-    this.haptic();
-    this.setData({ type: v === "无" ? "" : (v === this.data.type ? "" : v) });
-    this.hideSheet("typeDropdownShow");
-  },
+  onKwFocus() { if (this.data.kwHist.length && !this.data.kwHistShow) this.setData({ kwHistShow: true }); },
+  onKwBlur() { setTimeout(() => { this.setData({ kwHistShow: false }); }, 200); },
   onTypeMoreTap() {
     this.haptic();
     if (this.data.typeDropdownShow) { this.hideSheet("typeDropdownShow"); return; }
@@ -1619,6 +1612,7 @@ Page({
       wx.setStorageSync("shihai-onboard-v1", String(Date.now()));
     } catch (e) {}
     setTimeout(() => this.setData({ onboardShow: true }), 600);
+    setTimeout(() => this.setData({ onboardShow: false }), 4200);
   },
   onOnboardTap() {
     this.setData({ onboardShow: false });

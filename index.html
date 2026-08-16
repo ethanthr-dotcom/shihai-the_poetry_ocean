@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>诗海·古诗词浏览器</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/icon-16.png">
@@ -628,6 +628,9 @@
       border-radius: 14px;
       box-shadow: var(--card-shadow);
       padding: 16px;
+      max-height: min(66vh, 600px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       z-index: 1199;
       opacity: 0;
       visibility: hidden;
@@ -652,7 +655,7 @@
       font-weight: 600;
     }
     .theme-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
-    .theme-opt { text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .theme-opt { text-align: center; white-space: normal; overflow: visible; word-break: keep-all; line-height: 1.35; }
     .theme-opt {
       width: auto;
       padding: 6px 12px;
@@ -681,21 +684,22 @@
     .kw-hint { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
     .kw-hint-t { font-size: 12px; color: var(--meta-color); }
     .kw-badge { font-size: 11px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--accent-color); color: var(--accent-color); background: color-mix(in srgb, var(--accent-color) 9%, transparent); letter-spacing: 1px; white-space: nowrap; }
-    .type-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
-    .type-chip { font-size: 12.5px; padding: 5px 13px; border-radius: 999px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); cursor: pointer; font-family: inherit; transition: all .2s; }
-    .type-chip:hover { opacity: .75; }
-    .type-chip.active { background: var(--accent-color); color: var(--button-text); border-color: var(--accent-color); }
-    .type-chip.more { border-style: dashed; }
+    .type-field { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 3px 0; min-height: 22px; user-select: none; }
+    .type-field .ph { opacity: .6; }
+    .type-field .caret { font-size: .85em; opacity: .55; margin-left: 6px; }
     .type-group-h { font-size: 11px; color: var(--meta-color); margin: 12px 0 7px; letter-spacing: 2px; }
     .settings-group-h { font-size: 12.5px; font-weight: 600; letter-spacing: 2px; color: var(--label-color); display: flex; justify-content: space-between; align-items: center; padding: 10px 0 8px; margin-bottom: 8px; border-bottom: 1px dashed color-mix(in srgb, var(--accent-color) 40%, transparent); cursor: pointer; user-select: none; }
     .settings-group-h:first-child { padding-top: 0; }
     .settings-caret { font-size: 11px; opacity: .55; transition: transform .2s; }
     .settings-group.closed .settings-body { display: none; }
     .settings-group.closed .settings-caret { transform: rotate(-90deg); }
-    .card-sub-tools .sub-tool { display: inline-flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--accent-color) 45%, transparent); background: color-mix(in srgb, var(--accent-color) 9%, transparent); color: var(--text-color); font-size: 12.5px; letter-spacing: 1px; cursor: pointer; font-family: inherit; transition: all .2s; }
-    .card-sub-tools .sub-tool:hover { background: color-mix(in srgb, var(--accent-color) 18%, transparent); }
-    .card-sub-tools .sub-tool:active { transform: scale(.95); }
-    .card-sub-tools .sub-tool svg { width: 14px; height: 14px; flex: none; opacity: .8; }
+    .settings-row { display: flex; gap: 0 18px; }
+    .settings-row > .theme-section { flex: 1; min-width: 0; }
+    .card-sub-tools .sub-link { background: none; border: none; padding: 0; color: var(--meta-color); font-size: 12.5px; letter-spacing: 1px; cursor: pointer; font-family: inherit; transition: color .2s; }
+    .card-sub-tools .sub-link:hover { color: var(--accent-color); }
+    .card-sub-tools .sub-link:active { opacity: .6; }
+    .card-sub-tools .sl-sep { color: var(--meta-color); opacity: .5; }
+    .card-sub-tools .sub-link[style*="none"] + .sl-sep { display: none; }
     .results-panel.card { text-align: left; padding: var(--card-padding); min-height: 240px; }
     /* ====== Round-17 精致化 ====== */
     .ink-ripple { position: fixed; z-index: 400; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, color-mix(in srgb, var(--seal-color) 28%, transparent) 0%, transparent 70%); opacity: .85; animation: inkRipple .65s ease-out forwards; }
@@ -717,7 +721,7 @@
     .onboard-ring { position: fixed; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; border: 2px solid var(--seal-color); box-shadow: 0 0 0 9999px rgba(20,16,10,.55); pointer-events: none; animation: onboardPulse 1.4s ease-in-out infinite; }
     @keyframes onboardPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
     .onboard-tip { position: fixed; transform: translateX(-50%); background: var(--card-bg, #fff); color: var(--text-color); border: 1px solid var(--accent-color); padding: 8px 14px; border-radius: 10px; font-size: 13px; white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.25); pointer-events: none; }
-    .card-sub-tools { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .card-sub-tools { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 12px; margin-bottom: 6px; }
   </style>
 </head>
 <body>
@@ -807,7 +811,7 @@
         </div>
         <div class="type-wrap">
           <label>体裁</label>
-          <div id="typeChips" class="type-chips"></div>
+          <div id="typeField" class="type-field" title="点击展开体裁选择"><span id="typeFieldLabel" class="ph">体裁：点击选择</span><span class="caret">▾</span></div>
         </div>
       </div>
       <!-- 体裁选择面板：整行内联展开（推挤布局，稳定可靠） -->
@@ -848,9 +852,11 @@
     <!-- 分享与比例：渲染诗词后由 JS 移入卡片内部 -->
     <div id="cardToolsInner" class="card-tools-inner" style="display:none">
       <div class="card-sub-tools">
-        <button id="sameAuthorButton" class="sub-tool" type="button" style="display:none"></button>
-        <button id="copyPoemButton" class="sub-tool" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg><span>复制全诗</span></button>
-        <button id="readAloudButton" class="sub-tool" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg><span>朗读</span></button>
+        <button id="sameAuthorButton" class="sub-link" type="button" style="display:none"></button>
+        <span class="sl-sep">·</span>
+        <button id="copyPoemButton" class="sub-link" type="button">复制全诗</button>
+        <span class="sl-sep">·</span>
+        <button id="readAloudButton" class="sub-link" type="button">朗读</button>
       </div>
       <button id="shareButton" type="button" class="secondary">下载或分享卡片</button>
       <div class="ratio-row">
@@ -1036,6 +1042,7 @@
         <button class="theme-opt" data-value="qinghua">青花</button>
       </div>
     </div>
+    <div class="settings-row">
     <div class="theme-section">
       <div class="theme-label">排版</div>
       <div class="theme-options" data-group="layout">
@@ -1051,11 +1058,13 @@
         <button class="theme-opt" data-value="vertical">竖排</button>
       </div>
     </div>
+    </div>
       </div>
     </div>
     <div class="settings-group" data-sg="opts">
       <div class="settings-group-h" data-sg-toggle="opts">体验开关<span class="settings-caret">▾</span></div>
       <div class="settings-body">
+    <div class="settings-row">
     <div class="theme-section">
       <div class="theme-label">批注卡片提醒</div>
       <div class="theme-options" data-group="notePrompt">
@@ -1070,6 +1079,8 @@
         <button class="theme-opt" data-value="off">关</button>
       </div>
     </div>
+    </div>
+    <div class="settings-row">
     <div class="theme-section">
       <div class="theme-label">摇一摇抽诗</div>
       <div class="theme-options" data-group="optShake">
@@ -1083,6 +1094,7 @@
         <button class="theme-opt" data-value="on">开</button>
         <button class="theme-opt active" data-value="off">关</button>
       </div>
+    </div>
     </div>
     <div class="theme-section">
       <div class="theme-label">分享签名</div>
@@ -1597,7 +1609,7 @@
       const sab = $("sameAuthorButton");
       if (sab) {
         sab.style.display = author ? "" : "none";
-        if (author) sab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg><span>同作者再来一首 · ' + escapeHtml(author) + "</span>";
+        if (author) sab.textContent = "同作者再来一首 · " + author;
       }
       try {
         if (typeof speechSynthesis !== "undefined" && speechSynthesis.speaking) {
@@ -1903,10 +1915,11 @@
     });
     updateKwHint();
     // ====== 搜索历史快捷条 ======
+    let kwHistVisible = false;
     function renderKwHist() {
       const box = $("kwHist");
       if (!box) return;
-      if (!kwHist.length) { box.style.display = "none"; return; }
+      if (!kwHistVisible || !kwHist.length) { box.style.display = "none"; return; }
       box.style.display = "";
       box.innerHTML = kwHist.map((k) => '<button class="kw-hist-chip" type="button">' + escapeHtml(k) + "</button>").join("") +
         '<button class="kw-hist-clear" type="button" title="清空搜索历史">✕</button>';
@@ -1923,6 +1936,8 @@
       openResults(chip.textContent, typeValue.trim());
     });
     renderKwHist();
+    keywordInput.addEventListener("focus", () => { kwHistVisible = true; renderKwHist(); });
+    keywordInput.addEventListener("blur", () => { setTimeout(() => { kwHistVisible = false; renderKwHist(); }, 200); });
 
     // ====== 分享：纯 Canvas 手绘诗词卡片（高分辨率、按句排版、间距自适应） ======
     let shareRatio = "1:1";
@@ -2636,36 +2651,19 @@
       return "词牌 · 曲牌";
     }
     function renderTypeChips() {
-      const wrap = $("typeChips");
-      if (!wrap) return;
-      wrap.innerHTML = "";
-      ["无"].concat(TYPE_COMMON).forEach((t) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "type-chip" + ((t === "无" ? !typeValue : t === typeValue) ? " active" : "");
-        b.textContent = t;
-        b.addEventListener("click", () => {
-          haptic();
-          typeValue = t === "无" ? "" : (t === typeValue ? "" : t);
-          renderTypeChips();
-          closeTypeDropdown();
-        });
-        wrap.appendChild(b);
-      });
-      const more = document.createElement("button");
-      more.type = "button";
-      more.className = "type-chip more";
-      more.textContent = "全部 " + TYPE_LIST_ALL.length + " ▾";
-      more.addEventListener("click", () => {
-        haptic();
-        const dd = $("typeDropdown");
-        if (dd.classList.contains("open")) { closeTypeDropdown(); return; }
-        $("typeQuery").value = "";
-        renderTypeGrid();
-        dd.classList.add("open");
-      });
-      wrap.appendChild(more);
+      const lab = $("typeFieldLabel");
+      if (!lab) return;
+      lab.textContent = typeValue ? "体裁：" + typeValue : "体裁：点击选择";
+      lab.classList.toggle("ph", !typeValue);
     }
+    $("typeField").addEventListener("click", () => {
+      haptic();
+      const dd = $("typeDropdown");
+      if (dd.classList.contains("open")) { closeTypeDropdown(); return; }
+      $("typeQuery").value = "";
+      renderTypeGrid();
+      dd.classList.add("open");
+    });
     function renderTypeGrid() {
       const grid = $("typeGrid");
       const q = $("typeQuery").value.trim();
@@ -2707,7 +2705,7 @@
     $("typeQuery").addEventListener("input", renderTypeGrid);
     // 下拉之外任意点击收起
     document.addEventListener("click", (e) => {
-      if (!e.target.closest("#typeDropdown") && !e.target.closest("#typeChips")) {
+      if (!e.target.closest("#typeDropdown") && !e.target.closest("#typeField")) {
         closeTypeDropdown();
       }
     });
@@ -3344,6 +3342,7 @@
         '<div class="onboard-tip" style="left:' + cx + 'px;top:' + (cy + r.height / 2 + 16) + 'px">第一次来？点我查看使用指南</div>';
       document.body.appendChild(mask);
       mask.addEventListener("click", () => mask.remove());
+      setTimeout(() => { if (mask.isConnected) { mask.style.opacity = "0"; mask.style.transition = "opacity .6s ease"; mask.style.pointerEvents = "none"; setTimeout(() => mask.remove(), 650); } }, 3000);
     }
 
     // ====== 时段提示：按时辰变换首条提示文案 ======
