@@ -64,9 +64,9 @@ Page({
     searchMode: "auto",
     kwHint: "",
     searchProgress: "",
-    kwHist: [],
-    kwHintTag: "",
-    kwHintText: "",
+    kwStateText: "",
+    kwStateMuted: false,
+    smIdx: 0,
     sgStyleClosed: false,
     sgOptsClosed: false,
     favQuery: "",
@@ -77,7 +77,6 @@ Page({
     optSign: "",
     statsLine: "",
     onboardShow: false,
-    kwHistShow: false,
     briefQuote: "",
     briefFull: false,
     ripple: null,
@@ -192,13 +191,12 @@ Page({
     const h = new Date().getHours();
     const greet = h >= 5 && h < 8 ? "晨读" : h < 12 ? "上午品读" : h < 14 ? "午间小读" : h < 18 ? "午后漫读" : h < 23 ? "灯下夜读" : "深夜静读";
     this.setData({ randomTip: greet + " · " + this.data.randomTip });
-    try { const sm0 = wx.getStorageSync("shihai-search-mode-v1"); if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title" || sm0 === "auto") this.setData({ searchMode: sm0 }); } catch (e) {}
+    try { const sm0 = wx.getStorageSync("shihai-search-mode-v1"); if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title" || sm0 === "auto") this.setData({ searchMode: sm0, smIdx: ["auto", "author", "dynasty", "title"].indexOf(sm0) }); } catch (e) {}
     // 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名）
     this._opts = { preview: true, shake: false, brief: false, sign: "" };
     try { const o0 = wx.getStorageSync("shihai-opts-v1"); if (o0) this._opts = { ...this._opts, ...o0 }; } catch (e) {}
     this.setData({ optPreview: !!this._opts.preview, optShake: !!this._opts.shake, optBrief: !!this._opts.brief, optSign: this._opts.sign || "" });
     if (this._opts.shake) this._startShake();
-    try { const kh0 = wx.getStorageSync("shihai-kw-hist-v1"); if (Array.isArray(kh0)) this.setData({ kwHist: kh0.slice(0, 6) }); } catch (e) {}
     // 体裁全量内嵌：常见体裁 chips 直达 + 完整面板分组可搜索
     this.setData({
       typeOptions: TYPE_LIST_ALL,
@@ -350,21 +348,9 @@ Page({
     const m = e.currentTarget.dataset.mode;
     if (!m || m === this.data.searchMode) return;
     this.haptic();
-    this.setData({ searchMode: m });
+    this.setData({ searchMode: m, smIdx: ["auto", "author", "dynasty", "title"].indexOf(m) });
     try { wx.setStorageSync("shihai-search-mode-v1", m); } catch (err) {}
     this.updateKwHint();
-  },
-  onKwHistTap(e) {
-    const kw = e.currentTarget.dataset.kw;
-    if (!kw) return;
-    this.haptic();
-    this.setData({ keyword: kw });
-    this.openResults(kw, (this.data.type || "").trim());
-  },
-  onKwHistClear() {
-    this.haptic();
-    this.setData({ kwHist: [] });
-    try { wx.setStorageSync("shihai-kw-hist-v1", []); } catch (e) {}
   },
   _detectKw(kw) {
     if (this._authorSet && this._authorSet.has(kw)) return "author";
@@ -385,20 +371,18 @@ Page({
   },
   updateKwHint() {
     const kw = (this.data.keyword || "").trim();
-    if (!kw) { this.setData({ kwHintText: "", kwHintTag: "" }); return; }
+    if (!kw) { this.setData({ kwStateText: "", kwStateMuted: false }); return; }
     const m = this.data.searchMode;
-    if (m === "author") { this.setData({ kwHintTag: "作者", kwHintText: "「" + kw + "」· 精确检索" }); return; }
-    if (m === "dynasty") { this.setData({ kwHintTag: "朝代", kwHintText: "「" + kw + "」· 精确检索" }); return; }
-    if (m === "title") { this.setData({ kwHintTag: "标题", kwHintText: "「" + kw + "」· 模糊检索" }); return; }
-    if (!this.indexReady) { this.setData({ kwHintTag: "", kwHintText: "智能识别：诗词库加载中……" }); return; }
-    this.setData({ kwHintTag: "识别中", kwHintText: "正在判断输入类型……" });
+    if (m === "author") { this.setData({ kwStateText: "按作者检索", kwStateMuted: false }); return; }
+    if (m === "dynasty") { this.setData({ kwStateText: "按朝代检索", kwStateMuted: false }); return; }
+    if (m === "title") { this.setData({ kwStateText: "按标题检索", kwStateMuted: false }); return; }
+    if (!this.indexReady) { this.setData({ kwStateText: "识别中", kwStateMuted: true }); return; }
+    this.setData({ kwStateText: "识别中", kwStateMuted: true });
     data.ensureFullIndex().then((full) => {
       if (full && !this._authorSet) this._buildKnownSets(full);
       if ((this.data.keyword || "").trim() !== kw) return;
       const d = this._detectKw(kw);
-      this.setData(d === "author" ? { kwHintTag: "作者", kwHintText: "「" + kw + "」· 将按作者精确检索" }
-        : d === "dynasty" ? { kwHintTag: "朝代", kwHintText: "「" + kw + "」· 将按朝代精确检索" }
-        : { kwHintTag: "标题", kwHintText: "「" + kw + "」· 将按标题模糊检索" });
+      this.setData({ kwStateText: d === "author" ? "按作者检索" : d === "dynasty" ? "按朝代检索" : "按标题检索", kwStateMuted: false });
     });
   },
   onTypeInput(e) { this.setData({ type: e.detail.value }); },
@@ -418,8 +402,6 @@ Page({
     if (/^(五|七|六|四|三|杂)言/.test(t) || /(绝句|律诗|古风|排律|乐府|歌行)$/.test(t) || t === "诗经" || t === "楚辞" || t === "元曲" || t === "民谣") return "诗";
     return "词牌 · 曲牌";
   },
-  onKwFocus() { if (this.data.kwHist.length && !this.data.kwHistShow) this.setData({ kwHistShow: true }); },
-  onKwBlur() { setTimeout(() => { this.setData({ kwHistShow: false }); }, 200); },
   onTypeMoreTap() {
     this.haptic();
     if (this.data.typeDropdownShow) { this.hideSheet("typeDropdownShow"); return; }
@@ -907,12 +889,6 @@ Page({
   // ====== 搜索结果列表：就地替换诗词卡片；无限分页（页面触底）；手风琴；批量收藏 ======
   async openResults(kw, type) {
     if (!this.indexReady) { this.showStatus("诗词库尚未加载完成，请稍候……"); return; }
-    if (kw) {
-      const kh = (this.data.kwHist || []).filter((x) => x !== kw);
-      kh.unshift(kw);
-      this.setData({ kwHist: kh.slice(0, 6) });
-      try { wx.setStorageSync("shihai-kw-hist-v1", kh.slice(0, 6)); } catch (e) {}
-    }
     if (kw || type) {
       const full = await data.ensureFullIndex();
       if (!full) { this.showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
@@ -1145,26 +1121,6 @@ Page({
     wx.showToast({ title: "已清空阅读记录", icon: "none" });
   },
 
-  // ====== 今日之诗：按日期确定性挑选，所有人当天读到同一首 ======
-  onDailyTap() {
-    this.haptic();
-    if (this.data.randomLoading || !this.indexReady) {
-      if (!this.indexReady) this.showStatus("诗词库尚未加载完成，请稍候……");
-      return;
-    }
-    this.setData({ randomLoading: true, listMode: false });
-    this.progressStart();
-    data.findDailyPoem().then((poem) => {
-      this.renderPoem(poem);
-      wx.pageScrollTo({ selector: ".card", duration: 300 });
-      wx.showToast({ title: "今日之诗 · 与大家同读", icon: "none" });
-    }).catch((err) => {
-      this.showStatus("读取失败：" + (err && err.message ? err.message : err), true);
-    }).finally(() => {
-      this.setData({ randomLoading: false });
-      this.progressDone();
-    });
-  },
 
   // ====== 卡片手势：左右轻滑换诗 / 长按诗句复制 / 双击收藏 ======
   onCardTouchStart(e) {
@@ -1502,6 +1458,20 @@ Page({
     this.hideSheet("devShow");
     this.setData({ disclaimerShow: true });
   },
+  onDevReonboard() {
+    this.haptic();
+    clearInterval(this._devInterval);
+    this.hideSheet("devShow");
+    try { wx.removeStorageSync("shihai-onboard-v1"); } catch (e) {}
+    this._maybeOnboard();
+  },
+  onDevResplash() {
+    this.haptic();
+    clearInterval(this._devInterval);
+    this.hideSheet("devShow");
+    this.setData({ splashShow: true, uiReady: false });
+    this.startSplash();
+  },
   onDevClose() {
     clearInterval(this._devInterval);
     this.hideSheet("devShow");
@@ -1612,9 +1582,9 @@ Page({
       wx.setStorageSync("shihai-onboard-v1", String(Date.now()));
     } catch (e) {}
     setTimeout(() => this.setData({ onboardShow: true }), 600);
-    setTimeout(() => this.setData({ onboardShow: false }), 4200);
+    setTimeout(() => this.setData({ onboardShow: false }), 6600);
   },
-  onOnboardTap() {
+  onOnboardClose() {
     this.setData({ onboardShow: false });
   },
   onThemeOptTap(e) {

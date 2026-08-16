@@ -34,20 +34,16 @@
       <view class="row">
         <view class="field">
           <view class="label">搜索</view>
-          <input class="input" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜" placeholder-class="ph" value="{{keyword}}" bindinput="onKeywordInput" bindfocus="onKwFocus" bindblur="onKwBlur" />
-          <view class="mode-chips">
-            <view class="mode-chip {{searchMode === 'auto' ? 'active' : ''}}" data-mode="auto" bindtap="onSearchModeTap">智能识别</view>
-            <view class="mode-chip {{searchMode === 'author' ? 'active' : ''}}" data-mode="author" bindtap="onSearchModeTap">按作者</view>
-            <view class="mode-chip {{searchMode === 'dynasty' ? 'active' : ''}}" data-mode="dynasty" bindtap="onSearchModeTap">按朝代</view>
-            <view class="mode-chip {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
+          <view class="input-wrap">
+            <input class="input" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜" placeholder-class="ph" value="{{keyword}}" bindinput="onKeywordInput" />
+            <text wx:if="{{kwStateText}}" class="kw-state {{kwStateMuted ? 'muted' : ''}}">{{kwStateText}}</text>
           </view>
-          <view wx:if="{{kwHintText}}" class="kw-hint">
-            <text wx:if="{{kwHintTag}}" class="kw-badge">{{kwHintTag}}</text>
-            <text class="kw-hint-t">{{kwHintText}}</text>
-          </view>
-          <view wx:if="{{kwHist.length && kwHistShow}}" class="kw-hist">
-            <view wx:for="{{kwHist}}" wx:key="*this" class="kw-hist-chip" data-kw="{{item}}" bindtap="onKwHistTap">{{item}}</view>
-            <view class="kw-hist-clear" bindtap="onKwHistClear">✕</view>
+          <view class="mode-seg">
+            <view class="sm-thumb" style="left: calc({{smIdx}} * 25% + 4rpx);"></view>
+            <view class="mode-opt {{searchMode === 'auto' ? 'active' : ''}}" data-mode="auto" bindtap="onSearchModeTap">智能识别</view>
+            <view class="mode-opt {{searchMode === 'author' ? 'active' : ''}}" data-mode="author" bindtap="onSearchModeTap">按作者</view>
+            <view class="mode-opt {{searchMode === 'dynasty' ? 'active' : ''}}" data-mode="dynasty" bindtap="onSearchModeTap">按朝代</view>
+            <view class="mode-opt {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
           </view>
         </view>
         <view class="field type-wrap">
@@ -78,7 +74,6 @@
         </button>
       </view>
       <view class="random-tip">{{randomTip}}</view>
-      <view class="daily-row"><view class="link-btn" hover-class="link-btn-hover" bindtap="onDailyTap">☀ 今日之诗 · 每日与大家同读一首</view></view>
     </view>
 
     <view wx:if="{{!listMode}}" class="card" bindtouchstart="onCardTouchStart" bindtouchend="onCardTouchEnd">
@@ -105,8 +100,8 @@
         </view>
         <view class="card-tools">
           <view class="card-sub-tools">
-            <block wx:if="{{poem.pa}}"><text class="sub-link" hover-class="sub-link-hover" bindtap="onMetaAuthorTap">同作者再来一首 · {{poem.pa}}</text><text class="sl-sep">·</text></block>
-            <text class="sub-link" hover-class="sub-link-hover" bindtap="onCopyPoemTap">复制全诗</text>
+            <view wx:if="{{poem.pa}}" class="sub-tool" hover-class="sub-tool-hover" bindtap="onMetaAuthorTap">同作者再来一首 · {{poem.pa}}</view>
+            <view class="sub-tool" hover-class="sub-tool-hover" bindtap="onCopyPoemTap">复制全诗</view>
           </view>
           <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">
             <block wx:if="{{shareLoading}}">生成中……</block>
@@ -151,8 +146,8 @@
         <view class="result-head" data-index="{{index}}" bindtap="onResultItemTap">
           <view wx:if="{{selMode}}" class="chk {{selIds[item.id] ? 'on' : ''}}">✓</view>
           <view class="result-hm">
-            <view class="result-t"><block wx:if="{{item.tSegs}}" wx:for="{{item.tSegs}}" wx:for-item="seg" wx:key="k"><text class="{{seg.h ? 'kw-hit' : ''}}">{{seg.s}}</text></block><block wx:else>{{item.t || '无题'}}</block><text wx:if="{{item.seen}}" class="seen-mark"> ✓ 已读</text></view>
-            <view class="result-m"><block wx:if="{{item.mSegs}}" wx:for="{{item.mSegs}}" wx:for-item="seg" wx:key="k"><text class="{{seg.h ? 'kw-hit' : ''}}">{{seg.s}}</text></block><block wx:else>{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</block></view>
+            <view class="result-t"><block wx:if="{{item.tSegs}}"><block wx:for="{{item.tSegs}}" wx:for-item="seg" wx:key="k"><text class="{{seg.h ? 'kw-hit' : ''}}">{{seg.s}}</text></block></block><block wx:else>{{item.t || '无题'}}</block><text wx:if="{{item.seen}}" class="seen-mark"> ✓ 已读</text></view>
+            <view class="result-m"><block wx:if="{{item.mSegs}}"><block wx:for="{{item.mSegs}}" wx:for-item="seg" wx:key="k"><text class="{{seg.h ? 'kw-hit' : ''}}">{{seg.s}}</text></block></block><block wx:else>{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</block></view>
           </view>
           <view wx:if="{{!selMode}}" class="result-note {{item.hasNote ? 'on' : ''}}" data-index="{{index}}" catchtap="onResultNoteTap"><view class="note-glyph"></view></view>
           <view wx:if="{{!selMode}}" class="result-fav {{item.fav ? 'on' : ''}} {{item.burst ? 'burst' : ''}}" data-index="{{index}}" catchtap="onResultFavTap"><view class="star-glyph"></view></view>
@@ -195,9 +190,9 @@
   </view>
 
   <!-- 首次引导高亮（30 天未访问再次提示） -->
-  <view wx:if="{{onboardShow}}" class="onboard-mask" catchtap="onOnboardTap" catchtouchmove="noop">
-    <view class="onboard-ring"></view>
-    <view class="onboard-tip">第一次来？点我查看使用指南</view>
+  <view wx:if="{{onboardShow}}" class="onboard-bar" catchtap="onOnboardClose">
+    <text>初来乍到？「⚙」调主题 ·「🕘」看最近读过 ·「指南」了解更多</text>
+    <text class="ob-close">✕</text>
   </view>
 
   <!-- 收藏夹入口（设置图标旁） -->
@@ -324,6 +319,8 @@
       </scroll-view>
       <button class="btn primary dev-btn" catchtap="onDevCopy">复制全部信息</button>
       <button class="btn secondary dev-btn" catchtap="onDevReshowDisclaimer">重新显示开屏使用提示</button>
+      <button class="btn secondary dev-btn" catchtap="onDevReonboard">重新显示初次引导</button>
+      <button class="btn secondary dev-btn" catchtap="onDevResplash">重新显示开屏界面</button>
       <button class="btn secondary dev-btn" catchtap="onDevClose">关闭面板</button>
     </view>
   </view>
@@ -335,10 +332,10 @@
       <view class="sheet-head">使用指南</view>
       <view class="guide-stats">{{statsLine}}</view>
       <view class="guide-list">
-        <view class="guide-item"><text class="guide-k">精致体验</text>设置可开启<text class="guide-b">摇一摇抽诗</text>与<text class="guide-b">名句速览</text>；卡片下方可<text class="guide-b">复制全诗</text>；点作者名<text class="guide-b">搜全部同作者诗词</text>；搜索框下自动记录<text class="guide-b">最近搜索</text>。</view>
+        <view class="guide-item"><text class="guide-k">精致体验</text>设置可开启<text class="guide-b">摇一摇抽诗</text>与<text class="guide-b">名句速览</text>；卡片下方可<text class="guide-b">复制全诗</text>、<text class="guide-b">同作者再来一首</text>；点作者名<text class="guide-b">搜全部同作者诗词</text>。</view>
         <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「与诗相逢」<text class="guide-b">随机推荐一首</text>。</view>
         <view class="guide-item"><text class="guide-k">手势</text>在诗词卡片上<text class="guide-b">左右轻滑</text>换一首随机诗；<text class="guide-b">双击卡片</text>快速收藏；<text class="guide-b">长按诗句</text>即可复制该句。</view>
-        <view class="guide-item"><text class="guide-k">每日与足迹</text>「今日之诗」每天为你推荐<text class="guide-b">同一首</text>；顶栏时钟图标查看<text class="guide-b">最近读过</text>；收藏夹支持一键<text class="guide-b">导出</text>。</view>
+        <view class="guide-item"><text class="guide-k">足迹</text>顶栏时钟图标查看<text class="guide-b">最近读过</text>；收藏夹支持一键<text class="guide-b">导出</text>。</view>
         <view class="guide-item"><text class="guide-k">条件搜索</text>一框输入搜索词，<text class="guide-b">智能识别</text>作者 / 朝代 / 标题，也可在输入框下手动指定；命中关键词<text class="guide-b">加粗高亮</text>、点开过的条目标记已读；与体裁任意组合，体裁首项「无」表示不限。</view>
         <view class="guide-item"><text class="guide-k">列表浏览</text>点击标题行<text class="guide-b">展开全诗</text>，一次只展开一首；<text class="guide-b">上滑自动加载更多</text>。</view>
         <view class="guide-item"><text class="guide-k">批量收藏</text>列表中点「批量收藏」，勾选后<text class="guide-b">一键加入收藏夹</text>。</view>

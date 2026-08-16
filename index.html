@@ -89,7 +89,7 @@
     }
     h1 {
       text-align: center;
-      margin: 0 0 18px;
+      margin: 48px 0 18px;
       line-height: 0;
     }
     /* SVG logo：顶部阳刻 / 页脚阴刻 */
@@ -115,7 +115,7 @@
     .btn-line { display: block; }
     .row {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr;
       gap: 12px;
       margin-bottom: 14px;
     }
@@ -362,10 +362,13 @@
     .mini-btn.danger { border-color: var(--seal-color, #a3382f); color: var(--seal-color, #a3382f); }
     .mini-btn.solid { background: var(--button-bg, #8b2c2c); border-color: var(--button-bg, #8b2c2c); color: var(--button-text, #fff); opacity: 1; }
     .search-tip { font-size: 11px; opacity: .6; text-align: center; margin: 4px 0 6px; line-height: 1.7; }
-    .mode-chips { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-    .mode-chip { flex: 1; min-width: 60px; background: none; border: 1px solid var(--input-border); color: var(--label-color); font-size: 12px; letter-spacing: 1px; padding: 5px 2px; border-radius: 999px; cursor: pointer; transition: all .2s; }
-    .mode-chip.active { border-color: var(--seal-color, #a3382f); color: var(--seal-color, #a3382f); background: color-mix(in srgb, var(--seal-color, #a3382f) 8%, transparent); }
-    .kw-hint { font-size: 11.5px; color: var(--accent-color); margin-top: 6px; line-height: 1.5; text-align: left; }
+    .input-wrap { position: relative; }
+    .input-wrap input { padding-right: 100px; }
+    .kw-state { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 11px; letter-spacing: 1px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--accent-color); color: var(--accent-color); background: color-mix(in srgb, var(--accent-color) 9%, transparent); white-space: nowrap; pointer-events: none; }
+    .kw-state.muted { border-color: var(--input-border); color: var(--meta-color); background: transparent; }
+    .mode-seg { position: relative; display: flex; height: 34px; border-radius: 17px; border: 1px solid var(--input-border); background: var(--input-bg); margin-top: 8px; }
+    .mode-opt { position: relative; flex: 1; width: auto; margin: 0; padding: 0; border: 0; background: transparent; font-size: 12.5px; letter-spacing: 1px; color: var(--text-color); opacity: .75; cursor: pointer; font-family: inherit; transition: color .2s, opacity .2s; }
+    .mode-opt.active { background: transparent; color: var(--button-text); opacity: 1; }
     .results-progress { margin: 6px 0 4px; padding: 7px 11px; font-size: 12px; line-height: 1.5; color: var(--label-color); border: 1px dashed var(--input-border); border-radius: 7px; display: flex; align-items: center; gap: 8px; }
     .results-progress::before { content: ""; width: 12px; height: 12px; border: 2px solid var(--input-border); border-top-color: var(--seal-color, #a3382f); border-radius: 50%; animation: spinProg .8s linear infinite; flex: none; }
     @keyframes spinProg { to { transform: rotate(360deg); } }
@@ -469,9 +472,10 @@
     /* 最近读过入口（顶栏时钟图标） */
     .hist-toggle { position: absolute; top: 18px; right: 132px; width: 26px; height: 26px; background: transparent; border: 0; color: var(--text-color); cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; opacity: 0; pointer-events: none; transition: opacity .5s ease, transform .18s cubic-bezier(.34,1.56,.64,1); }
     .hist-toggle svg { width: 100%; height: 100%; }
+    .hist-toggle.visible { opacity: 0; pointer-events: none; }
+    .hist-toggle.visible.ready { opacity: .72; pointer-events: auto; }
+    .hist-toggle.visible.ready:hover { opacity: 1; }
 
-    /* 今日之诗入口 */
-    .random-sub { text-align: center; margin-top: 4px; }
     .link-btn { background: none; border: 1px solid var(--seal-color, #a3382f); color: var(--seal-color, #a3382f); font-size: 13px; letter-spacing: 3px; cursor: pointer; font-family: inherit; padding: 8px 24px; border-radius: 999px; transition: background-color .2s, color .2s, transform .18s cubic-bezier(.34,1.56,.64,1); }
     .link-btn:hover { background: var(--seal-color, #a3382f); color: var(--bg-color); }
     .link-btn:active { transform: scale(.94); }
@@ -675,16 +679,15 @@
     }
     @media (max-width: 650px) {
       .row { grid-template-columns: 1fr; }
+      .onboard-bar { left: 52px; right: 12px; top: 10px; max-width: none; }
       .theme-panel { right: 8px; left: 8px; width: auto; }
       .splash-logo { height: 46px; }
       .deco-mountains { width: 70vw; }
     }
   
     /* ====== Round-18 搜索与设置精化 ====== */
-    .kw-hint { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-    .kw-hint-t { font-size: 12px; color: var(--meta-color); }
-    .kw-badge { font-size: 11px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--accent-color); color: var(--accent-color); background: color-mix(in srgb, var(--accent-color) 9%, transparent); letter-spacing: 1px; white-space: nowrap; }
-    .type-field { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 3px 0; min-height: 22px; user-select: none; }
+
+    .type-field { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 9px 12px; min-height: 22px; user-select: none; border: 1px solid var(--input-border); background: var(--input-bg); border-radius: 9px; transition: background 0.3s, border-color 0.3s; }
     .type-field .ph { opacity: .6; }
     .type-field .caret { font-size: .85em; opacity: .55; margin-left: 6px; }
     .type-group-h { font-size: 11px; color: var(--meta-color); margin: 12px 0 7px; letter-spacing: 2px; }
@@ -695,21 +698,16 @@
     .settings-group.closed .settings-caret { transform: rotate(-90deg); }
     .settings-row { display: flex; gap: 0 18px; }
     .settings-row > .theme-section { flex: 1; min-width: 0; }
-    .card-sub-tools .sub-link { background: none; border: none; padding: 0; color: var(--meta-color); font-size: 12.5px; letter-spacing: 1px; cursor: pointer; font-family: inherit; transition: color .2s; }
-    .card-sub-tools .sub-link:hover { color: var(--accent-color); }
-    .card-sub-tools .sub-link:active { opacity: .6; }
-    .card-sub-tools .sl-sep { color: var(--meta-color); opacity: .5; }
-    .card-sub-tools .sub-link[style*="none"] + .sl-sep { display: none; }
+    .card-sub-tools .sub-tool { display: inline-flex; align-items: center; padding: 7px 14px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--accent-color) 45%, transparent); background: color-mix(in srgb, var(--accent-color) 9%, transparent); color: var(--text-color); font-size: 12px; letter-spacing: 1px; cursor: pointer; font-family: inherit; transition: all .2s; white-space: nowrap; }
+    .card-sub-tools .sub-tool:hover { background: color-mix(in srgb, var(--accent-color) 18%, transparent); }
+    .card-sub-tools .sub-tool:active { transform: scale(.95); }
     .results-panel.card { text-align: left; padding: var(--card-padding); min-height: 240px; }
     /* ====== Round-17 精致化 ====== */
     .ink-ripple { position: fixed; z-index: 400; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, color-mix(in srgb, var(--seal-color) 28%, transparent) 0%, transparent 70%); opacity: .85; animation: inkRipple .65s ease-out forwards; }
     @keyframes inkRipple { to { transform: scale(10); opacity: 0; } }
     .card { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23p)'/%3E%3C/svg%3E"); }
     .reading-progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--seal-color); opacity: .8; z-index: 350; pointer-events: none; }
-    .kw-hist { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
-    .kw-hist-chip { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--accent-color); background: transparent; color: var(--text-color); cursor: pointer; font-family: inherit; }
-    .kw-hist-chip:hover { background: color-mix(in srgb, var(--accent-color) 12%, transparent); }
-    .kw-hist-clear { font-size: 11px; padding: 3px 8px; border: none; background: transparent; color: var(--meta-color); cursor: pointer; }
+
     .meta-link { cursor: pointer; border-bottom: 1px dashed currentColor; }
     .brief-quote .verse-line { font-size: 1.12em; }
     .brief-more { margin-top: 16px; font-size: 13px; }
@@ -717,11 +715,14 @@
     .opt-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; border: 1px solid rgba(0,0,0,.18); vertical-align: -1px; }
     body.no-preview .opt-dot { display: none; }
     .opt-sign { margin-top: 6px; }
-    .onboard-mask { position: fixed; inset: 0; z-index: 500; cursor: pointer; }
+    .onboard-bar { position: fixed; left: 54px; top: 12px; z-index: 1300; display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 320px); padding: 10px 14px; border-radius: 12px; background: var(--card-bg); border: 1px solid var(--card-border); box-shadow: var(--card-shadow); font-size: 12.5px; color: var(--text-color); letter-spacing: .5px; animation: obIn .4s ease; cursor: pointer; line-height: 1.6; }
+    .onboard-bar.gone { opacity: 0; transition: opacity .4s ease; pointer-events: none; }
+    .onboard-bar .ob-close { background: none; border: none; color: var(--meta-color); font-size: 12px; cursor: pointer; padding: 2px 4px; width: auto; height: auto; line-height: 1; }
+    @keyframes obIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
     .onboard-ring { position: fixed; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; border: 2px solid var(--seal-color); box-shadow: 0 0 0 9999px rgba(20,16,10,.55); pointer-events: none; animation: onboardPulse 1.4s ease-in-out infinite; }
     @keyframes onboardPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
     .onboard-tip { position: fixed; transform: translateX(-50%); background: var(--card-bg, #fff); color: var(--text-color); border: 1px solid var(--accent-color); padding: 8px 14px; border-radius: 10px; font-size: 13px; white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.25); pointer-events: none; }
-    .card-sub-tools { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 12px; margin-bottom: 6px; }
+    .card-sub-tools { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: nowrap; margin-top: 12px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -799,15 +800,17 @@
       <div class="row">
         <div>
           <label for="keyword">搜索</label>
-          <input id="keyword" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜">
-          <div id="modeChips" class="mode-chips">
-            <button class="mode-chip active" data-mode="auto" type="button">智能识别</button>
-            <button class="mode-chip" data-mode="author" type="button">按作者</button>
-            <button class="mode-chip" data-mode="dynasty" type="button">按朝代</button>
-            <button class="mode-chip" data-mode="title" type="button">按标题</button>
+          <div class="input-wrap">
+            <input id="keyword" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜">
+            <span id="kwState" class="kw-state" style="display:none"></span>
           </div>
-          <div id="kwHint" class="kw-hint" style="display:none"></div>
-          <div id="kwHist" class="kw-hist" style="display:none"></div>
+          <div class="mode-seg">
+            <div class="ratio-thumb" id="smThumb"></div>
+            <button class="mode-opt active" data-mode="auto" type="button">智能识别</button>
+            <button class="mode-opt" data-mode="author" type="button">按作者</button>
+            <button class="mode-opt" data-mode="dynasty" type="button">按朝代</button>
+            <button class="mode-opt" data-mode="title" type="button">按标题</button>
+          </div>
         </div>
         <div class="type-wrap">
           <label>体裁</label>
@@ -824,7 +827,6 @@
       </div>
       <div class="random-tip">读到心动的一首，可在下方生成卡片保存或分享</div>
       <div class="random-tip">读到会心处，可点诗词旁的 ✎ 纸笔图标写下你的感悟</div>
-      <div class="random-sub"><button id="dailyButton" class="link-btn" type="button">☀ 今日之诗 · 每日与大家同读一首</button></div>
     </section>
 
     <section class="card" id="card">
@@ -852,11 +854,8 @@
     <!-- 分享与比例：渲染诗词后由 JS 移入卡片内部 -->
     <div id="cardToolsInner" class="card-tools-inner" style="display:none">
       <div class="card-sub-tools">
-        <button id="sameAuthorButton" class="sub-link" type="button" style="display:none"></button>
-        <span class="sl-sep">·</span>
-        <button id="copyPoemButton" class="sub-link" type="button">复制全诗</button>
-        <span class="sl-sep">·</span>
-        <button id="readAloudButton" class="sub-link" type="button">朗读</button>
+        <button id="sameAuthorButton" class="sub-tool" type="button" style="display:none"></button>
+        <button id="copyPoemButton" class="sub-tool" type="button">复制全诗</button>
       </div>
       <button id="shareButton" type="button" class="secondary">下载或分享卡片</button>
       <div class="ratio-row">
@@ -890,10 +889,10 @@
       <div class="sheet-head">使用指南</div>
       <div class="guide-stats" id="guideStats"></div>
       <div class="guide-list">
-        <div class="guide-item"><span class="guide-k">精致体验</span>设置可开启<b class="guide-b">摇一摇抽诗</b>与<b class="guide-b">名句速览</b>；卡片下方可<b class="guide-b">复制全诗</b>、<b class="guide-b">朗读</b>；点作者名<b class="guide-b">搜全部同作者诗词</b>；搜索框下自动记录<b class="guide-b">最近搜索</b>。</div>
+        <div class="guide-item"><span class="guide-k">精致体验</span>设置可开启<b class="guide-b">摇一摇抽诗</b>与<b class="guide-b">名句速览</b>；卡片下方可<b class="guide-b">复制全诗</b>、<b class="guide-b">同作者再来一首</b>；点作者名<b class="guide-b">搜全部同作者诗词</b>。</div>
         <div class="guide-item"><span class="guide-k">随机邂逅</span>不填任何条件，点「与诗相逢」<b class="guide-b">随机推荐一首</b>。</div>
         <div class="guide-item"><span class="guide-k">手势</span>在诗词卡片上<b class="guide-b">左右轻滑</b>换一首随机诗；<b class="guide-b">双击卡片</b>快速收藏；<b class="guide-b">长按诗句</b>即可复制该句。</div>
-        <div class="guide-item"><span class="guide-k">每日与足迹</span>「今日之诗」每天为你推荐<b class="guide-b">同一首</b>；顶栏时钟图标查看<b class="guide-b">最近读过</b>；收藏夹支持一键<b class="guide-b">导出</b>。</div>
+        <div class="guide-item"><span class="guide-k">足迹</span>顶栏时钟图标查看<b class="guide-b">最近读过</b>；收藏夹支持一键<b class="guide-b">导出</b>。</div>
         <div class="guide-item"><span class="guide-k">条件搜索</span>一框输入搜索词，<b class="guide-b">智能识别</b>作者 / 朝代 / 标题，也可在输入框下手动指定；命中关键词<b class="guide-b">加粗高亮</b>、点开过的条目标记已读；与体裁任意组合，体裁首项「无」表示不限。</div>
         <div class="guide-item"><span class="guide-k">列表浏览</span>点击标题行<b class="guide-b">展开全诗</b>，一次只展开一首；<b class="guide-b">上滑自动加载更多</b>。</div>
         <div class="guide-item"><span class="guide-k">批量收藏</span>列表中点「批量收藏」，勾选后<b class="guide-b">一键加入收藏夹</b>。</div>
@@ -1011,6 +1010,8 @@
       <div class="fav-bar">
         <button class="mini-btn" id="devCopy" type="button">复制全部信息</button>
         <button class="mini-btn" id="devReshow" type="button">重新显示开屏提示</button>
+        <button class="mini-btn" id="devReonboard" type="button">重新显示初次引导</button>
+        <button class="mini-btn" id="devResplash" type="button">重新显示开屏界面</button>
         <button class="mini-btn solid" id="devClose" type="button">关闭面板</button>
       </div>
     </div>
@@ -1147,10 +1148,6 @@
     try { const o0 = JSON.parse(localStorage.getItem(OPTS_KEY) || "null"); if (o0) appOpts = { ...appOpts, ...o0 }; } catch (e) {}
     function saveOpts() { try { localStorage.setItem(OPTS_KEY, JSON.stringify(appOpts)); } catch (e) {} }
     // ====== 搜索历史（最近 6 条） ======
-    const KW_HIST_KEY = "shihai-kw-hist-v1";
-    let kwHist = [];
-    try { kwHist = JSON.parse(localStorage.getItem(KW_HIST_KEY) || "[]") || []; } catch (e) { kwHist = []; }
-    function saveKwHist() { try { localStorage.setItem(KW_HIST_KEY, JSON.stringify(kwHist.slice(0, 6))); } catch (e) {} }
     // ====== 搜索摘要索引：每块标题字符集，标题模糊检索先收窄数据块 ======
     const SEARCH_INDEX_KEY = "poetry-search-index-v1";
     let SEARCH_IDX = null;
@@ -1199,26 +1196,23 @@
       if (searchMode !== "auto") return searchMode;
       return detectKw(kw);
     }
-    function kwHintHtml(tag, text) {
-      return (tag ? '<span class="kw-badge">' + tag + "</span>" : "") + '<span class="kw-hint-t">' + escapeHtml(text) + "</span>";
-    }
     function updateKwHint() {
-      const hint = $("kwHint");
-      if (!hint) return;
+      const st = $("kwState");
+      if (!st) return;
       const kw = keywordInput.value.trim();
-      if (!kw) { hint.style.display = "none"; return; }
-      hint.style.display = "";
-      if (searchMode === "author") { hint.innerHTML = kwHintHtml("作者", "「" + kw + "」· 精确检索"); return; }
-      if (searchMode === "dynasty") { hint.innerHTML = kwHintHtml("朝代", "「" + kw + "」· 精确检索"); return; }
-      if (searchMode === "title") { hint.innerHTML = kwHintHtml("标题", "「" + kw + "」· 模糊检索"); return; }
-      if (!INDEX) { hint.innerHTML = kwHintHtml("", "智能识别：诗词库加载中……"); return; }
-      hint.innerHTML = kwHintHtml("识别中", "正在判断输入类型……");
+      if (!kw) { st.style.display = "none"; return; }
+      st.style.display = "";
+      st.classList.remove("muted");
+      if (searchMode === "author") { st.textContent = "按作者检索"; return; }
+      if (searchMode === "dynasty") { st.textContent = "按朝代检索"; return; }
+      if (searchMode === "title") { st.textContent = "按标题检索"; return; }
+      if (!INDEX) { st.textContent = "识别中"; st.classList.add("muted"); return; }
+      st.textContent = "识别中"; st.classList.add("muted");
       ensureFullIndex().then(() => {
         if (keywordInput.value.trim() !== kw) return;
         const m = detectKw(kw);
-        hint.innerHTML = m === "author" ? kwHintHtml("作者", "「" + kw + "」· 将按作者精确检索")
-          : m === "dynasty" ? kwHintHtml("朝代", "「" + kw + "」· 将按朝代精确检索")
-          : kwHintHtml("标题", "「" + kw + "」· 将按标题模糊检索");
+        st.classList.remove("muted");
+        st.textContent = m === "author" ? "按作者检索" : m === "dynasty" ? "按朝代检索" : "按标题检索";
       });
     }
     function hiliteKw(text) {
@@ -1614,7 +1608,6 @@
       try {
         if (typeof speechSynthesis !== "undefined" && speechSynthesis.speaking) {
           speechSynthesis.cancel(); aloudOn = false;
-          const rab = $("readAloudButton"); if (rab) rab.textContent = "朗读";
         }
       } catch (e) {}
 
@@ -1898,10 +1891,13 @@
 
     // 搜索方式标签与设置面板同步 + 输入实时识别提示
     function renderModeChips() {
-      document.querySelectorAll("#modeChips .mode-chip").forEach((b) => b.classList.toggle("active", b.dataset.mode === searchMode));
+      const opts = Array.from(document.querySelectorAll(".mode-opt"));
+      opts.forEach((b) => b.classList.toggle("active", b.dataset.mode === searchMode));
       document.querySelectorAll('.theme-options[data-group="optSearchMode"] .theme-opt').forEach((b) => b.classList.toggle("active", b.dataset.value === searchMode));
+      const thumb = $("smThumb");
+      if (thumb) { const idx = opts.findIndex((b) => b.classList.contains("active")); if (idx >= 0) thumb.style.left = "calc(" + idx * 25 + "% + 2px)"; }
     }
-    document.querySelectorAll("#modeChips .mode-chip").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll(".mode-opt").forEach((b) => b.addEventListener("click", () => {
       haptic();
       searchMode = b.dataset.mode;
       saveSearchMode();
@@ -1915,29 +1911,6 @@
     });
     updateKwHint();
     // ====== 搜索历史快捷条 ======
-    let kwHistVisible = false;
-    function renderKwHist() {
-      const box = $("kwHist");
-      if (!box) return;
-      if (!kwHistVisible || !kwHist.length) { box.style.display = "none"; return; }
-      box.style.display = "";
-      box.innerHTML = kwHist.map((k) => '<button class="kw-hist-chip" type="button">' + escapeHtml(k) + "</button>").join("") +
-        '<button class="kw-hist-clear" type="button" title="清空搜索历史">✕</button>';
-    }
-    $("kwHist").addEventListener("click", (e) => {
-      if (e.target.closest(".kw-hist-clear")) {
-        haptic(); kwHist = []; saveKwHist(); renderKwHist(); return;
-      }
-      const chip = e.target.closest(".kw-hist-chip");
-      if (!chip) return;
-      haptic();
-      keywordInput.value = chip.textContent;
-      updateKwHint();
-      openResults(chip.textContent, typeValue.trim());
-    });
-    renderKwHist();
-    keywordInput.addEventListener("focus", () => { kwHistVisible = true; renderKwHist(); });
-    keywordInput.addEventListener("blur", () => { setTimeout(() => { kwHistVisible = false; renderKwHist(); }, 200); });
 
     // ====== 分享：纯 Canvas 手绘诗词卡片（高分辨率、按句排版、间距自适应） ======
     let shareRatio = "1:1";
@@ -2304,20 +2277,7 @@
       updateKwHint();
       openResults(a, "");
     });
-    let aloudOn = false;
-    $("readAloudButton").addEventListener("click", () => {
-      if (!currentPoem || typeof speechSynthesis === "undefined") { toast("当前浏览器不支持朗读"); return; }
-      haptic();
-      const rab = $("readAloudButton");
-      if (aloudOn) { speechSynthesis.cancel(); aloudOn = false; rab.textContent = "朗读"; return; }
-      const text = (currentPoem.t || "") + "，" + [currentPoem.d, currentPoem.a].filter(Boolean).join("，") + "。" + (currentPoem.c || "").replace(/[\u25a1\ufffd]/g, "");
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "zh-CN"; u.rate = 0.85;
-      u.onend = () => { aloudOn = false; rab.textContent = "朗读"; };
-      aloudOn = true; rab.textContent = "停止朗读";
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
-    });
+
 
     // ====== 网络字体（固定：思源宋体，jsDelivr 国内可访问） ======
     // 主源 jsDelivr；加载失败自动切备用 CDN（unpkg，固定版本），都失败回退系统字体
@@ -2873,13 +2833,6 @@
     }
     async function openResults(kw, type) {
       if (!INDEX) { showStatus("诗词库尚未加载完成，请稍候……"); return; }
-      if (kw) {
-        kwHist = kwHist.filter((x) => x !== kw);
-        kwHist.unshift(kw);
-        if (kwHist.length > 6) kwHist.length = 6;
-        saveKwHist();
-        renderKwHist();
-      }
       if (type || kw) {
         const full = await ensureFullIndex();
         if (!full) { showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
@@ -3027,6 +2980,8 @@
     function saveHistory() {
       try { localStorage.setItem(HIST_KEY, JSON.stringify(readHistory.slice(0, 20))); } catch (e) {}
     }
+    function syncHistToggle() { const h = $("histToggle"); if (h) h.classList.toggle("visible", readHistory.length > 0); }
+    syncHistToggle();
     function recordHistory(poem) {
       if (!poem) return;
       const id = favId(poem);
@@ -3034,6 +2989,7 @@
       readHistory.unshift({ t: poem.t, a: poem.a, d: poem.d, y: poem.y, c: poem.c });
       if (readHistory.length > 20) readHistory.length = 20;
       saveHistory();
+      syncHistToggle();
     }
     function renderHistList() {
       const list = $("histList");
@@ -3077,38 +3033,11 @@
       if (!readHistory.length) { toast("暂无阅读记录"); return; }
       readHistory = [];
       saveHistory();
+      syncHistToggle();
       renderHistList();
       toast("已清空阅读记录");
     });
 
-    // ====== 今日之诗：按日期确定性挑选，所有人当天读到同一首 ======
-    function dailySeed() {
-      const d = new Date();
-      return (((d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()) >>> 0) * 2654435761) >>> 0;
-    }
-    async function loadDailyPoem() {
-      if (!INDEX) { toast("诗词库尚未加载完成，请稍候"); return; }
-      const seed = dailySeed();
-      const chunks = INDEX.chunks;
-      for (let i = 0; i < 6; i++) {
-        const chunk = chunks[(seed + i * 7919) % chunks.length];
-        let poems;
-        try { poems = await loadChunk(chunk.file); } catch (e) { continue; }
-        if (!poems || !poems.length) continue;
-        for (let j = 0; j < 8; j++) {
-          const p = poems[(((seed >> 3) + i * 31 + j * 97) % poems.length + poems.length) % poems.length];
-          if (!/[\u25a1\ufffd]/.test((p.t ?? "") + (p.a ?? "") + (p.c ?? ""))) {
-            setListMode(false);
-            renderPoem(p);
-            card.scrollIntoView({ behavior: "smooth", block: "start" });
-            toast("今日之诗 · 每天与大家同读一首");
-            return;
-          }
-        }
-      }
-      toast("今日之诗读取失败，请重试");
-    }
-    $("dailyButton").addEventListener("click", () => { haptic(); loadDailyPoem(); });
 
     // ====== 收藏夹导出：复制全文 + 尝试下载 txt ======
     function copyText(text) {
@@ -3331,18 +3260,14 @@
         if (ts && Date.now() - ts < 30 * 86400000) return;
         localStorage.setItem(ONBOARD_KEY, String(Date.now()));
       } catch (e) {}
-      const tg = $("guideToggle");
-      if (!tg) return;
-      const r = tg.getBoundingClientRect();
-      if (!r.width) return;
-      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      const mask = document.createElement("div");
-      mask.className = "onboard-mask";
-      mask.innerHTML = '<div class="onboard-ring" style="left:' + cx + 'px;top:' + cy + 'px"></div>' +
-        '<div class="onboard-tip" style="left:' + cx + 'px;top:' + (cy + r.height / 2 + 16) + 'px">第一次来？点我查看使用指南</div>';
-      document.body.appendChild(mask);
-      mask.addEventListener("click", () => mask.remove());
-      setTimeout(() => { if (mask.isConnected) { mask.style.opacity = "0"; mask.style.transition = "opacity .6s ease"; mask.style.pointerEvents = "none"; setTimeout(() => mask.remove(), 650); } }, 3000);
+      const bar = document.createElement("div");
+      bar.className = "onboard-bar";
+      bar.innerHTML = '<span>初来乍到？右上「⚙」调主题配色，「🕘」看最近读过，右上角指南了解更多</span><button type="button" class="ob-close" aria-label="关闭">✕</button>';
+      document.body.appendChild(bar);
+      const kill = () => { if (bar.isConnected) { bar.classList.add("gone"); setTimeout(() => bar.remove(), 400); } };
+      bar.addEventListener("click", kill);
+      bar.querySelector(".ob-close").addEventListener("click", kill);
+      setTimeout(kill, 6000);
     }
 
     // ====== 时段提示：按时辰变换首条提示文案 ======
@@ -3875,6 +3800,8 @@
       if (nt) nt.classList.add("ready");
       const gd = $("guideToggle");
       if (gd) gd.classList.add("ready");
+      const ht = $("histToggle");
+      if (ht) ht.classList.add("ready");
       const splash = $("splash");
       if (splash) {
         splash.classList.add("hide");
@@ -3890,9 +3817,11 @@
     } catch (e) {}
 
     // ====== 开屏动画（每次会话一次，点击可跳过） ======
+    let splashHtmlBackup = "";
     (function initSplash() {
       const splash = $("splash");
       if (!splash) return;
+      splashHtmlBackup = splash.outerHTML;
       const hide = () => {
         splash.classList.add("hide");
         // 开屏结束后才显示设置按钮与收藏夹入口
@@ -3904,6 +3833,8 @@
         if (nt) nt.classList.add("ready");
         const gd = $("guideToggle");
         if (gd) gd.classList.add("ready");
+        const ht = $("histToggle");
+        if (ht) ht.classList.add("ready");
         setTimeout(() => splash.remove(), 900);
       };
       splash.addEventListener("click", hide);
@@ -4041,6 +3972,22 @@
         disclaimerBox.style.display = "";
         window.scrollTo({ top: 0 });
       }
+    });
+    $("devReonboard").addEventListener("click", () => {
+      haptic();
+      closeDevPanel();
+      try { localStorage.removeItem(ONBOARD_KEY); } catch (e) {}
+      maybeOnboard();
+    });
+    $("devResplash").addEventListener("click", () => {
+      haptic();
+      closeDevPanel();
+      if (!splashHtmlBackup || $("splash")) return;
+      document.body.insertAdjacentHTML("beforeend", splashHtmlBackup);
+      const sp = $("splash");
+      const hideSp = () => { sp.classList.add("hide"); setTimeout(() => sp.remove(), 900); };
+      sp.addEventListener("click", hideSp);
+      setTimeout(hideSp, 3200);
     });
 
     // 开发者入口：长按页脚版权行 1.5s 呼出（轻微移动不取消）
