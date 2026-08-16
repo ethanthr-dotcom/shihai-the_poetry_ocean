@@ -33,7 +33,7 @@ function loadImage(canvas, src) {
 }
 
 async function drawShare(opts) {
-  const { canvas, ctx, poem, vertical, ratio, cardW, cardH, colors, logoPath } = opts;
+  const { canvas, ctx, poem, vertical, ratio, cardW, cardH, colors, logoPath, sign } = opts;
   const bg = colors.bg || "#f4f1e8";
   const textColor = colors.text || "#2f2a24";
   const metaColor = colors.meta || "#766d63";
@@ -126,6 +126,7 @@ async function drawShare(opts) {
   ctx.restore();
 
   const footerText = "诗海 \u00b7 非营利古诗词共享项目";
+  const signText = ((sign || "") + "").trim();
 
   // 印章位 logo：横排用阴刻横版、竖排用竖版；加载失败退化为红色圆角方框
   const logoImg = await loadImage(canvas, logoPath);
@@ -159,7 +160,7 @@ async function drawShare(opts) {
     };
     const blockHeight = (L, list) =>
       L.titleFont + 80 + L.metaFont + 70 + list.length * L.lineH +
-      90 + L.logoH + 90 + L.catFont;
+      90 + L.logoH + 90 + L.catFont + (signText ? Math.round(L.catFont * 1.5) + 24 : 0);
 
     let lines = verses;
     let L = layout();
@@ -217,6 +218,12 @@ async function drawShare(opts) {
     ctx.fillStyle = catColor;
     ctx.font = L.catFont + "px " + FONT;
     ctx.fillText(footerText, W / 2, y + L.catFont / 2);
+    if (signText) {
+      y += L.catFont + 24;
+      ctx.fillStyle = metaColor;
+      ctx.font = Math.round(L.catFont * 0.95) + "px " + FONT;
+      ctx.fillText(signText, W / 2, y + L.catFont / 2);
+    }
   } else {
     // ---------- 竖排：右标题列 → 诗句列 → 左作者列；竖版 logo 置于页面底部；全部元素不出边框 ----------
     const ADV = 1.35;
@@ -276,14 +283,15 @@ async function drawShare(opts) {
     }
     // 页脚：不超出内框——超宽自动缩字号
     const fMaxW = W - M * 0.9 - 40;
+    const vFooter = signText ? footerText + " \u00b7 " + signText : footerText;
     let fSize = Math.round(20 * (W / 750));
     ctx.fillStyle = catColor;
     for (;;) {
       ctx.font = fSize + "px " + FONT;
-      if (ctx.measureText(footerText).width <= fMaxW || fSize <= 28) break;
+      if (ctx.measureText(vFooter).width <= fMaxW || fSize <= 28) break;
       fSize -= 4;
     }
-    ctx.fillText(footerText, W / 2, H - M * 0.45 - fSize * 0.75);
+    ctx.fillText(vFooter, W / 2, H - M * 0.45 - fSize * 0.75);
   }
 }
 

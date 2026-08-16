@@ -53,7 +53,13 @@ async function ensureFullIndex() {
 // 按需加载单个分块（内存缓存，限制数量防膨胀）
 async function loadChunk(file) {
   if (chunkCache.has(file)) return chunkCache.get(file);
-  const poems = await fetchJson(cfg.DATA_BASE + "data/" + file);
+  // 网络失败自动重试（共 3 次，间隔递增）
+  let poems = null, err = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try { poems = await fetchJson(cfg.DATA_BASE + "data/" + file); err = null; break; } catch (e) { err = e; }
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+  }
+  if (err) throw err;
   chunkCache.set(file, poems);
   if (chunkCache.size > 12) {
     chunkCache.delete(chunkCache.keys().next().value);

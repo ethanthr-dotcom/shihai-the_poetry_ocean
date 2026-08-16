@@ -1,6 +1,8 @@
-<view class="app" style="{{varsStyle}}" bindtap="onPageTap">
+<view class="app" style="{{varsStyle}}" bindtap="onPageTap" bindtouchstart="onRippleTouch">
   <!-- 顶部加载进度条 -->
   <view class="progress {{progressState}}"></view>
+  <view class="reading-progress" style="width: {{readProg}}%"></view>
+  <view wx:if="{{ripple}}" class="ink-ripple" style="left:{{ripple.x}}px;top:{{ripple.y}}px"></view>
 
   <!-- 点缀：山峦（CSS clip-path 简化版，跟随主题色） -->
   <view class="deco-mountains">
@@ -40,6 +42,10 @@
             <view class="mode-chip {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
           </view>
           <view wx:if="{{kwHint}}" class="kw-hint">{{kwHint}}</view>
+          <view wx:if="{{kwHist.length}}" class="kw-hist">
+            <view wx:for="{{kwHist}}" wx:key="*this" class="kw-hist-chip" data-kw="{{item}}" bindtap="onKwHistTap">{{item}}</view>
+            <view class="kw-hist-clear" bindtap="onKwHistClear">✕</view>
+          </view>
         </view>
         <view class="field type-wrap">
           <view class="label">体裁</view>
@@ -80,8 +86,12 @@
           <view class="title" style="{{titleStyle}}">
             <view wx:for="{{titleLines}}" wx:key="index" class="title-line">{{item}}</view>
           </view>
-          <view class="meta" style="{{metaStyle}}">{{poem.meta}}</view>
-          <view class="content {{isVertical ? 'vertical' : ''}}">
+          <view class="meta" style="{{metaStyle}}"><block wx:if="{{poem.pd}}">{{poem.pd}}<block wx:if="{{poem.pa}}"> · </block></block><text wx:if="{{poem.pa}}" class="meta-link" catchtap="onMetaAuthorTap">{{poem.pa}}</text></view>
+          <view wx:if="{{optBrief && briefQuote && !briefFull}}" class="content brief-quote">
+            <view class="verse-line">{{briefQuote}}</view>
+            <view class="brief-more link-btn" catchtap="onBriefFullTap">名句速览中 · 查看全诗 ▾</view>
+          </view>
+          <view wx:else class="content {{isVertical ? 'vertical' : ''}}">
             <view wx:for="{{verseLines}}" wx:key="index" class="verse-line {{item.wrap ? 'wrap' : ''}}" data-text="{{item.text}}{{item.punct}}" bindlongpress="onVerseLongPress">
               <text>{{item.text}}</text><text wx:if="{{item.punct}}" class="hang-punct">{{item.punct}}</text>
             </view>
@@ -89,6 +99,10 @@
           <view wx:if="{{poem.type}}" class="category" style="{{categoryStyle}}">体裁：{{poem.type}}</view>
         </view>
         <view class="card-tools">
+          <view class="card-sub-tools">
+            <view wx:if="{{poem.pa}}" class="link-btn" hover-class="link-btn-hover" bindtap="onMetaAuthorTap">同作者再来一首 · {{poem.pa}}</view>
+            <view class="link-btn" hover-class="link-btn-hover" bindtap="onCopyPoemTap">复制全诗</view>
+          </view>
           <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">
             <block wx:if="{{shareLoading}}">生成中……</block>
             <block wx:else><text class="btn-line" wx:for="{{shareBtnLines}}" wx:key="index">{{item}}</text></block>
@@ -162,7 +176,7 @@
       </view>
       <view class="results-foot">
         <block wx:if="{{resultsLoading}}">正在加载……</block>
-        <block wx:elif="{{resultsDone}}">已全部加载 · 共 {{resultsCount}} 首</block>
+        <block wx:elif="{{resultsDone}}">{{resultsCount ? '已全部加载 · 共 ' + resultsCount + ' 首' : '未找到匹配的诗词 · 试试更换关键词，或清空条件后点「与诗相逢」'}}</block>
         <block wx:else>上滑自动加载更多</block>
       </view>
     </view>
@@ -173,6 +187,12 @@
       <view class="copyright" bindlongpress="onDevEntry">版权所有 © Ethan 2026 · 非营利项目</view>
       <view class="copyright">数据来源：chinese-poetry 开源项目（MIT License）</view>
     </view>
+  </view>
+
+  <!-- 首次引导高亮（30 天未访问再次提示） -->
+  <view wx:if="{{onboardShow}}" class="onboard-mask" catchtap="onOnboardTap" catchtouchmove="noop">
+    <view class="onboard-ring"></view>
+    <view class="onboard-tip">第一次来？点我查看使用指南</view>
   </view>
 
   <!-- 收藏夹入口（设置图标旁） -->
@@ -202,7 +222,7 @@
       <view class="theme-label">配色</view>
       <view class="theme-options">
         <view wx:for="{{colorOptions}}" wx:key="value" class="theme-opt {{item.active ? 'active' : ''}}"
-          data-group="color" data-value="{{item.value}}" bindtap="onThemeOptTap">{{item.label}}</view>
+          data-group="color" data-value="{{item.value}}" bindtap="onThemeOptTap"><view wx:if="{{optPreview && item.dot}}" class="opt-dot" style="background:{{item.dot}}"></view>{{item.label}}</view>
       </view>
     </view>
     <view class="theme-section">
@@ -227,6 +247,31 @@
         <view class="theme-opt {{searchMode === 'dynasty' ? 'active' : ''}}" data-mode="dynasty" bindtap="onSearchModeTap">按朝代</view>
         <view class="theme-opt {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
       </view>
+    </view>
+    <view class="theme-section">
+      <view class="theme-label">主题小预览</view>
+      <view class="theme-options">
+        <view class="theme-opt {{optPreview ? 'active' : ''}}" data-key="preview" data-value="on" bindtap="onOptToggle">开</view>
+        <view class="theme-opt {{optPreview ? '' : 'active'}}" data-key="preview" data-value="off" bindtap="onOptToggle">关</view>
+      </view>
+    </view>
+    <view class="theme-section">
+      <view class="theme-label">摇一摇抽诗</view>
+      <view class="theme-options">
+        <view class="theme-opt {{optShake ? 'active' : ''}}" data-key="shake" data-value="on" bindtap="onOptToggle">开</view>
+        <view class="theme-opt {{optShake ? '' : 'active'}}" data-key="shake" data-value="off" bindtap="onOptToggle">关</view>
+      </view>
+    </view>
+    <view class="theme-section">
+      <view class="theme-label">名句速览</view>
+      <view class="theme-options">
+        <view class="theme-opt {{optBrief ? 'active' : ''}}" data-key="brief" data-value="on" bindtap="onOptToggle">开</view>
+        <view class="theme-opt {{optBrief ? '' : 'active'}}" data-key="brief" data-value="off" bindtap="onOptToggle">关</view>
+      </view>
+    </view>
+    <view class="theme-section">
+      <view class="theme-label">分享签名</view>
+      <input class="input opt-sign" maxlength="20" placeholder="展示在分享卡片页脚（可留空）" value="{{optSign}}" bindinput="onSignInput" />
     </view>
     <view class="panel-hint">点击页面空白处即可关闭</view>
   </view>
@@ -267,7 +312,9 @@
   <view wx:if="{{guideShow || guideShowClosing}}" class="picker-mask {{guideShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onGuideClose">
     <view class="guide-box" catchtap="noop">
       <view class="sheet-head">使用指南</view>
+      <view class="guide-stats">{{statsLine}}</view>
       <view class="guide-list">
+        <view class="guide-item"><text class="guide-k">精致体验</text>设置可开启<text class="guide-b">摇一摇抽诗</text>与<text class="guide-b">名句速览</text>；卡片下方可<text class="guide-b">复制全诗</text>；点作者名<text class="guide-b">搜全部同作者诗词</text>；搜索框下自动记录<text class="guide-b">最近搜索</text>。</view>
         <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「与诗相逢」<text class="guide-b">随机推荐一首</text>。</view>
         <view class="guide-item"><text class="guide-k">手势</text>在诗词卡片上<text class="guide-b">左右轻滑</text>换一首随机诗；<text class="guide-b">双击卡片</text>快速收藏；<text class="guide-b">长按诗句</text>即可复制该句。</view>
         <view class="guide-item"><text class="guide-k">每日与足迹</text>「今日之诗」每天为你推荐<text class="guide-b">同一首</text>；顶栏时钟图标查看<text class="guide-b">最近读过</text>；收藏夹支持一键<text class="guide-b">导出</text>。</view>
@@ -288,6 +335,7 @@
     <view class="fav-sheet" catchtap="noop">
       <view class="sheet-head">收藏夹<text class="results-count"> · {{favList.length}} 首</text></view>
       <view class="fav-tip">★ 收藏仅保存在本机本地缓存（相当于浏览器 cookie），清除缓存或卸载小程序后会丢失</view>
+      <input class="input sheet-search" placeholder="在收藏中搜索标题或作者……" placeholder-class="ph" value="{{favQuery}}" bindinput="onFavQuery" />
       <view class="fav-bar">
         <view class="mini-btn" bindtap="onFavManage">{{favSelMode ? '完成' : '批量管理'}}</view>
         <view wx:if="{{!favSelMode && favList.length}}" class="mini-btn" bindtap="onFavExport">导出</view>

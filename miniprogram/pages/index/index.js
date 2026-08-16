@@ -62,6 +62,18 @@ Page({
     searchMode: "auto",
     kwHint: "",
     searchProgress: "",
+    kwHist: [],
+    favQuery: "",
+    readProg: 0,
+    optPreview: true,
+    optShake: false,
+    optBrief: false,
+    optSign: "",
+    statsLine: "",
+    onboardShow: false,
+    briefQuote: "",
+    briefFull: false,
+    ripple: null,
     type: "",
     libTip: "收录 34 万余首古诗词",
     statusText: "正在加载诗词库……",
@@ -174,12 +186,35 @@ Page({
     const greet = h >= 5 && h < 8 ? "晨读" : h < 12 ? "上午品读" : h < 14 ? "午间小读" : h < 18 ? "午后漫读" : h < 23 ? "灯下夜读" : "深夜静读";
     this.setData({ randomTip: greet + " · " + this.data.randomTip });
     try { const sm0 = wx.getStorageSync("shihai-search-mode-v1"); if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title" || sm0 === "auto") this.setData({ searchMode: sm0 }); } catch (e) {}
+    // 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名）
+    this._opts = { preview: true, shake: false, brief: false, sign: "" };
+    try { const o0 = wx.getStorageSync("shihai-opts-v1"); if (o0) this._opts = { ...this._opts, ...o0 }; } catch (e) {}
+    this.setData({ optPreview: !!this._opts.preview, optShake: !!this._opts.shake, optBrief: !!this._opts.brief, optSign: this._opts.sign || "" });
+    if (this._opts.shake) this._startShake();
+    try { const kh0 = wx.getStorageSync("shihai-kw-hist-v1"); if (Array.isArray(kh0)) this.setData({ kwHist: kh0.slice(0, 6) }); } catch (e) {}
+    this._stats = { total: 0, dates: [], streak: 0, last: "" };
+    try { const st0 = wx.getStorageSync("shihai-stats-v1"); if (st0 && typeof st0.total === "number") this._stats = st0; } catch (e) {}
+    const term0 = this._solarTermToday();
+    if (term0) this.setData({ libTip: this.data.libTip + " · 今日" + term0 });
+    this.setData({ colorOptions: this.data.colorOptions.map((o) => ({ ...o, dot: themes.THEMES.color[o.value].vars["--bg-color"] })) });
     this.boot();
     this.fitBtnLabels();
   },
 
   onResize() {
     this.fitBtnLabels();
+  },
+
+  // 顶部阅读进度条（节流测量页面高度）
+  onPageScroll(e) {
+    const now = Date.now();
+    if (this._progTs && now - this._progTs < 150) return;
+    this._progTs = now;
+    wx.createSelectorQuery().select(".app").boundingClientRect((r) => {
+      const winH = this._winH || wx.getSystemInfoSync().windowHeight;
+      const max = (r ? r.height : 0) - winH;
+      this.setData({ readProg: max > 0 ? Math.round(Math.min(100, (e.scrollTop / max) * 100)) : 0 });
+    }).exec();
   },
 
   // 按钮标签自适应换行：太窄时拆行，硬性保证每行不少于两个字
@@ -217,6 +252,7 @@ Page({
     this.setData({ uiReady: true });
     this.hideSheet("disclaimerShow");
     this.hideSheet("splashShow");
+    this._maybeOnboard();
   },
 
   // ====== 开屏动画（与网页版一致：3.2s 自动消失，点击可跳过） ======
@@ -225,6 +261,7 @@ Page({
       if (!this.data.splashShow) return;
       this.setData({ uiReady: true });
     this.hideSheet("splashShow");
+      this._maybeOnboard();
     };
     this.splashTimer = setTimeout(hide, 3200);
   },
@@ -304,6 +341,18 @@ Page({
     this.setData({ searchMode: m });
     try { wx.setStorageSync("shihai-search-mode-v1", m); } catch (err) {}
     this.updateKwHint();
+  },
+  onKwHistTap(e) {
+    const kw = e.currentTarget.dataset.kw;
+    if (!kw) return;
+    this.haptic();
+    this.setData({ keyword: kw });
+    this.openResults(kw, (this.data.type || "").trim());
+  },
+  onKwHistClear() {
+    this.haptic();
+    this.setData({ kwHist: [] });
+    try { wx.setStorageSync("shihai-kw-hist-v1", []); } catch (e) {}
   },
   _detectKw(kw) {
     if (this._authorSet && this._authorSet.has(kw)) return "author";
@@ -734,7 +783,11 @@ Page({
   },
   onGuideOpen() {
     this.haptic();
-    this.setData({ guideShow: true });
+    const st = this._stats || { total: 0, dates: [], streak: 0 };
+    this.setData({
+      statsLine: "已读 " + st.total + " 首 · 到访 " + (st.dates ? st.dates.length : 0) + " 天 · 连续 " + (st.streak || 0) + " 天",
+      guideShow: true
+    });
   },
   onGuideClose() {
     this.haptic();
@@ -747,10 +800,19 @@ Page({
     if (this.data.favSheetShow) { this.hideSheet("favSheetShow"); return; }
     this.openFavSheet();
   },
+  _filterFavs(q) {
+    const list = this._favs.map((p) => ({ ...p }));
+    if (!q) return list;
+    return list.filter((p) => ((p.t || "") + (p.a || "") + (p.d || "")).indexOf(q) >= 0);
+  },
+  onFavQuery(e) {
+    const q = (e.detail.value || "").trim();
+    this.setData({ favQuery: q, favList: this._filterFavs(q) });
+  },
   openFavSheet() {
     this.setData({
       favSheetShow: true,
-      favList: this._favs.map((p) => ({ ...p })),
+      favList: this._filterFavs(this.data.favQuery),
       favSelMode: false, favSelIds: {}, favSelCount: 0,
       themePanelOpen: false
     });
@@ -759,7 +821,8 @@ Page({
   onFavItemTap(e) {
     if (this.data.favSelMode) { this.onFavSelToggle(e); return; }
     const idx = e.currentTarget.dataset.index;
-    const poem = this._favs[idx];
+    const item = this.data.favList[idx];
+    const poem = item ? this._favs.find((p) => p.id === item.id) : null;
     if (!poem) return;
     this.haptic();
     this.setData({ listMode: false });
@@ -804,7 +867,7 @@ Page({
         this._syncResultsFav();
         if (this.currentPoem && !this._favSet.has(favId(this.currentPoem))) this.setData({ currentFav: false });
         this.setData({
-          favList: this._favs.map((p) => ({ ...p })),
+          favList: this._filterFavs(this.data.favQuery),
           favSelIds: {}, favSelCount: 0
         });
         wx.showToast({ title: "已删除", icon: "success" });
@@ -815,6 +878,12 @@ Page({
   // ====== 搜索结果列表：就地替换诗词卡片；无限分页（页面触底）；手风琴；批量收藏 ======
   async openResults(kw, type) {
     if (!this.indexReady) { this.showStatus("诗词库尚未加载完成，请稍候……"); return; }
+    if (kw) {
+      const kh = (this.data.kwHist || []).filter((x) => x !== kw);
+      kh.unshift(kw);
+      this.setData({ kwHist: kh.slice(0, 6) });
+      try { wx.setStorageSync("shihai-kw-hist-v1", kh.slice(0, 6)); } catch (e) {}
+    }
     if (kw || type) {
       const full = await data.ensureFullIndex();
       if (!full) { this.showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
@@ -1120,13 +1189,26 @@ Page({
     this.currentPoem = poem;
     const meta = this._metaText(poem);
     const tt = this._buildTitle(poem.t || "无题");
+    const pid = favId(poem);
+    if (this._lastStatId !== pid) { this._lastStatId = pid; this._recordStats(); }
+    const newPoem = this._briefOverrideId !== pid;
+    if (newPoem) this._briefOverrideId = pid;
+    const verseList = verse.splitVerses(poem.c);
+    let briefQuote = "";
+    if (this._opts && this._opts.brief && verseList.length) {
+      let h = 0;
+      for (let i = 0; i < pid.length; i++) h += pid.charCodeAt(i);
+      briefQuote = verseList[h % verseList.length];
+    }
     this.setData({
       hasPoem: true,
       currentFav: !!(this._favSet && this._favSet.has(favId(poem))),
       currentNote: !!(this._noteMap && this._noteMap.has(favId(poem))),
       statusText: "",
       statusError: false,
-      poem: { t: poem.t || "无题", meta, type: poem.y || "" },
+      poem: { t: poem.t || "无题", meta, pd: poem.d || "", pa: poem.a || "", type: poem.y || "" },
+      briefQuote,
+      briefFull: newPoem ? false : this.data.briefFull,
       titleLines: tt.lines,
       titleStyle: tt.style,
       metaStyle: this._fitInlineStyle(meta, "--meta-font-size"),
@@ -1395,6 +1477,115 @@ Page({
     this.hideSheet("devShow");
   },
   noop() {},
+  // ====== 精致化：水墨涟漪 / 选项开关 / 签名 / 摇一摇 / 统计 / 节气 / 首次引导 ======
+  onRippleTouch(e) {
+    const t = e.touches && e.touches[0];
+    if (!t) return;
+    this.setData({ ripple: { x: t.clientX, y: t.clientY } });
+    clearTimeout(this._rippleTimer);
+    this._rippleTimer = setTimeout(() => this.setData({ ripple: null }), 650);
+  },
+  _saveOpts() { try { wx.setStorageSync("shihai-opts-v1", this._opts); } catch (e) {} },
+  onOptToggle(e) {
+    const { key, value } = e.currentTarget.dataset;
+    if (!key) return;
+    this.haptic();
+    this._opts[key] = value === "on";
+    this._saveOpts();
+    const upd = {};
+    upd["opt" + key.charAt(0).toUpperCase() + key.slice(1)] = this._opts[key];
+    if (key === "brief") upd.briefFull = false;
+    this.setData(upd);
+    if (key === "shake") { if (this._opts.shake) this._startShake(); else this._stopShake(); }
+    if (key === "brief" && this.currentPoem) this.renderPoem(this.currentPoem);
+  },
+  onSignInput(e) {
+    this._opts.sign = (e.detail.value || "").trim();
+    this.setData({ optSign: e.detail.value || "" });
+    this._saveOpts();
+  },
+  onBriefFullTap() {
+    this.haptic();
+    this.setData({ briefFull: true });
+  },
+  onMetaAuthorTap() {
+    const a = this.currentPoem && (this.currentPoem.a || "").trim();
+    if (!a) return;
+    this.haptic();
+    this.setData({ keyword: a });
+    this.openResults(a, "");
+  },
+  onCopyPoemTap() {
+    const p = this.currentPoem;
+    if (!p) return;
+    this.haptic();
+    const text = "《" + (p.t || "无题") + "》 " + [p.d, p.a].filter(Boolean).join(" · ") + "\n" + (p.c || "");
+    wx.setClipboardData({ data: text, success: () => wx.showToast({ title: "已复制全诗", icon: "none" }) });
+  },
+  _startShake() {
+    if (this._shakeOn) return;
+    this._shakeOn = true;
+    this._shakeLast = 0;
+    this._accPrev = null;
+    try { wx.startAccelerometer({ interval: "game" }); } catch (e) {}
+    this._accCb = (res) => {
+      const p = this._accPrev;
+      this._accPrev = res;
+      if (!p) return;
+      const d = Math.abs(res.x - p.x) + Math.abs(res.y - p.y) + Math.abs(res.z - p.z);
+      if (d > 1.5 && Date.now() - this._shakeLast > 2000 && !this.data.randomLoading) {
+        this._shakeLast = Date.now();
+        this.haptic();
+        wx.showToast({ title: "摇一摇 · 与诗相逢", icon: "none" });
+        this.setData({ listMode: false, keyword: "", type: "" });
+        this.loadRandomPoem(true);
+      }
+    };
+    wx.onAccelerometerChange(this._accCb);
+  },
+  _stopShake() {
+    if (!this._shakeOn) return;
+    this._shakeOn = false;
+    if (this._accCb) { try { wx.offAccelerometerChange(this._accCb); } catch (e) {} }
+    try { wx.stopAccelerometer(); } catch (e) {}
+  },
+  _recordStats() {
+    const st = this._stats = this._stats || { total: 0, dates: [], streak: 0, last: "" };
+    const d = new Date();
+    const ds = d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+    if (st.last !== ds) {
+      const y = new Date(d.getTime() - 86400000);
+      const ys = y.getFullYear() + "-" + (y.getMonth() + 1) + "-" + y.getDate();
+      st.streak = st.last === ys ? (st.streak || 0) + 1 : 1;
+      st.last = ds;
+      if (!Array.isArray(st.dates)) st.dates = [];
+      if (st.dates.indexOf(ds) < 0) st.dates.push(ds);
+      if (st.dates.length > 500) st.dates.shift();
+    }
+    st.total += 1;
+    try { wx.setStorageSync("shihai-stats-v1", st); } catch (e) {}
+  },
+  _solarTermToday() {
+    const TERMS = ["小寒","大寒","立春","雨水","惊蛰","春分","清明","谷雨","立夏","小满","芒种","夏至","小暑","大暑","立秋","处暑","白露","秋分","寒露","霜降","立冬","小雪","大雪","冬至"];
+    const C21 = [5.4055,20.12,3.87,18.73,5.63,20.646,4.81,20.1,5.52,21.04,5.678,21.37,7.108,22.83,7.5,23.13,7.646,23.042,8.318,23.438,7.438,22.36,7.18,21.94];
+    const d = new Date(); const m = d.getMonth(); const Y = d.getFullYear() % 100;
+    for (let i = 0; i < 2; i++) {
+      const day = Math.floor(Y * 0.2422 + C21[m * 2 + i]) - Math.floor((Y - 1) / 4);
+      if (d.getDate() === day) return TERMS[m * 2 + i];
+    }
+    return "";
+  },
+  _maybeOnboard() {
+    try {
+      const ts = parseInt(wx.getStorageSync("shihai-onboard-v1") || "0", 10);
+      if (ts && Date.now() - ts < 30 * 86400000) return;
+      wx.setStorageSync("shihai-onboard-v1", String(Date.now()));
+    } catch (e) {}
+    setTimeout(() => this.setData({ onboardShow: true }), 600);
+  },
+  onOnboardTap() {
+    this.setData({ onboardShow: false });
+  },
   onThemeOptTap(e) {
     this.haptic();
     const { group, value } = e.currentTarget.dataset;
@@ -1505,7 +1696,8 @@ Page({
                   meta: colors["--meta-color"], accent: colors["--accent-color"],
                   category: colors["--category-color"], seal: colors["--seal-color"]
                 },
-                logoPath: vertical ? "/assets/logo-vertical.png" : "/assets/logo-yin.png"
+                logoPath: vertical ? "/assets/logo-vertical.png" : "/assets/logo-yin.png",
+                sign: (this._opts && this._opts.sign) || ""
               });
             } catch (e) {
               return reject(e);
