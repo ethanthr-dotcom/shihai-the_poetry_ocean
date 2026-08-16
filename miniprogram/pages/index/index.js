@@ -59,6 +59,9 @@ Page({
     directionOptions: themes.DIRECTION_OPTIONS.map((o) => ({ ...o, active: o.value === "horizontal" })),
 
     keyword: "",
+    searchMode: "auto",
+    kwHint: "",
+    searchProgress: "",
     type: "",
     libTip: "收录 34 万余首古诗词",
     statusText: "正在加载诗词库……",
@@ -170,6 +173,7 @@ Page({
     const h = new Date().getHours();
     const greet = h >= 5 && h < 8 ? "晨读" : h < 12 ? "上午品读" : h < 14 ? "午间小读" : h < 18 ? "午后漫读" : h < 23 ? "灯下夜读" : "深夜静读";
     this.setData({ randomTip: greet + " · " + this.data.randomTip });
+    try { const sm0 = wx.getStorageSync("shihai-search-mode-v1"); if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title" || sm0 === "auto") this.setData({ searchMode: sm0 }); } catch (e) {}
     this.boot();
     this.fitBtnLabels();
   },
@@ -288,7 +292,52 @@ Page({
     }
   },
 
-  onKeywordInput(e) { this.setData({ keyword: e.detail.value }); },
+  onKeywordInput(e) {
+    this.setData({ keyword: e.detail.value });
+    clearTimeout(this._kwHintTimer);
+    this._kwHintTimer = setTimeout(() => this.updateKwHint(), 250);
+  },
+  onSearchModeTap(e) {
+    const m = e.currentTarget.dataset.mode;
+    if (!m || m === this.data.searchMode) return;
+    this.haptic();
+    this.setData({ searchMode: m });
+    try { wx.setStorageSync("shihai-search-mode-v1", m); } catch (err) {}
+    this.updateKwHint();
+  },
+  _detectKw(kw) {
+    if (this._authorSet && this._authorSet.has(kw)) return "author";
+    if (this._dynastySet && this._dynastySet.has(kw)) return "dynasty";
+    return "title";
+  },
+  _buildKnownSets(full) {
+    if (!full || !Array.isArray(full.chunks)) return;
+    this._authorSet = new Set(); this._dynastySet = new Set();
+    full.chunks.forEach((c) => {
+      (c.authors || []).forEach((a) => { const x = (a || "").trim(); if (x) this._authorSet.add(x); });
+      (c.dynasties || []).forEach((d) => { const x = (d || "").trim(); if (x) this._dynastySet.add(x); });
+    });
+  },
+  _effModeFor(kw) {
+    const m = this.data.searchMode;
+    return m !== "auto" ? m : this._detectKw(kw);
+  },
+  updateKwHint() {
+    const kw = (this.data.keyword || "").trim();
+    if (!kw) { this.setData({ kwHint: "" }); return; }
+    const m = this.data.searchMode;
+    if (m === "author") { this.setData({ kwHint: "按作者精确检索「" + kw + "」" }); return; }
+    if (m === "dynasty") { this.setData({ kwHint: "按朝代精确检索「" + kw + "」" }); return; }
+    if (m === "title") { this.setData({ kwHint: "按标题模糊检索「" + kw + "」" }); return; }
+    if (!this.indexReady) { this.setData({ kwHint: "智能识别：诗词库加载中……" }); return; }
+    this.setData({ kwHint: "智能识别中……" });
+    data.ensureFullIndex().then((full) => {
+      if (full && !this._authorSet) this._buildKnownSets(full);
+      if ((this.data.keyword || "").trim() !== kw) return;
+      const d = this._detectKw(kw);
+      this.setData({ kwHint: d === "author" ? "识别为作者「" + kw + "」· 按作者精确检索" : d === "dynasty" ? "识别为朝代「" + kw + "」· 按朝代精确检索" : "未识别为作者/朝代 · 按标题模糊检索" });
+    });
+  },
   onTypeInput(e) { this.setData({ type: e.detail.value }); },
 
   onRandomTap() {
@@ -769,19 +818,29 @@ Page({
     if (kw || type) {
       const full = await data.ensureFullIndex();
       if (!full) { this.showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
+      if (!this._authorSet) this._buildKnownSets(full);
     }
     const base = await data.loadIndex();
-    let candidates = type ? data.filterChunks("", "", type) : base.chunks.slice();
-    if (kw) candidates = data.sortChunksByKw(candidates, kw);
+    const mode = kw ? this._effModeFor(kw) : "auto";
+    // 优先用全索引分块（含 authors），作者/朝代收窄才能生效
+    const baseChunks = data.getFullChunks() || base.chunks;
+    let candidates = type ? data.filterChunks("", "", type) : baseChunks.slice();
+    if (kw) {
+      candidates = data.sortChunksByKw(candidates, kw, mode);
+      // 作者 / 朝代检索：只扫描含目标的数据块，速度大幅提升
+      if (mode === "author" || mode === "dynasty") candidates = candidates.filter((c) => data.chunkKwScore(c, kw, mode) > 0);
+    }
     if (!candidates.length) { this.showStatus("未找到匹配条件的诗词", true); return; }
     this._resultChunks = candidates;
     this._resultCursor = 0;
-    this._resultFilter = { kw, type };
+    this._resultFilter = { kw, type, mode };
     this._resultsBusy = false;
     this._openIdx = null;
+    this._seenIds = this._seenIds || new Set();
     this.setData({
       listMode: true, resultsList: [], resultsDone: false, resultsCount: 0,
-      selMode: false, selIds: {}, selCount: 0
+      selMode: false, selIds: {}, selCount: 0,
+      searchProgress: "正在检索：0 / " + candidates.length + " 个数据块 · 已命中 0 首"
     });
     setTimeout(() => wx.pageScrollTo({ selector: ".results-panel", duration: 300 }), 80);
     this.loadMoreResults();
@@ -790,32 +849,50 @@ Page({
     if (this._resultsBusy || this.data.resultsDone || !this.data.listMode) return;
     this._resultsBusy = true;
     this.setData({ resultsLoading: true });
-    const { kw, type } = this._resultFilter;
+    const { kw, type, mode } = this._resultFilter;
     let added = 0;
     try {
-      while (added < 30 && this._resultCursor < this._resultChunks.length) {
-        const chunk = this._resultChunks[this._resultCursor++];
-        const poems = await data.loadChunk(chunk.file);
-        const matched = poems.filter((p) => data.matchKw(p, kw, type));
-        if (matched.length) {
-          const items = matched.map((p) => {
+      while (added < 20 && this._resultCursor < this._resultChunks.length) {
+        // 并行拉取 5 个数据块，明显提速
+        const batch = this._resultChunks.slice(this._resultCursor, this._resultCursor + 5);
+        this._resultCursor += batch.length;
+        const lists = await Promise.all(batch.map((c) => data.loadChunk(c.file)));
+        const items = [];
+        lists.forEach((poems) => {
+          poems.filter((p) => data.matchKw(p, kw, type, mode)).forEach((p) => {
             const id = favId(p);
-            return { id, t: p.t, a: p.a, d: p.d, y: p.y, c: p.c, open: false, fav: this._favSet.has(id), hasNote: !!(this._noteMap && this._noteMap.has(id)) };
+            items.push({ id, t: p.t, a: p.a, d: p.d, y: p.y, c: p.c, open: false, seen: this._seenIds.has(id), fav: this._favSet.has(id), hasNote: !!(this._noteMap && this._noteMap.has(id)), tSegs: this._kwSegs(p.t || "无题", kw), mSegs: this._kwSegs((p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : ""), kw) });
           });
+        });
+        if (items.length) {
           this.setData({ resultsList: this.data.resultsList.concat(items) });
           added += items.length;
         }
+        this.setData({ searchProgress: "正在检索：" + Math.min(this._resultCursor, this._resultChunks.length) + " / " + this._resultChunks.length + " 个数据块 · 已命中 " + this.data.resultsList.length + " 首" });
       }
       this.setData({
         resultsDone: this._resultCursor >= this._resultChunks.length,
-        resultsCount: this.data.resultsList.length
+        resultsCount: this.data.resultsList.length,
+        searchProgress: ""
       });
     } catch (err) {
+      this.setData({ searchProgress: "" });
       this.showStatus("读取失败：" + (err && err.message ? err.message : err), true);
     } finally {
       this._resultsBusy = false;
       this.setData({ resultsLoading: false });
     }
+  },
+  // 按搜索词切分文本用于高亮（搜索引擎式加粗）
+  _kwSegs(text, kw) {
+    if (!kw || text.indexOf(kw) < 0) return null;
+    const parts = text.split(kw);
+    const segs = [];
+    parts.forEach((s, i) => {
+      if (i) segs.push({ s: kw, h: true, k: "h" + i });
+      if (s) segs.push({ s, h: false, k: "t" + i });
+    });
+    return segs;
   },
   // 页面触底自动加载下一页
   onReachBottom() {
@@ -834,6 +911,11 @@ Page({
     }
     const willOpen = !list[idx].open;
     updates["resultsList[" + idx + "].open"] = willOpen;
+    if (willOpen && !list[idx].seen) {
+      updates["resultsList[" + idx + "].seen"] = true;
+      if (!this._seenIds) this._seenIds = new Set();
+      this._seenIds.add(list[idx].id);
+    }
     this._openIdx = willOpen ? idx : null;
     this.setData(updates);
     // 展开后把该首滚动到视口垂直居中
@@ -918,7 +1000,7 @@ Page({
       }
       // 竖排显示模式：不推荐内容超过 56 字的诗词
       const maxLen = this.currentTheme.direction === "vertical" ? 56 : 0;
-      const poem = await data.findRandomPoemByKw(kw, type, maxLen);
+      const poem = await data.findRandomPoemByKw(kw, type, maxLen, kw ? this._effModeFor(kw) : "auto");
       this.renderPoem(poem);
       if (userAction) {
         wx.pageScrollTo({ selector: ".card", duration: 300 });

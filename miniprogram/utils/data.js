@@ -115,25 +115,28 @@ function shuffle(arr) {
 
 // 随机抽取一首：加权选块 → 块内随机；maxLen>0 时只取内容不超过 maxLen 字的诗（尝试块数放宽到 24）
 // 统一搜索：作者 / 朝代精确匹配，标题模糊（包含）匹配
-function matchKw(p, kw, type) {
+function matchKw(p, kw, type, mode) {
   if (/[\u25a1\ufffd]/.test((p.t ?? "") + (p.a ?? ""))) return false;
   if (type && (p.y ?? "").trim() !== type) return false;
   if (!kw) return true;
+  if (mode === "author") return (p.a ?? "").trim() === kw;
+  if (mode === "dynasty") return (p.d ?? "").trim() === kw;
+  if (mode === "title") return (p.t ?? "").indexOf(kw) >= 0;
   return (p.a ?? "").trim() === kw || (p.d ?? "").trim() === kw || (p.t ?? "").indexOf(kw) >= 0;
 }
 // 分块优先级：全索引中已知作者 > 含该朝代的分块，加快命中
-function chunkKwScore(c, kw) {
+function chunkKwScore(c, kw, mode) {
   let s = 0;
   if (FULL_INDEX && Array.isArray(c.authors) && c.authors.some((a) => a.trim() === kw)) s += 2;
-  if (chunkHasDynasty(c, kw)) s += 1;
+  if (chunkHasDynasty(c, kw)) s += (mode === "dynasty" ? 2 : 1);
   return s;
 }
-function sortChunksByKw(list, kw) {
-  return list.slice().sort((a, b) => chunkKwScore(b, kw) - chunkKwScore(a, kw));
+function sortChunksByKw(list, kw, mode) {
+  return list.slice().sort((a, b) => chunkKwScore(b, kw, mode) - chunkKwScore(a, kw, mode));
 }
 
 // 统一搜索版随机抽诗：关键词（作者/朝代精确 + 标题模糊）+ 体裁
-async function findRandomPoemByKw(kw, type, maxLen) {
+async function findRandomPoemByKw(kw, type, maxLen, mode) {
   const index = await loadIndex();
   if (!index) throw new Error("索引加载失败");
 
@@ -142,11 +145,15 @@ async function findRandomPoemByKw(kw, type, maxLen) {
     if (!FULL_INDEX) throw new Error("筛选数据加载失败，请检查网络后重试");
   }
 
-  let candidates = type ? filterChunks("", "", type) : index.chunks.slice();
-  if (kw) candidates = sortChunksByKw(candidates, kw);
+  // 优先用全索引分块（含 authors），作者/朝代收窄才能生效
+  let candidates = type ? filterChunks("", "", type) : (FULL_INDEX && FULL_INDEX.chunks ? FULL_INDEX.chunks.slice() : index.chunks.slice());
+  if (kw) {
+    candidates = sortChunksByKw(candidates, kw, mode);
+    if (mode === "author" || mode === "dynasty") candidates = candidates.filter((c) => chunkKwScore(c, kw, mode) > 0);
+  }
   if (!candidates.length) throw new Error("未找到匹配条件的诗");
 
-  const kwHit = kw ? candidates.filter((c) => chunkKwScore(c, kw) > 0) : [];
+  const kwHit = kw ? candidates.filter((c) => chunkKwScore(c, kw, mode) > 0) : [];
   const first = kw && kwHit.length ? kwHit[Math.floor(Math.random() * kwHit.length)] : weightedRandom(candidates);
   const rest = shuffle(candidates.filter((c) => c.file !== first.file));
   const order = [first].concat(rest);
@@ -154,7 +161,7 @@ async function findRandomPoemByKw(kw, type, maxLen) {
 
   for (let i = 0; i < maxTries; i++) {
     const poems = await loadChunk(order[i].file);
-    let matched = poems.filter((p) => matchKw(p, kw, type));
+    let matched = poems.filter((p) => matchKw(p, kw, type, mode));
     // 竖排模式：内容超过 maxLen 字的不推荐，换一首短的
     if (maxLen) matched = matched.filter((p) => Array.from(p.c || "").length <= maxLen);
     if (matched.length) {
@@ -257,6 +264,8 @@ function cacheStats() {
   return { count: chunkCache.size, chunks: Array.from(chunkCache.keys()) };
 }
 
+function getFullChunks() { return FULL_INDEX && Array.isArray(FULL_INDEX.chunks) ? FULL_INDEX.chunks : null; }
+
 module.exports = {
   loadIndex,
   ensureFullIndex,
@@ -264,11 +273,13 @@ module.exports = {
   filterChunks,
   matchPoem,
   matchKw,
+  chunkKwScore,
   sortChunksByKw,
   findRandomPoemByKw,
   findRandomPoem,
   findPoemByMeta,
   findDailyPoem,
   collectTypes,
+  getFullChunks,
   cacheStats
 };

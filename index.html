@@ -362,6 +362,17 @@
     .mini-btn.danger { border-color: var(--seal-color, #a3382f); color: var(--seal-color, #a3382f); }
     .mini-btn.solid { background: var(--button-bg, #8b2c2c); border-color: var(--button-bg, #8b2c2c); color: var(--button-text, #fff); opacity: 1; }
     .search-tip { font-size: 11px; opacity: .6; text-align: center; margin: 4px 0 6px; line-height: 1.7; }
+    .mode-chips { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .mode-chip { flex: 1; min-width: 60px; background: none; border: 1px solid var(--input-border); color: var(--label-color); font-size: 12px; letter-spacing: 1px; padding: 5px 2px; border-radius: 999px; cursor: pointer; transition: all .2s; }
+    .mode-chip.active { border-color: var(--seal-color, #a3382f); color: var(--seal-color, #a3382f); background: color-mix(in srgb, var(--seal-color, #a3382f) 8%, transparent); }
+    .kw-hint { font-size: 11.5px; color: var(--accent-color); margin-top: 6px; line-height: 1.5; text-align: left; }
+    .results-progress { margin: 6px 0 4px; padding: 7px 11px; font-size: 12px; line-height: 1.5; color: var(--label-color); border: 1px dashed var(--input-border); border-radius: 7px; display: flex; align-items: center; gap: 8px; }
+    .results-progress::before { content: ""; width: 12px; height: 12px; border: 2px solid var(--input-border); border-top-color: var(--seal-color, #a3382f); border-radius: 50%; animation: spinProg .8s linear infinite; flex: none; }
+    @keyframes spinProg { to { transform: rotate(360deg); } }
+    .kw-hit { color: var(--seal-color, #a3382f); font-weight: 700; }
+    .result-item.seen .result-t { opacity: .55; }
+    .result-item.seen .result-m { opacity: .4; }
+    .result-item.seen .result-t::after { content: " \2713  已读"; font-size: .72em; color: var(--accent-color); opacity: .9; }
     .card-fav, .result-fav, .fav-heart { font-style: normal; flex: none; line-height: 1; }
     .card-fav .star-svg, .result-fav .star-svg, .fav-heart .star-svg { width: 100%; height: 100%; display: block; }
     /* 收藏瞬间：星星绽放 + 迸溅粒子 */
@@ -733,7 +744,7 @@
   <main class="page">
     <h1><img class="site-logo" src="assets/logo-yang.svg" alt="诗海"></h1>
     <div class="subtitle" id="libTip">在线诗词浏览器 · 收录 34 万余首古诗词</div>
-    <div class="search-tip">搜索框与体裁均可留空：全部留空将随机推荐一首；搜索框支持作者 / 朝代与标题模糊搜索</div>
+    <div class="search-tip">留空即随机推荐 · 自动识别或指定 作者 / 朝代 / 标题（模糊）搜索</div>
     <div class="data-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</div>
 
     <section class="controls">
@@ -741,6 +752,13 @@
         <div>
           <label for="keyword">搜索</label>
           <input id="keyword" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜">
+          <div id="modeChips" class="mode-chips">
+            <button class="mode-chip active" data-mode="auto" type="button">智能识别</button>
+            <button class="mode-chip" data-mode="author" type="button">按作者</button>
+            <button class="mode-chip" data-mode="dynasty" type="button">按朝代</button>
+            <button class="mode-chip" data-mode="title" type="button">按标题</button>
+          </div>
+          <div id="kwHint" class="kw-hint" style="display:none"></div>
         </div>
         <div class="type-wrap">
           <label>体裁</label>
@@ -777,6 +795,7 @@
         </div>
       </div>
       <div class="results-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</div>
+      <div id="resultsProgress" class="results-progress" style="display:none"></div>
       <div id="resultsList"></div>
       <div id="resultsFoot" class="results-foot"></div>
     </section>
@@ -817,7 +836,7 @@
         <div class="guide-item"><span class="guide-k">随机邂逅</span>不填任何条件，点「与诗相逢」<b class="guide-b">随机推荐一首</b>。</div>
         <div class="guide-item"><span class="guide-k">手势</span>在诗词卡片上<b class="guide-b">左右轻滑</b>换一首随机诗；<b class="guide-b">双击卡片</b>快速收藏；<b class="guide-b">长按诗句</b>即可复制该句。</div>
         <div class="guide-item"><span class="guide-k">每日与足迹</span>「今日之诗」每天为你推荐<b class="guide-b">同一首</b>；顶栏时钟图标查看<b class="guide-b">最近读过</b>；收藏夹支持一键<b class="guide-b">导出</b>。</div>
-        <div class="guide-item"><span class="guide-k">条件搜索</span>一框输入作者 / 朝代 / 标题（标题模糊）<b class="guide-b">与体裁任意组合</b>；体裁点输入框展开选择，首项「无」表示不限。</div>
+        <div class="guide-item"><span class="guide-k">条件搜索</span>一框输入搜索词，<b class="guide-b">智能识别</b>作者 / 朝代 / 标题，也可在输入框下手动指定；命中关键词<b class="guide-b">加粗高亮</b>、点开过的条目标记已读；与体裁任意组合，体裁首项「无」表示不限。</div>
         <div class="guide-item"><span class="guide-k">列表浏览</span>点击标题行<b class="guide-b">展开全诗</b>，一次只展开一首；<b class="guide-b">上滑自动加载更多</b>。</div>
         <div class="guide-item"><span class="guide-k">批量收藏</span>列表中点「批量收藏」，勾选后<b class="guide-b">一键加入收藏夹</b>。</div>
         <div class="guide-item"><span class="guide-k">收藏</span>点诗词旁的<b class="guide-b">星星</b>收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持<b class="guide-b">批量管理与删除</b>。</div>
@@ -983,6 +1002,15 @@
         <button class="theme-opt" data-value="off">关</button>
       </div>
     </div>
+    <div class="theme-section">
+      <div class="theme-label">搜索方式</div>
+      <div class="theme-options" data-group="optSearchMode">
+        <button class="theme-opt active" data-value="auto">智能识别</button>
+        <button class="theme-opt" data-value="author">按作者</button>
+        <button class="theme-opt" data-value="dynasty">按朝代</button>
+        <button class="theme-opt" data-value="title">按标题</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1008,6 +1036,57 @@
     const cardToolsInner = $("cardToolsInner");
     const keywordInput = $("keyword");
     let typeValue = "";
+    // ====== 搜索方式：智能识别 / 作者 / 朝代 / 标题（搜索区标签与设置面板同步） ======
+    const SEARCH_MODE_KEY = "shihai-search-mode-v1";
+    let searchMode = "auto";
+    try { const sm0 = localStorage.getItem(SEARCH_MODE_KEY); if (sm0 === "auto" || sm0 === "author" || sm0 === "dynasty" || sm0 === "title") searchMode = sm0; } catch (e) {}
+    function saveSearchMode() { try { localStorage.setItem(SEARCH_MODE_KEY, searchMode); } catch (e) {} }
+    let kwHintTimer = null;
+    let AUTHOR_SET = null, DYNASTY_SET = null;
+    function buildKnownSets() {
+      if (!FULL_INDEX || !Array.isArray(FULL_INDEX.chunks)) return;
+      AUTHOR_SET = new Set(); DYNASTY_SET = new Set();
+      FULL_INDEX.chunks.forEach((c) => {
+        (c.authors || []).forEach((a) => { const x = (a || "").trim(); if (x) AUTHOR_SET.add(x); });
+        (c.dynasties || []).forEach((d) => { const x = (d || "").trim(); if (x) DYNASTY_SET.add(x); });
+      });
+    }
+    function detectKw(kw) {
+      if (AUTHOR_SET && AUTHOR_SET.has(kw)) return "author";
+      if (DYNASTY_SET && DYNASTY_SET.has(kw)) return "dynasty";
+      return "title";
+    }
+    function effModeFor(kw) {
+      if (searchMode !== "auto") return searchMode;
+      return detectKw(kw);
+    }
+    function updateKwHint() {
+      const hint = $("kwHint");
+      if (!hint) return;
+      const kw = keywordInput.value.trim();
+      if (!kw) { hint.style.display = "none"; return; }
+      hint.style.display = "";
+      if (searchMode === "author") { hint.textContent = "按作者精确检索「" + kw + "」"; return; }
+      if (searchMode === "dynasty") { hint.textContent = "按朝代精确检索「" + kw + "」"; return; }
+      if (searchMode === "title") { hint.textContent = "按标题模糊检索「" + kw + "」"; return; }
+      if (!INDEX) { hint.textContent = "智能识别：诗词库加载中……"; return; }
+      hint.textContent = "智能识别中……";
+      ensureFullIndex().then(() => {
+        if (keywordInput.value.trim() !== kw) return;
+        const m = detectKw(kw);
+        hint.textContent = m === "author" ? "识别为作者「" + kw + "」· 按作者精确检索"
+          : m === "dynasty" ? "识别为朝代「" + kw + "」· 按朝代精确检索"
+          : "未识别为作者/朝代 · 按标题模糊检索";
+      });
+    }
+    function hiliteKw(text) {
+      const t = escapeHtml(text ?? "");
+      const kw = resultFilter ? resultFilter.kw : "";
+      if (!kw) return t;
+      const ek = escapeHtml(kw);
+      if (!ek) return t;
+      return t.split(ek).join('<b class="kw-hit">' + ek + "</b>");
+    }
     const typeInput = { get value() { return typeValue; } };
     const progressEl = $("progress");
     function progressStart() {
@@ -1454,21 +1533,24 @@
     }
 
     // 统一搜索：作者 / 朝代精确匹配，标题模糊（包含）匹配
-    function matchKw(p, kw, type) {
+    function matchKw(p, kw, type, mode) {
       if (/[\u25a1\ufffd]/.test((p.t ?? "") + (p.a ?? ""))) return false;
       if (type && (p.y ?? "").trim() !== type) return false;
       if (!kw) return true;
+      if (mode === "author") return (p.a ?? "").trim() === kw;
+      if (mode === "dynasty") return (p.d ?? "").trim() === kw;
+      if (mode === "title") return (p.t ?? "").indexOf(kw) >= 0;
       return (p.a ?? "").trim() === kw || (p.d ?? "").trim() === kw || (p.t ?? "").indexOf(kw) >= 0;
     }
     // 分块优先级：全索引中已知作者 > 含该朝代的分块，加快命中
-    function chunkKwScore(c, kw) {
+    function chunkKwScore(c, kw, mode) {
       let s = 0;
       if (FULL_INDEX && Array.isArray(c.authors) && c.authors.some((a) => a.trim() === kw)) s += 2;
-      if (chunkHasDynasty(c, kw)) s += 1;
+      if (chunkHasDynasty(c, kw)) s += (mode === "dynasty" ? 2 : 1);
       return s;
     }
-    function sortChunksByKw(list, kw) {
-      return list.slice().sort((a, b) => chunkKwScore(b, kw) - chunkKwScore(a, kw));
+    function sortChunksByKw(list, kw, mode) {
+      return list.slice().sort((a, b) => chunkKwScore(b, kw, mode) - chunkKwScore(a, kw, mode));
     }
 
     function matchPoem(poem, author, dynasty, type) {
@@ -1510,8 +1592,13 @@
           }
         }
 
-        let candidates = type ? filterChunks("", "", type) : INDEX.chunks.slice();
-        if (kw) candidates = sortChunksByKw(candidates, kw);
+        // 优先用全索引分块（含 authors），作者/朝代收窄才能生效
+        let candidates = type ? filterChunks("", "", type) : (FULL_INDEX && FULL_INDEX.chunks ? FULL_INDEX.chunks.slice() : INDEX.chunks.slice());
+        if (kw) {
+          const m = effModeFor(kw);
+          candidates = sortChunksByKw(candidates, kw, m);
+          if (m === "author" || m === "dynasty") candidates = candidates.filter((c) => chunkKwScore(c, kw, m) > 0);
+        }
         if (!candidates.length) {
           showStatus("未找到匹配条件的诗", true);
           return;
@@ -1528,7 +1615,7 @@
         for (let i = 0; i < maxTries; i++) {
           const chunk = order[i];
           const poems = await loadChunk(chunk.file);
-          let matched = poems.filter((p) => matchKw(p, kw, type));
+          let matched = poems.filter((p) => matchKw(p, kw, type, kw ? effModeFor(kw) : "auto"));
           if (vMax) matched = matched.filter((p) => Array.from(p.c || "").length <= vMax);
           if (matched.length) {
             const poem = matched[Math.floor(Math.random() * matched.length)];
@@ -1563,7 +1650,7 @@
               const fc = localStorage.getItem(FULL_CACHE_KEY);
               if (fc) {
                 const { data: fd, ts: fts } = JSON.parse(fc);
-                if (Date.now() - fts < CACHE_TTL) FULL_INDEX = fd;
+                if (Date.now() - fts < CACHE_TTL) { FULL_INDEX = fd; buildKnownSets(); }
               }
             } catch (e) {}
             showStatus(
@@ -1607,17 +1694,19 @@
 
     // 按需加载筛选索引（含 authors/types，仅筛选时使用）
     async function ensureFullIndex() {
-      if (FULL_INDEX) return;
+      if (FULL_INDEX) return true;
       try {
         const res = await fetch(DATA_BASE + "data/index-full.json");
         if (!res.ok) return;
         FULL_INDEX = await res.json();
+        buildKnownSets();
         try {
           localStorage.setItem(
             FULL_CACHE_KEY, JSON.stringify({ data: FULL_INDEX, ts: Date.now() })
           );
         } catch (e) {}
       } catch (e) {}
+      return !!FULL_INDEX;
     }
 
     button.addEventListener("click", () => {
@@ -1628,6 +1717,25 @@
       if (kw || type) openResults(kw, type);
       else { setListMode(false); loadRandomPoem(); }
     });
+
+    // 搜索方式标签与设置面板同步 + 输入实时识别提示
+    function renderModeChips() {
+      document.querySelectorAll("#modeChips .mode-chip").forEach((b) => b.classList.toggle("active", b.dataset.mode === searchMode));
+      document.querySelectorAll('.theme-options[data-group="optSearchMode"] .theme-opt').forEach((b) => b.classList.toggle("active", b.dataset.value === searchMode));
+    }
+    document.querySelectorAll("#modeChips .mode-chip").forEach((b) => b.addEventListener("click", () => {
+      haptic();
+      searchMode = b.dataset.mode;
+      saveSearchMode();
+      renderModeChips();
+      updateKwHint();
+    }));
+    renderModeChips();
+    keywordInput.addEventListener("input", () => {
+      clearTimeout(kwHintTimer);
+      kwHintTimer = setTimeout(updateKwHint, 250);
+    });
+    updateKwHint();
 
     // ====== 分享：纯 Canvas 手绘诗词卡片（高分辨率、按句排版、间距自适应） ======
     let shareRatio = "1:1";
@@ -2266,7 +2374,7 @@
       // 同步面板选中状态
       document.querySelectorAll(".theme-options").forEach((container) => {
         const group = container.dataset.group;
-        if (group === "notePrompt") return; // 由 syncNotePromptOpts 单独同步
+        if (group === "notePrompt" || group === "optSearchMode") return; // 非主题项，单独同步
         const value = currentTheme[group];
         container.querySelectorAll(".theme-opt").forEach((btn) => {
           btn.classList.toggle("active", btn.dataset.value === value);
@@ -2400,10 +2508,10 @@
       hm.className = "result-hm";
       const t = document.createElement("div");
       t.className = "result-t";
-      t.textContent = p.t || "无题";
+      t.innerHTML = hiliteKw(p.t || "无题");
       const m = document.createElement("div");
       m.className = "result-m";
-      m.textContent = (p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : "");
+      m.innerHTML = hiliteKw((p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : ""));
       hm.append(t, m);
       const noteIc = document.createElement("div");
       noteIc.className = "result-note" + (noteMap.has(p.id) ? " on" : "");
@@ -2459,6 +2567,7 @@
         if (openItem && openItem !== item) openItem.classList.remove("open");
         item.classList.toggle("open");
         openItem = item.classList.contains("open") ? item : null;
+        if (openItem === item) item.classList.add("seen");
         // 展开后把该首滚动到视口垂直居中
         if (openItem === item) {
           setTimeout(() => {
@@ -2477,28 +2586,34 @@
       if (resultBusy || resultsDone) return;
       resultBusy = true;
       $("resultsFoot").textContent = "正在加载……";
-      const { kw, type } = resultFilter;
+      const { kw, type, mode } = resultFilter;
+      const pg = $("resultsProgress");
       let added = 0;
       try {
-        while (added < 30 && resultCursor < resultChunks.length) {
-          const poems = await loadChunk(resultChunks[resultCursor++].file);
-          const matched = poems.filter((p) => matchKw(p, kw, type));
-          if (matched.length) {
-            const list = $("resultsList");
-            matched.forEach((p) => {
+        while (added < 20 && resultCursor < resultChunks.length) {
+          // 并行拉取 5 个数据块，明显提速
+          const batch = resultChunks.slice(resultCursor, resultCursor + 5);
+          resultCursor += batch.length;
+          const lists = await Promise.all(batch.map((c) => loadChunk(c.file)));
+          const listEl = $("resultsList");
+          lists.forEach((poems) => {
+            poems.filter((p) => matchKw(p, kw, type, mode)).forEach((p) => {
               const withId = { ...p, id: favId(p) };
               results.push(withId);
-              list.appendChild(makeResultItem(withId));
+              listEl.appendChild(makeResultItem(withId));
+              added += 1;
             });
-            added += matched.length;
-          }
+          });
+          if (pg) pg.textContent = "正在检索：" + Math.min(resultCursor, resultChunks.length) + " / " + resultChunks.length + " 个数据块 · 已命中 " + results.length + " 首";
         }
         resultsDone = resultCursor >= resultChunks.length;
         updateResultsCount();
+        if (pg) pg.style.display = "none";
         $("resultsFoot").textContent = resultsDone
           ? "已全部加载 · 共 " + results.length + " 首"
           : "上滑自动加载更多";
       } catch (err) {
+        if (pg) pg.style.display = "none";
         showStatus("读取失败：" + (err && err.message ? err.message : err), true);
       } finally {
         resultBusy = false;
@@ -2506,19 +2621,27 @@
     }
     async function openResults(kw, type) {
       if (!INDEX) { showStatus("诗词库尚未加载完成，请稍候……"); return; }
-      if (type) {
+      if (type || kw) {
         const full = await ensureFullIndex();
         if (!full) { showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
       }
-      let candidates = type ? filterChunks("", "", type) : INDEX.chunks.slice();
-      if (kw) candidates = sortChunksByKw(candidates, kw);
+      const mode = kw ? effModeFor(kw) : "auto";
+      // 优先用全索引分块（含 authors），作者/朝代收窄才能生效
+      let candidates = type ? filterChunks("", "", type) : (FULL_INDEX && FULL_INDEX.chunks ? FULL_INDEX.chunks.slice() : INDEX.chunks.slice());
+      if (kw) {
+        candidates = sortChunksByKw(candidates, kw, mode);
+        // 作者 / 朝代检索：只扫描含目标的数据块，速度大幅提升
+        if (mode === "author" || mode === "dynasty") candidates = candidates.filter((c) => chunkKwScore(c, kw, mode) > 0);
+      }
       if (!candidates.length) { showStatus("未找到匹配条件的诗词", true); return; }
-      resultChunks = candidates; resultCursor = 0; resultFilter = { kw, type };
+      resultChunks = candidates; resultCursor = 0; resultFilter = { kw, type, mode };
       results = []; resultsDone = false; resultBusy = false; openItem = null;
       selMode = false; selIds.clear(); updateSelBar();
       $("resultsList").innerHTML = "";
       updateResultsCount();
       setListMode(true);
+      const pg = $("resultsProgress");
+      if (pg) { pg.textContent = "正在检索：0 / " + resultChunks.length + " 个数据块 · 已命中 0 首"; pg.style.display = ""; }
       resultsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
       loadMoreResults();
     }
@@ -3271,6 +3394,9 @@
         const group = btn.closest(".theme-options").dataset.group;
         const value = btn.dataset.value;
         if (group === "notePrompt") { setNotePrompt(value === "on"); return; }
+        if (group === "optSearchMode") {
+          searchMode = value; saveSearchMode(); renderModeChips(); updateKwHint(); return;
+        }
         // 切到竖排：默认紧凑排版（竖版分享图按网页卡片自适应生成）；切回横排恢复原选择
         if (group === "direction" && value !== currentTheme.direction) {
           if (value === "vertical") {

@@ -25,7 +25,7 @@
       <image class="site-logo" src="/assets/logo-yang.png" mode="aspectFit"></image>
     </view>
     <view class="subtitle">在线诗词浏览器 · {{libTip}}</view>
-    <view class="search-tip">搜索框与体裁均可留空：全部留空将随机推荐一首；搜索框支持作者 / 朝代与标题模糊搜索</view>
+    <view class="search-tip">留空即随机推荐 · 自动识别或指定 作者 / 朝代 / 标题（模糊）搜索</view>
     <view class="data-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</view>
 
     <view class="controls">
@@ -33,6 +33,13 @@
         <view class="field">
           <view class="label">搜索</view>
           <input class="input" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜" placeholder-class="ph" value="{{keyword}}" bindinput="onKeywordInput" />
+          <view class="mode-chips">
+            <view class="mode-chip {{searchMode === 'auto' ? 'active' : ''}}" data-mode="auto" bindtap="onSearchModeTap">智能识别</view>
+            <view class="mode-chip {{searchMode === 'author' ? 'active' : ''}}" data-mode="author" bindtap="onSearchModeTap">按作者</view>
+            <view class="mode-chip {{searchMode === 'dynasty' ? 'active' : ''}}" data-mode="dynasty" bindtap="onSearchModeTap">按朝代</view>
+            <view class="mode-chip {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
+          </view>
+          <view wx:if="{{kwHint}}" class="kw-hint">{{kwHint}}</view>
         </view>
         <view class="field type-wrap">
           <view class="label">体裁</view>
@@ -120,12 +127,13 @@
         </view>
       </view>
       <view class="results-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</view>
-      <view wx:for="{{resultsList}}" wx:key="id" id="resItem-{{index}}" class="result-item {{item.open ? 'open' : ''}}">
+      <view wx:if="{{searchProgress}}" class="results-progress">{{searchProgress}}</view>
+      <view wx:for="{{resultsList}}" wx:key="id" id="resItem-{{index}}" class="result-item {{item.open ? 'open' : ''}} {{item.seen ? 'seen' : ''}}">
         <view class="result-head" data-index="{{index}}" bindtap="onResultItemTap">
           <view wx:if="{{selMode}}" class="chk {{selIds[item.id] ? 'on' : ''}}">✓</view>
           <view class="result-hm">
-            <view class="result-t">{{item.t || '无题'}}</view>
-            <view class="result-m">{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</view>
+            <view class="result-t"><block wx:if="{{item.tSegs}}" wx:for="{{item.tSegs}}" wx:for-item="seg" wx:key="k"><text class="{{seg.h ? 'kw-hit' : ''}}">{{seg.s}}</text></block><block wx:else>{{item.t || '无题'}}</block><text wx:if="{{item.seen}}" class="seen-mark"> ✓ 已读</text></view>
+            <view class="result-m"><block wx:if="{{item.mSegs}}" wx:for="{{item.mSegs}}" wx:for-item="seg" wx:key="k"><text class="{{seg.h ? 'kw-hit' : ''}}">{{seg.s}}</text></block><block wx:else>{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</block></view>
           </view>
           <view wx:if="{{!selMode}}" class="result-note {{item.hasNote ? 'on' : ''}}" data-index="{{index}}" catchtap="onResultNoteTap"><view class="note-glyph"></view></view>
           <view wx:if="{{!selMode}}" class="result-fav {{item.fav ? 'on' : ''}} {{item.burst ? 'burst' : ''}}" data-index="{{index}}" catchtap="onResultFavTap"><view class="star-glyph"></view></view>
@@ -211,6 +219,15 @@
         <view class="theme-opt {{notePromptOn ? '' : 'active'}}" data-value="off" bindtap="onNotePromptTap">关</view>
       </view>
     </view>
+    <view class="theme-section">
+      <view class="theme-label">搜索方式</view>
+      <view class="theme-options">
+        <view class="theme-opt {{searchMode === 'auto' ? 'active' : ''}}" data-mode="auto" bindtap="onSearchModeTap">智能识别</view>
+        <view class="theme-opt {{searchMode === 'author' ? 'active' : ''}}" data-mode="author" bindtap="onSearchModeTap">按作者</view>
+        <view class="theme-opt {{searchMode === 'dynasty' ? 'active' : ''}}" data-mode="dynasty" bindtap="onSearchModeTap">按朝代</view>
+        <view class="theme-opt {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
+      </view>
+    </view>
     <view class="panel-hint">点击页面空白处即可关闭</view>
   </view>
 
@@ -254,7 +271,7 @@
         <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「与诗相逢」<text class="guide-b">随机推荐一首</text>。</view>
         <view class="guide-item"><text class="guide-k">手势</text>在诗词卡片上<text class="guide-b">左右轻滑</text>换一首随机诗；<text class="guide-b">双击卡片</text>快速收藏；<text class="guide-b">长按诗句</text>即可复制该句。</view>
         <view class="guide-item"><text class="guide-k">每日与足迹</text>「今日之诗」每天为你推荐<text class="guide-b">同一首</text>；顶栏时钟图标查看<text class="guide-b">最近读过</text>；收藏夹支持一键<text class="guide-b">导出</text>。</view>
-        <view class="guide-item"><text class="guide-k">条件搜索</text>一框输入作者 / 朝代 / 标题（标题模糊）<text class="guide-b">与体裁任意组合</text>；体裁点输入框展开选择，首项「无」表示不限。</view>
+        <view class="guide-item"><text class="guide-k">条件搜索</text>一框输入搜索词，<text class="guide-b">智能识别</text>作者 / 朝代 / 标题，也可在输入框下手动指定；命中关键词<text class="guide-b">加粗高亮</text>、点开过的条目标记已读；与体裁任意组合，体裁首项「无」表示不限。</view>
         <view class="guide-item"><text class="guide-k">列表浏览</text>点击标题行<text class="guide-b">展开全诗</text>，一次只展开一首；<text class="guide-b">上滑自动加载更多</text>。</view>
         <view class="guide-item"><text class="guide-k">批量收藏</text>列表中点「批量收藏」，勾选后<text class="guide-b">一键加入收藏夹</text>。</view>
         <view class="guide-item"><text class="guide-k">收藏</text>点诗词旁的<text class="guide-b">星星</text>收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持<text class="guide-b">批量管理与删除</text>。</view>
