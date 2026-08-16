@@ -916,18 +916,24 @@ Page({
     let added = 0;
     try {
       while (added < 20 && this._resultCursor < this._resultChunks.length) {
-        // 并行拉取 6 个数据块；每块加载完成立即上屏命中项（命中一个弹出一个）
+        // 并行拉取 6 个数据块；每块加载完成立即上屏命中项（命中一个弹出一个），单次最多 20 条，滑到底再续载
         const batch = this._resultChunks.slice(this._resultCursor, this._resultCursor + 6);
         this._resultCursor += batch.length;
         await Promise.all(batch.map(async (c) => {
+          if (added >= 20) return;
           const poems = await data.loadChunk(c.file);
-          const items = [];
+          let items = [];
           poems.filter((p) => data.matchKw(p, kw, type, mode)).forEach((p) => {
             const id = favId(p);
             items.push({ id, t: p.t, a: p.a, d: p.d, y: p.y, c: p.c, open: false, seen: this._seenIds.has(id), fav: this._favSet.has(id), hasNote: !!(this._noteMap && this._noteMap.has(id)), tSegs: this._kwSegs(p.t || "无题", kw), mSegs: this._kwSegs((p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : ""), kw) });
           });
+          if (added + items.length > 20) items = items.slice(0, 20 - added);
           if (items.length) {
-            this.setData({ resultsList: this.data.resultsList.concat(items) });
+            // 增量 setData：按数组下标只传新增项，避免全量重传列表
+            const base = this.data.resultsList.length;
+            const patch = {};
+            items.forEach((it, k) => { patch["resultsList[" + (base + k) + "]"] = it; });
+            this.setData(patch);
             added += items.length;
           }
         }));
