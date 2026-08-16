@@ -58,8 +58,7 @@ Page({
     colorOptions: themes.COLOR_OPTIONS.map((o) => ({ ...o, active: o.value === "warm" })),
     directionOptions: themes.DIRECTION_OPTIONS.map((o) => ({ ...o, active: o.value === "horizontal" })),
 
-    author: "",
-    dynasty: "",
+    keyword: "",
     type: "",
     libTip: "收录 34 万余首古诗词",
     statusText: "正在加载诗词库……",
@@ -81,7 +80,7 @@ Page({
     devShow: false,
     devRows: [],
     shareImg: "",
-    randomBtnLines: ["今日与诗相逢"],
+    randomBtnLines: ["与诗相逢"],
     randomTip: "读到心动的一首，可在下方生成卡片保存或分享 · 点诗词旁 ✎ 可写下感悟",
     typeOptions: [],
     typeQuery: "",
@@ -182,12 +181,13 @@ Page({
   // 按钮标签自适应换行：太窄时拆行，硬性保证每行不少于两个字
   fitBtnLabels() {
     const winW = wx.getSystemInfoSync().windowWidth;
+    this._winH = wx.getSystemInfoSync().windowHeight;
     const scale = winW / 375; // 32rpx 字号 → 16*scale px
     // 按钮内文字可用宽 = 屏宽 - 页面左右16px*2 - 控件区36rpx + btn-row外扩16rpx - 按钮自身左右padding 32rpx*2
     const avail = winW - 32 - 36 * scale + 16 * scale - 32 * scale;
     const fontPx = 16 * scale;
     this.setData({
-      randomBtnLines: this._splitBtnLabel("今日与诗相逢", avail, fontPx),
+      randomBtnLines: this._splitBtnLabel("与诗相逢", avail, fontPx),
       shareBtnLines: this._splitBtnLabel("下载或分享卡片", avail, fontPx)
     });
   },
@@ -288,17 +288,15 @@ Page({
     }
   },
 
-  onAuthorInput(e) { this.setData({ author: e.detail.value }); },
-  onDynastyInput(e) { this.setData({ dynasty: e.detail.value }); },
+  onKeywordInput(e) { this.setData({ keyword: e.detail.value }); },
   onTypeInput(e) { this.setData({ type: e.detail.value }); },
 
   onRandomTap() {
     this.haptic();
-    const author = (this.data.author || "").trim();
-    const dynasty = (this.data.dynasty || "").trim();
+    const kw = (this.data.keyword || "").trim();
     const type = (this.data.type || "").trim();
-    // 填了任一筛选条件 → 结果列表替换诗词卡片；未填 → 随机一首（恢复卡片）
-    if (author || dynasty || type) { this.openResults(author, dynasty, type); return; }
+    // 填了搜索词或体裁 → 结果列表替换诗词卡片；未填 → 随机一首（恢复卡片）
+    if (kw || type) { this.openResults(kw, type); return; }
     this.setData({ listMode: false });
     this.loadRandomPoem(true);
   },
@@ -766,17 +764,19 @@ Page({
   },
 
   // ====== 搜索结果列表：就地替换诗词卡片；无限分页（页面触底）；手风琴；批量收藏 ======
-  async openResults(author, dynasty, type) {
+  async openResults(kw, type) {
     if (!this.indexReady) { this.showStatus("诗词库尚未加载完成，请稍候……"); return; }
-    if (author || type) {
+    if (kw || type) {
       const full = await data.ensureFullIndex();
       if (!full) { this.showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
     }
-    const candidates = data.filterChunks(author, dynasty, type);
+    const base = await data.loadIndex();
+    let candidates = type ? data.filterChunks("", "", type) : base.chunks.slice();
+    if (kw) candidates = data.sortChunksByKw(candidates, kw);
     if (!candidates.length) { this.showStatus("未找到匹配条件的诗词", true); return; }
     this._resultChunks = candidates;
     this._resultCursor = 0;
-    this._resultFilter = { author, dynasty, type };
+    this._resultFilter = { kw, type };
     this._resultsBusy = false;
     this._openIdx = null;
     this.setData({
@@ -790,13 +790,13 @@ Page({
     if (this._resultsBusy || this.data.resultsDone || !this.data.listMode) return;
     this._resultsBusy = true;
     this.setData({ resultsLoading: true });
-    const { author, dynasty, type } = this._resultFilter;
+    const { kw, type } = this._resultFilter;
     let added = 0;
     try {
       while (added < 30 && this._resultCursor < this._resultChunks.length) {
         const chunk = this._resultChunks[this._resultCursor++];
         const poems = await data.loadChunk(chunk.file);
-        const matched = poems.filter((p) => data.matchPoem(p, author, dynasty, type));
+        const matched = poems.filter((p) => data.matchKw(p, kw, type));
         if (matched.length) {
           const items = matched.map((p) => {
             const id = favId(p);
@@ -836,17 +836,32 @@ Page({
     updates["resultsList[" + idx + "].open"] = willOpen;
     this._openIdx = willOpen ? idx : null;
     this.setData(updates);
+    // 展开后把该首滚动到视口垂直居中
+    if (willOpen) {
+      setTimeout(() => {
+        const q = wx.createSelectorQuery();
+        q.select("#resItem-" + idx).boundingClientRect();
+        q.selectViewport().scrollOffset();
+        q.exec((res) => {
+          const r = res && res[0], so = res && res[1];
+          if (!r || !so) return;
+          const winH = this._winH || wx.getSystemInfoSync().windowHeight;
+          const target = so.scrollTop + r.top + r.height / 2 - winH / 2;
+          wx.pageScrollTo({ scrollTop: Math.max(0, target), duration: 300 });
+        });
+      }, 360);
+    }
   },
-  onResultShareTap(e) {
+  async onResultShareTap(e) {
     const idx = e.currentTarget.dataset.index;
     const item = this.data.resultsList[idx];
     if (!item) return;
     this.haptic();
-    this.setData({ listMode: false });
+    // 留在列表页直接为这首诗词生成卡片（不跳回主卡片）；完成后恢复主卡片状态
+    const prev = this.currentPoem;
     this.currentPoem = item;
-    this.renderPoem(item);
-    this._cardRect = null; // 让分享流程重新测量卡片尺寸
-    setTimeout(() => this.onShareTap(), 350);
+    this._cardRect = { width: 300, height: 400 }; // 卡片未显示时，自适应比例回退 3:4
+    try { await this.onShareTap(); } finally { this.currentPoem = prev; this._cardRect = null; }
   },
   onListModeExit() {
     this.haptic();
@@ -894,8 +909,7 @@ Page({
     if (this.data.randomLoading) return;
     this.setData({ randomLoading: true });
     this.progressStart();
-    const author = forceRandom ? "" : (this.data.author || "").trim();
-    const dynasty = forceRandom ? "" : (this.data.dynasty || "").trim();
+    const kw = forceRandom ? "" : (this.data.keyword || "").trim();
     const type = forceRandom ? "" : (this.data.type || "").trim();
     try {
       if (!this.indexReady) {
@@ -904,7 +918,7 @@ Page({
       }
       // 竖排显示模式：不推荐内容超过 56 字的诗词
       const maxLen = this.currentTheme.direction === "vertical" ? 56 : 0;
-      const poem = await data.findRandomPoem(author, dynasty, type, maxLen);
+      const poem = await data.findRandomPoemByKw(kw, type, maxLen);
       this.renderPoem(poem);
       if (userAction) {
         wx.pageScrollTo({ selector: ".card", duration: 300 });
@@ -1036,7 +1050,6 @@ Page({
       metaStyle: this._fitInlineStyle(meta, "--meta-font-size"),
       categoryStyle: this._fitInlineStyle(poem.y ? "体裁：" + poem.y : "", "--category-font-size"),
       verseLines: this.buildVerseLines(poem),
-      sealText: Array.from(poem.a || "").slice(0, 3).join(""),
       inkAnim: false
     }, () => { this.fitCardText(); this.setData({ inkAnim: true }); });
     this._recordHistory(poem);

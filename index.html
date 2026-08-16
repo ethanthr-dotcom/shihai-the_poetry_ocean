@@ -115,7 +115,7 @@
     .btn-line { display: block; }
     .row {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 12px;
       margin-bottom: 14px;
     }
@@ -442,8 +442,6 @@
     @keyframes inkIn { from { opacity: 0; transform: translateY(12px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
     .card-body.ink-in { animation: inkIn .55s cubic-bezier(.22,.8,.36,1); }
 
-    /* 作者印章（竖排朱红小印） */
-    .author-seal { display: block; width: fit-content; margin: 10px auto 0; padding: 3px 3px; background: var(--seal-color, #a3382f); color: #fdf6ec; font-size: 10px; line-height: 1.25; letter-spacing: 2px; border-radius: 3px; opacity: .9; writing-mode: vertical-rl; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
 
     /* 空状态：圆相（ ensō ）水墨引导 */
     .sheet-empty.art { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 30px 0 26px; opacity: .75; }
@@ -459,12 +457,12 @@
 
     /* 最近读过入口（顶栏时钟图标） */
     .hist-toggle { position: absolute; top: 18px; right: 132px; width: 26px; height: 26px; background: transparent; border: 0; color: var(--text-color); cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; opacity: 0; pointer-events: none; transition: opacity .5s ease, transform .18s cubic-bezier(.34,1.56,.64,1); }
-    .hist-toggle svg { width: 100%; height: 100%; opacity: .55; }
+    .hist-toggle svg { width: 100%; height: 100%; }
 
     /* 今日之诗入口 */
     .random-sub { text-align: center; margin-top: 4px; }
-    .link-btn { background: none; border: 0; color: var(--meta-color, #8a7a5f); opacity: .8; font-size: 12px; letter-spacing: 2px; cursor: pointer; font-family: inherit; padding: 4px 10px; transition: opacity .2s, transform .18s cubic-bezier(.34,1.56,.64,1); }
-    .link-btn:hover { opacity: 1; }
+    .link-btn { background: none; border: 1px solid var(--seal-color, #a3382f); color: var(--seal-color, #a3382f); font-size: 13px; letter-spacing: 3px; cursor: pointer; font-family: inherit; padding: 8px 24px; border-radius: 999px; transition: background-color .2s, color .2s, transform .18s cubic-bezier(.34,1.56,.64,1); }
+    .link-btn:hover { background: var(--seal-color, #a3382f); color: var(--bg-color); }
     .link-btn:active { transform: scale(.94); }
     .dev-list { max-height: 46vh; overflow-y: auto; text-align: left; margin: 6px 0 12px; }
     .dev-sec { font-size: 12px; color: var(--meta-color); letter-spacing: 2px; margin: 12px 0 4px; opacity: .85; }
@@ -735,18 +733,14 @@
   <main class="page">
     <h1><img class="site-logo" src="assets/logo-yang.svg" alt="诗海"></h1>
     <div class="subtitle" id="libTip">在线诗词浏览器 · 收录 34 万余首古诗词</div>
-    <div class="search-tip">三个条件框均可留空：全部留空将随机推荐一首，填写任意一项即按条件搜索</div>
+    <div class="search-tip">搜索框与体裁均可留空：全部留空将随机推荐一首；搜索框支持作者 / 朝代与标题模糊搜索</div>
     <div class="data-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</div>
 
     <section class="controls">
       <div class="row">
         <div>
-          <label for="author">作者</label>
-          <input id="author" placeholder="例如：李白">
-        </div>
-        <div>
-          <label for="dynasty">朝代</label>
-          <input id="dynasty" placeholder="例如：唐">
+          <label for="keyword">搜索</label>
+          <input id="keyword" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜">
         </div>
         <div class="type-wrap">
           <label>体裁</label>
@@ -759,7 +753,7 @@
         <div class="dd-list"><div id="typeGrid" class="type-grid"></div></div>
       </div>
       <div class="btn-row">
-        <button id="randomButton" type="button">今日与诗相逢</button>
+        <button id="randomButton" type="button">与诗相逢</button>
       </div>
       <div class="random-tip">读到心动的一首，可在下方生成卡片保存或分享</div>
       <div class="random-tip">读到会心处，可点诗词旁的 ✎ 纸笔图标写下你的感悟</div>
@@ -820,10 +814,10 @@
     <div class="sheet-box">
       <div class="sheet-head">使用指南</div>
       <div class="guide-list">
-        <div class="guide-item"><span class="guide-k">随机邂逅</span>不填任何条件，点「今日与诗相逢」<b class="guide-b">随机推荐一首</b>。</div>
+        <div class="guide-item"><span class="guide-k">随机邂逅</span>不填任何条件，点「与诗相逢」<b class="guide-b">随机推荐一首</b>。</div>
         <div class="guide-item"><span class="guide-k">手势</span>在诗词卡片上<b class="guide-b">左右轻滑</b>换一首随机诗；<b class="guide-b">双击卡片</b>快速收藏；<b class="guide-b">长按诗句</b>即可复制该句。</div>
         <div class="guide-item"><span class="guide-k">每日与足迹</span>「今日之诗」每天为你推荐<b class="guide-b">同一首</b>；顶栏时钟图标查看<b class="guide-b">最近读过</b>；收藏夹支持一键<b class="guide-b">导出</b>。</div>
-        <div class="guide-item"><span class="guide-k">条件搜索</span>填写作者 / 朝代 / 体裁<b class="guide-b">任意组合</b>；体裁点输入框展开选择，首项「无」表示不限。</div>
+        <div class="guide-item"><span class="guide-k">条件搜索</span>一框输入作者 / 朝代 / 标题（标题模糊）<b class="guide-b">与体裁任意组合</b>；体裁点输入框展开选择，首项「无」表示不限。</div>
         <div class="guide-item"><span class="guide-k">列表浏览</span>点击标题行<b class="guide-b">展开全诗</b>，一次只展开一首；<b class="guide-b">上滑自动加载更多</b>。</div>
         <div class="guide-item"><span class="guide-k">批量收藏</span>列表中点「批量收藏」，勾选后<b class="guide-b">一键加入收藏夹</b>。</div>
         <div class="guide-item"><span class="guide-k">收藏</span>点诗词旁的<b class="guide-b">星星</b>收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持<b class="guide-b">批量管理与删除</b>。</div>
@@ -1012,8 +1006,7 @@
     const button = $("randomButton");
     const card = $("card");
     const cardToolsInner = $("cardToolsInner");
-    const authorInput = $("author");
-    const dynastyInput = $("dynasty");
+    const keywordInput = $("keyword");
     let typeValue = "";
     const typeInput = { get value() { return typeValue; } };
     const progressEl = $("progress");
@@ -1340,7 +1333,7 @@
         .map((l) => '<span class="btn-line">' + l + "</span>").join("");
     }
     function fitButtons() {
-      setBtnLabel(button, "今日与诗相逢");
+      setBtnLabel(button, "与诗相逢");
       const sb = $("shareButton");
       if (!sb.disabled) setBtnLabel(sb, "下载或分享卡片");
     }
@@ -1367,7 +1360,6 @@
         '<div class="card-body">' +
         '<div class="title">' + escapeHtml(title || "无题") + "</div>" +
         '<div class="meta">' + escapeHtml(meta) + "</div>" +
-        (author ? '<div class="author-seal">' + escapeHtml(Array.from(author).slice(0, 3).join("")) + "</div>" : "") +
         '<div class="content">' + contentHtml + "</div>" +
         (type ? '<div class="category">体裁：' + escapeHtml(type) + "</div>" : "") +
         "</div>";
@@ -1461,6 +1453,24 @@
       return chunks;
     }
 
+    // 统一搜索：作者 / 朝代精确匹配，标题模糊（包含）匹配
+    function matchKw(p, kw, type) {
+      if (/[\u25a1\ufffd]/.test((p.t ?? "") + (p.a ?? ""))) return false;
+      if (type && (p.y ?? "").trim() !== type) return false;
+      if (!kw) return true;
+      return (p.a ?? "").trim() === kw || (p.d ?? "").trim() === kw || (p.t ?? "").indexOf(kw) >= 0;
+    }
+    // 分块优先级：全索引中已知作者 > 含该朝代的分块，加快命中
+    function chunkKwScore(c, kw) {
+      let s = 0;
+      if (FULL_INDEX && Array.isArray(c.authors) && c.authors.some((a) => a.trim() === kw)) s += 2;
+      if (chunkHasDynasty(c, kw)) s += 1;
+      return s;
+    }
+    function sortChunksByKw(list, kw) {
+      return list.slice().sort((a, b) => chunkKwScore(b, kw) - chunkKwScore(a, kw));
+    }
+
     function matchPoem(poem, author, dynasty, type) {
       // 过滤标题/作者含缺字符（□/替换符）的残损条目，避免显示为方块
       if (/[\u25a1\ufffd]/.test((poem.t ?? "") + (poem.a ?? ""))) return false;
@@ -1483,8 +1493,7 @@
       button.textContent = "正在读取……";
       progressStart();
 
-      const author = forceRandom ? "" : authorInput.value.trim();
-      const dynasty = forceRandom ? "" : dynastyInput.value.trim();
+      const kw = forceRandom ? "" : keywordInput.value.trim();
       const type = forceRandom ? "" : typeInput.value.trim();
 
       try {
@@ -1493,7 +1502,7 @@
           return;
         }
 
-        if ((author || type) && !FULL_INDEX) {
+        if ((kw || type) && !FULL_INDEX) {
           await ensureFullIndex();
           if (!FULL_INDEX) {
             showStatus("筛选数据加载失败，请检查网络后重试", true);
@@ -1501,23 +1510,25 @@
           }
         }
 
-        const candidates = filterChunks(author, dynasty, type);
+        let candidates = type ? filterChunks("", "", type) : INDEX.chunks.slice();
+        if (kw) candidates = sortChunksByKw(candidates, kw);
         if (!candidates.length) {
           showStatus("未找到匹配条件的诗", true);
           return;
         }
 
-        const first = weightedRandom(candidates);
+        const kwHit = kw ? candidates.filter((c) => chunkKwScore(c, kw) > 0) : [];
+        const first = kw && kwHit.length ? kwHit[Math.floor(Math.random() * kwHit.length)] : weightedRandom(candidates);
         const rest = shuffle(candidates.filter((c) => c.file !== first.file));
         const order = [first].concat(rest);
         // 竖排显示模式：不推荐内容超过 56 字的诗词
         const vMax = currentTheme.direction === "vertical" ? 56 : 0;
-        const maxTries = Math.min(order.length, vMax ? 24 : 8);
+        const maxTries = Math.min(order.length, kw ? 48 : vMax ? 24 : 8);
 
         for (let i = 0; i < maxTries; i++) {
           const chunk = order[i];
           const poems = await loadChunk(chunk.file);
-          let matched = poems.filter((p) => matchPoem(p, author, dynasty, type));
+          let matched = poems.filter((p) => matchKw(p, kw, type));
           if (vMax) matched = matched.filter((p) => Array.from(p.c || "").length <= vMax);
           if (matched.length) {
             const poem = matched[Math.floor(Math.random() * matched.length)];
@@ -1534,7 +1545,7 @@
         showStatus("读取失败：" + (err && err.message ? err.message : err), true);
       } finally {
         button.disabled = false;
-        setBtnLabel(button, "今日与诗相逢");
+        setBtnLabel(button, "与诗相逢");
         progressDone();
       }
     }
@@ -1611,11 +1622,10 @@
 
     button.addEventListener("click", () => {
       haptic();
-      const author = authorInput.value.trim();
-      const dynasty = dynastyInput.value.trim();
+      const kw = keywordInput.value.trim();
       const type = typeValue.trim();
-      // 填了任一筛选条件 → 浮层列出全部匹配结果（无限分页）；未填 → 随机一首
-      if (author || dynasty || type) openResults(author, dynasty, type);
+      // 填了搜索词或体裁 → 列出全部匹配结果（无限分页）；未填 → 随机一首
+      if (kw || type) openResults(kw, type);
       else { setListMode(false); loadRandomPoem(); }
     });
 
@@ -1664,14 +1674,9 @@
     }
 
     const shareButton = $("shareButton");
-    shareButton.addEventListener("click", async () => {
-      haptic();
-      if (!currentPoem) {
-        showStatus("请先随机抽取一首诗，再分享", true);
-        return;
-      }
-      shareButton.disabled = true;
-      shareButton.textContent = "生成中……";
+    async function generateShare(poem, srcBtn) {
+      srcBtn.disabled = true;
+      srcBtn.textContent = "生成中……";
       try {
         if (document.fonts && document.fonts.ready) await document.fonts.ready;
         const css = getComputedStyle(document.documentElement);
@@ -1685,19 +1690,21 @@
         const FONT = '"Noto Serif SC", "Songti SC", "SimSun", serif';
         const vertical = currentTheme.direction === "vertical";
 
-        const title = currentPoem.t || "无题";
-        const authorMeta = [currentPoem.d, currentPoem.a].filter(Boolean).join(" · ");
-        const verses = splitVerses(currentPoem.c);
+        const title = poem.t || "无题";
+        const authorMeta = [poem.d, poem.a].filter(Boolean).join(" · ");
+        const verses = splitVerses(poem.c);
 
         // 画布：宽固定 3000px；高按比例（自适应 = 浏览器中卡片的实际显示比例）；文字到边框间距固定，卡片不缩放
         const W = 3000;
         let H;
         if (shareRatio === "auto") {
-          // 自适应比例只看诗文正文区域（不含卡片内的分享按钮）
-          const bodyEl = card.querySelector(".card-body") || card;
-          const cw = bodyEl.clientWidth || 1;
-          const ch = bodyEl.clientHeight || cw;
-          H = Math.round((W * ch) / cw);
+          // 自适应比例只看诗文正文区域（不含卡片内的分享按钮）；列表页生成时卡片不可见，回退 3:4
+          const bodyEl = listMode ? null : card.querySelector(".card-body");
+          if (bodyEl && bodyEl.clientWidth) {
+            H = Math.round((W * bodyEl.clientHeight) / bodyEl.clientWidth);
+          } else {
+            H = Math.round((W * 4) / 3);
+          }
         } else {
           const [rw, rh] = shareRatio.split(":").map(Number);
           H = Math.round((W * rh) / rw);
@@ -1953,9 +1960,17 @@
       } catch (e) {
         showStatus("生成卡片失败：" + (e && e.message ? e.message : e), true);
       } finally {
-        shareButton.disabled = false;
-        setBtnLabel(shareButton, "下载或分享卡片");
+        srcBtn.disabled = false;
+        setBtnLabel(srcBtn, "下载或分享卡片");
       }
+    }
+    shareButton.addEventListener("click", () => {
+      haptic();
+      if (!currentPoem) {
+        showStatus("请先随机抽取一首诗，再分享", true);
+        return;
+      }
+      generateShare(currentPoem, shareButton);
     });
 
     // ====== 网络字体（固定：思源宋体，jsDelivr 国内可访问） ======
@@ -2432,11 +2447,8 @@
       share.addEventListener("click", (ev) => {
         ev.stopPropagation();
         haptic();
-        setListMode(false);
-        currentPoem = p;
-        renderPoem(p);
-        window.scrollTo({ top: Math.max(card.offsetTop - 20, 0), behavior: "smooth" });
-        setTimeout(() => shareButton.click(), 350);
+        // 留在列表页直接为这首诗词生成卡片，不跳回主卡片
+        generateShare(p, share);
       });
       tools.appendChild(share);
       body.append(verse, tools);
@@ -2447,6 +2459,13 @@
         if (openItem && openItem !== item) openItem.classList.remove("open");
         item.classList.toggle("open");
         openItem = item.classList.contains("open") ? item : null;
+        // 展开后把该首滚动到视口垂直居中
+        if (openItem === item) {
+          setTimeout(() => {
+            const r = item.getBoundingClientRect();
+            window.scrollTo({ top: Math.max(0, window.scrollY + r.top + r.height / 2 - window.innerHeight / 2), behavior: "smooth" });
+          }, 360);
+        }
       });
       const bodyWrap = document.createElement("div");
       bodyWrap.className = "result-body-wrap";
@@ -2458,12 +2477,12 @@
       if (resultBusy || resultsDone) return;
       resultBusy = true;
       $("resultsFoot").textContent = "正在加载……";
-      const { author, dynasty, type } = resultFilter;
+      const { kw, type } = resultFilter;
       let added = 0;
       try {
         while (added < 30 && resultCursor < resultChunks.length) {
           const poems = await loadChunk(resultChunks[resultCursor++].file);
-          const matched = poems.filter((p) => matchPoem(p, author, dynasty, type));
+          const matched = poems.filter((p) => matchKw(p, kw, type));
           if (matched.length) {
             const list = $("resultsList");
             matched.forEach((p) => {
@@ -2485,15 +2504,16 @@
         resultBusy = false;
       }
     }
-    async function openResults(author, dynasty, type) {
+    async function openResults(kw, type) {
       if (!INDEX) { showStatus("诗词库尚未加载完成，请稍候……"); return; }
-      if (author || type) {
+      if (type) {
         const full = await ensureFullIndex();
         if (!full) { showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
       }
-      const candidates = filterChunks(author, dynasty, type);
+      let candidates = type ? filterChunks("", "", type) : INDEX.chunks.slice();
+      if (kw) candidates = sortChunksByKw(candidates, kw);
       if (!candidates.length) { showStatus("未找到匹配条件的诗词", true); return; }
-      resultChunks = candidates; resultCursor = 0; resultFilter = { author, dynasty, type };
+      resultChunks = candidates; resultCursor = 0; resultFilter = { kw, type };
       results = []; resultsDone = false; resultBusy = false; openItem = null;
       selMode = false; selIds.clear(); updateSelBar();
       $("resultsList").innerHTML = "";
@@ -2626,7 +2646,7 @@
       list.innerHTML = "";
       $("histCount").textContent = " · " + readHistory.length + " 首";
       if (!readHistory.length) {
-        list.innerHTML = '<div class="sheet-empty art"><div class="empty-enso"></div><div>还没有阅读记录</div><div class="sub">去「今日与诗相逢」遇见第一首吧</div></div>';
+        list.innerHTML = '<div class="sheet-empty art"><div class="empty-enso"></div><div>还没有阅读记录</div><div class="sub">去「与诗相逢」遇见第一首吧</div></div>';
         return;
       }
       readHistory.forEach((p) => {

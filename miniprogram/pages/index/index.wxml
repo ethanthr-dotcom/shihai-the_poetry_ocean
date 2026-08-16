@@ -25,18 +25,14 @@
       <image class="site-logo" src="/assets/logo-yang.png" mode="aspectFit"></image>
     </view>
     <view class="subtitle">在线诗词浏览器 · {{libTip}}</view>
-    <view class="search-tip">三个条件框均可留空：全部留空将随机推荐一首，填写任意一项即按条件搜索</view>
+    <view class="search-tip">搜索框与体裁均可留空：全部留空将随机推荐一首；搜索框支持作者 / 朝代与标题模糊搜索</view>
     <view class="data-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</view>
 
     <view class="controls">
       <view class="row">
         <view class="field">
-          <view class="label">作者</view>
-          <input class="input" placeholder="例如：李白" placeholder-class="ph" value="{{author}}" bindinput="onAuthorInput" />
-        </view>
-        <view class="field">
-          <view class="label">朝代</view>
-          <input class="input" placeholder="例如：唐" placeholder-class="ph" value="{{dynasty}}" bindinput="onDynastyInput" />
+          <view class="label">搜索</view>
+          <input class="input" placeholder="作者 / 朝代 / 标题（模糊），如：李白、唐、静夜" placeholder-class="ph" value="{{keyword}}" bindinput="onKeywordInput" />
         </view>
         <view class="field type-wrap">
           <view class="label">体裁</view>
@@ -78,7 +74,6 @@
             <view wx:for="{{titleLines}}" wx:key="index" class="title-line">{{item}}</view>
           </view>
           <view class="meta" style="{{metaStyle}}">{{poem.meta}}</view>
-          <view wx:if="{{sealText}}" class="author-seal"><text>{{sealText}}</text></view>
           <view class="content {{isVertical ? 'vertical' : ''}}">
             <view wx:for="{{verseLines}}" wx:key="index" class="verse-line {{item.wrap ? 'wrap' : ''}}" data-text="{{item.text}}{{item.punct}}" bindlongpress="onVerseLongPress">
               <text>{{item.text}}</text><text wx:if="{{item.punct}}" class="hang-punct">{{item.punct}}</text>
@@ -125,7 +120,7 @@
         </view>
       </view>
       <view class="results-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</view>
-      <view wx:for="{{resultsList}}" wx:key="id" class="result-item {{item.open ? 'open' : ''}}">
+      <view wx:for="{{resultsList}}" wx:key="id" id="resItem-{{index}}" class="result-item {{item.open ? 'open' : ''}}">
         <view class="result-head" data-index="{{index}}" bindtap="onResultItemTap">
           <view wx:if="{{selMode}}" class="chk {{selIds[item.id] ? 'on' : ''}}">✓</view>
           <view class="result-hm">
@@ -256,10 +251,10 @@
     <view class="guide-box" catchtap="noop">
       <view class="sheet-head">使用指南</view>
       <view class="guide-list">
-        <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「今日与诗相逢」<text class="guide-b">随机推荐一首</text>。</view>
+        <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「与诗相逢」<text class="guide-b">随机推荐一首</text>。</view>
         <view class="guide-item"><text class="guide-k">手势</text>在诗词卡片上<text class="guide-b">左右轻滑</text>换一首随机诗；<text class="guide-b">双击卡片</text>快速收藏；<text class="guide-b">长按诗句</text>即可复制该句。</view>
         <view class="guide-item"><text class="guide-k">每日与足迹</text>「今日之诗」每天为你推荐<text class="guide-b">同一首</text>；顶栏时钟图标查看<text class="guide-b">最近读过</text>；收藏夹支持一键<text class="guide-b">导出</text>。</view>
-        <view class="guide-item"><text class="guide-k">条件搜索</text>填写作者 / 朝代 / 体裁<text class="guide-b">任意组合</text>；体裁点输入框展开选择，首项「无」表示不限。</view>
+        <view class="guide-item"><text class="guide-k">条件搜索</text>一框输入作者 / 朝代 / 标题（标题模糊）<text class="guide-b">与体裁任意组合</text>；体裁点输入框展开选择，首项「无」表示不限。</view>
         <view class="guide-item"><text class="guide-k">列表浏览</text>点击标题行<text class="guide-b">展开全诗</text>，一次只展开一首；<text class="guide-b">上滑自动加载更多</text>。</view>
         <view class="guide-item"><text class="guide-k">批量收藏</text>列表中点「批量收藏」，勾选后<text class="guide-b">一键加入收藏夹</text>。</view>
         <view class="guide-item"><text class="guide-k">收藏</text>点诗词旁的<text class="guide-b">星星</text>收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持<text class="guide-b">批量管理与删除</text>。</view>
@@ -314,7 +309,7 @@
         <view wx:if="{{!histList.length}}" class="sheet-empty art">
           <view class="empty-enso"></view>
           <view>还没有阅读记录</view>
-          <view class="empty-sub">去「今日与诗相逢」遇见第一首吧</view>
+          <view class="empty-sub">去「与诗相逢」遇见第一首吧</view>
         </view>
         <view wx:for="{{histList}}" wx:key="index" class="fav-item" data-index="{{index}}" bindtap="onHistItemTap">
           <view class="result-hm">
