@@ -143,6 +143,27 @@ async function findRandomPoem(author, dynasty, type, maxLen) {
   throw new Error("未找到匹配条件的诗");
 }
 
+// 分享深链：按 标题/作者/朝代 定位唯一一首诗
+// 先用作者+朝代收窄候选分块，再块内按 标题前缀 + 作者/朝代精确 匹配
+async function findPoemByMeta(title, author, dynasty) {
+  if (!title) return null;
+  const index = await loadIndex();
+  if (!index) return null;
+  if (author && !FULL_INDEX) await ensureFullIndex();
+  const chunks = filterChunks(author || null, dynasty || null, null).slice(0, 30);
+  for (const c of chunks) {
+    let poems = [];
+    try { poems = await loadChunk(c.file); } catch (e) { continue; }
+    const hit = (poems || []).find((p) =>
+      (!author || (p.a || "").trim() === author) &&
+      (!dynasty || (p.d || "").trim() === dynasty) &&
+      ((p.t || "") === title || (p.t || "").indexOf(title) === 0)
+    );
+    if (hit) return hit;
+  }
+  return null;
+}
+
 // 收集全部体裁（按出现的分块数降序，过滤乱码条目），体裁选择器用；带缓存
 let TYPES_LIST = null;
 function collectTypes() {
@@ -173,6 +194,7 @@ module.exports = {
   filterChunks,
   matchPoem,
   findRandomPoem,
+  findPoemByMeta,
   collectTypes,
   cacheStats
 };

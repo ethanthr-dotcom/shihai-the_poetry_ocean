@@ -373,7 +373,7 @@
         <button class="share-opt" open-type="share" bindtap="haptic"><text class="opt-ico">💬</text>分享给朋友</button>
         <button class="share-opt" bindtap="saveShare"><text class="opt-ico">🖼️</text>保存到相册</button>
       </view>
-      <view class="share-tip">点图片可全屏预览 · 点空白处关闭</view>
+      <view class="share-tip">点图片可全屏预览 · 点空白处关闭 · 朋友圈分享：右上角「···」→ 分享到朋友圈</view>
     </view>
   </view>
 

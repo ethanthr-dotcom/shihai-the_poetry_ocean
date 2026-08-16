@@ -140,7 +140,17 @@ Page({
   prevHorzTheme: null,
   indexReady: false,
 
-  onLoad() {
+  onLoad(options) {
+    // 分享深链参数（好友/朋友圈进入时携带）：标题 + 作者 + 朝代
+    try {
+      if (options && options.pt) {
+        this._shareTarget = {
+          t: decodeURIComponent(options.pt),
+          a: options.pa ? decodeURIComponent(options.pa) : "",
+          d: options.pd ? decodeURIComponent(options.pd) : ""
+        };
+      }
+    } catch (e) {}
     this.currentTheme = themes.loadTheme();
     this.applyTheme();
     // 首次使用提示：确认过则照常开屏；首次只展示提示抽屉，同意后直进主页（不再播开屏动画）
@@ -233,7 +243,9 @@ Page({
         statusText: "收录 " + total.toLocaleString("zh-CN") + " 首诗词，点击下方按钮随机抽取",
         statusError: false
       });
-      await this.loadRandomPoem(false);
+      let shared = false;
+      if (this._shareTarget) shared = await this.applyShareTarget();
+      if (!shared) await this.loadRandomPoem(false);
     } catch (err) {
       this.showStatus("诗词库加载失败：" + (err && err.message ? err.message : err), true);
     }
@@ -245,6 +257,21 @@ Page({
       this.currentPoem = null;
     } else {
       this.setData({ statusText: message, statusError: false });
+    }
+  },
+
+  // 分享深链：按分享携带的 标题/作者/朝代 定位并直接展示该诗；失败返回 false 走随机推荐兜底
+  async applyShareTarget() {
+    const q = this._shareTarget;
+    if (!q || !q.t) return false;
+    try {
+      const poem = await data.findPoemByMeta(q.t, q.a, q.d);
+      if (!poem) return false;
+      this.renderPoem(poem);
+      setTimeout(() => wx.pageScrollTo({ selector: ".card", duration: 300 }), 80);
+      return true;
+    } catch (e) {
+      return false;
     }
   },
 
@@ -1327,12 +1354,32 @@ Page({
     });
   },
 
-  // 微信原生转发
-  onShareAppMessage() {
+  // ====== 微信原生分享 ======
+  _shareTitle() {
     const p = this.currentPoem;
+    return p ? "诗海 · " + (p.t || "无题") + " — " + [p.d, p.a].filter(Boolean).join("·") : "诗海 · 古诗词浏览器";
+  },
+  _shareQuery() {
+    const p = this.currentPoem;
+    if (!p || !p.t) return "";
+    // 标题截取前 30 字控制链接长度；还原时按 前缀 + 作者/朝代精确 匹配
+    const pt = encodeURIComponent(String(p.t).slice(0, 30));
+    return "pt=" + pt + (p.a ? "&pa=" + encodeURIComponent(p.a) : "") + (p.d ? "&pd=" + encodeURIComponent(p.d) : "");
+  },
+  // 分享给朋友：携带深链参数，好友点开直达同一首诗
+  onShareAppMessage() {
+    const q = this._shareQuery();
     return {
-      title: p ? "诗海 · " + (p.t || "无题") + " — " + [p.d, p.a].filter(Boolean).join("·") : "诗海 · 古诗词浏览器",
-      path: "/pages/index/index",
+      title: this._shareTitle(),
+      path: "/pages/index/index" + (q ? "?" + q : ""),
+      imageUrl: this.data.shareImg || undefined
+    };
+  },
+  // 分享到朋友圈：定义本方法后右上角「···」即出现朋友圈入口（仅安卓端开放）
+  onShareTimeline() {
+    return {
+      title: this._shareTitle(),
+      query: this._shareQuery(),
       imageUrl: this.data.shareImg || undefined
     };
   }
