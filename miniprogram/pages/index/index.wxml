@@ -31,14 +31,13 @@
     <view class="controls">
       <view class="row">
         <view class="field">
-          <view class="label">搜索<text class="label-tip">留空即随机推荐 · 作者 / 朝代 / 标题（模糊）</text></view>
+          <view class="label">搜索<text class="label-tip">留空即随机推荐 · 作者 / 朝代 / 标题</text></view>
           <view class="input-wrap">
             <input class="input" placeholder-class="ph" value="{{keyword}}" bindinput="onKeywordInput" />
             <text wx:if="{{kwStateText}}" class="kw-state {{kwStateMuted ? 'muted' : ''}}">{{kwStateText}}</text>
           </view>
           <view class="mode-seg">
-            <view class="sm-thumb" style="left: calc({{smIdx}} * 25% + 4rpx);"></view>
-            <view class="mode-opt {{searchMode === 'auto' ? 'active' : ''}}" data-mode="auto" bindtap="onSearchModeTap">智能识别</view>
+            <view class="sm-thumb" style="left: calc({{smIdx}} * 33.333% + 4rpx);"></view>
             <view class="mode-opt {{searchMode === 'author' ? 'active' : ''}}" data-mode="author" bindtap="onSearchModeTap">按作者</view>
             <view class="mode-opt {{searchMode === 'dynasty' ? 'active' : ''}}" data-mode="dynasty" bindtap="onSearchModeTap">按朝代</view>
             <view class="mode-opt {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
@@ -98,7 +97,6 @@
         </view>
         <view class="card-tools">
           <view class="card-sub-tools">
-            <view wx:if="{{poem.pa}}" class="sub-tool" hover-class="sub-tool-hover" bindtap="onMetaAuthorTap">同作者再来一首 · {{poem.pa}}</view>
           </view>
           <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">
             <block wx:if="{{shareLoading}}">生成中……</block>
@@ -215,7 +213,7 @@
 
   <!-- 主题面板（配色/文字方向，与网页版一致） -->
   <view class="theme-panel {{themePanelOpen ? 'open' : ''}}" catchtap="noop" catchtouchmove="noop">
-    <scroll-view class="tp-scroll" scroll-y="true" enhanced="true" show-scrollbar="false">
+    <scroll-view wx:if="{{themePanelOpen}}" class="tp-scroll" scroll-y="true" enhanced="true" show-scrollbar="false">
     <view class="settings-group">
       <view class="settings-group-h" bindtap="onSgStyleToggle">主题样式<text class="settings-caret {{sgStyleClosed ? 'closed' : ''}}">▾</text></view>
       <view wx:if="{{!sgStyleClosed}}" class="settings-body">
@@ -295,11 +293,11 @@
       <view class="sheet-head">使用指南</view>
       <view class="guide-stats">{{statsLine}}</view>
       <view class="guide-list">
-        <view class="guide-item"><text class="guide-k">精致体验</text>卡片下方可<text class="guide-b">同作者再来一首</text>；点作者名<text class="guide-b">搜全部同作者诗词</text>。</view>
+        <view class="guide-item"><text class="guide-k">精致体验</text>点作者名<text class="guide-b">搜全部同作者诗词</text>。</view>
         <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「与诗相逢」<text class="guide-b">随机推荐一首</text>。</view>
         <view class="guide-item"><text class="guide-k">手势</text>在诗词卡片上<text class="guide-b">左右轻滑</text>换一首随机诗；<text class="guide-b">双击卡片</text>快速收藏；<text class="guide-b">长按诗句</text>即可复制该句。</view>
         <view class="guide-item"><text class="guide-k">足迹</text>顶栏时钟图标查看<text class="guide-b">最近读过</text>；收藏夹支持一键<text class="guide-b">导出</text>。</view>
-        <view class="guide-item"><text class="guide-k">条件搜索</text>一框输入搜索词，<text class="guide-b">智能识别</text>作者 / 朝代 / 标题，也可在输入框下手动指定；命中关键词<text class="guide-b">加粗高亮</text>、点开过的条目标记已读；与体裁任意组合，体裁首项「无」表示不限。</view>
+        <view class="guide-item"><text class="guide-k">条件搜索</text>一框输入搜索词，在搜索框下选择<text class="guide-b">按作者 / 按朝代 / 按标题</text>检索；命中关键词<text class="guide-b">加粗高亮</text>、点开过的条目标记已读；与体裁任意组合，体裁首项「无」表示不限。</view>
         <view class="guide-item"><text class="guide-k">列表浏览</text>点击标题行<text class="guide-b">展开全诗</text>，一次只展开一首；<text class="guide-b">上滑自动加载更多</text>。</view>
         <view class="guide-item"><text class="guide-k">批量收藏</text>列表中点「批量收藏」，勾选后<text class="guide-b">一键加入收藏夹</text>。</view>
         <view class="guide-item"><text class="guide-k">收藏</text>点诗词旁的<text class="guide-b">星星</text>收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持<text class="guide-b">批量管理与删除</text>。</view>

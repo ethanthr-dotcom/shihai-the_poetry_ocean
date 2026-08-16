@@ -190,7 +190,7 @@ Page({
     const h = new Date().getHours();
     const greet = h >= 5 && h < 8 ? "晨读" : h < 12 ? "上午品读" : h < 14 ? "午间小读" : h < 18 ? "午后漫读" : h < 23 ? "灯下夜读" : "深夜静读";
     this.setData({ randomTip: greet + " · " + this.data.randomTip });
-    try { const sm0 = wx.getStorageSync("shihai-search-mode-v1"); if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title" || sm0 === "auto") this.setData({ searchMode: sm0, smIdx: ["auto", "author", "dynasty", "title"].indexOf(sm0) }); } catch (e) {}
+    try { let sm0 = wx.getStorageSync("shihai-search-mode-v1"); if (sm0 === "auto") { sm0 = "title"; try { wx.setStorageSync("shihai-search-mode-v1", "title"); } catch (e2) {} } if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title") this.setData({ searchMode: sm0, smIdx: ["author", "dynasty", "title"].indexOf(sm0) }); } catch (e) {}
     // 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名）
     this._opts = { preview: true, shake: false, brief: false, sign: "" };
     try { const o0 = wx.getStorageSync("shihai-opts-v1"); if (o0) this._opts = { ...this._opts, ...o0 }; } catch (e) {}
@@ -335,7 +335,7 @@ Page({
     const m = e.currentTarget.dataset.mode;
     if (!m || m === this.data.searchMode) return;
     this.haptic();
-    this.setData({ searchMode: m, smIdx: ["auto", "author", "dynasty", "title"].indexOf(m) });
+    this.setData({ searchMode: m, smIdx: ["author", "dynasty", "title"].indexOf(m) });
     try { wx.setStorageSync("shihai-search-mode-v1", m); } catch (err) {}
     this.updateKwHint();
   },
@@ -353,24 +353,13 @@ Page({
     });
   },
   _effModeFor(kw) {
-    const m = this.data.searchMode;
-    return m !== "auto" ? m : this._detectKw(kw);
+    return this.data.searchMode;
   },
   updateKwHint() {
     const kw = (this.data.keyword || "").trim();
     if (!kw) { this.setData({ kwStateText: "", kwStateMuted: false }); return; }
     const m = this.data.searchMode;
-    if (m === "author") { this.setData({ kwStateText: "按作者检索", kwStateMuted: false }); return; }
-    if (m === "dynasty") { this.setData({ kwStateText: "按朝代检索", kwStateMuted: false }); return; }
-    if (m === "title") { this.setData({ kwStateText: "按标题检索", kwStateMuted: false }); return; }
-    if (!this.indexReady) { this.setData({ kwStateText: "识别中", kwStateMuted: true }); return; }
-    this.setData({ kwStateText: "识别中", kwStateMuted: true });
-    data.ensureFullIndex().then((full) => {
-      if (full && !this._authorSet) this._buildKnownSets(full);
-      if ((this.data.keyword || "").trim() !== kw) return;
-      const d = this._detectKw(kw);
-      this.setData({ kwStateText: d === "author" ? "按作者检索" : d === "dynasty" ? "按朝代检索" : "按标题检索", kwStateMuted: false });
-    });
+    this.setData({ kwStateText: m === "author" ? "按作者检索" : m === "dynasty" ? "按朝代检索" : "按标题检索", kwStateMuted: false });
   },
   onTypeInput(e) { this.setData({ type: e.detail.value }); },
 
@@ -876,20 +865,31 @@ Page({
   // ====== 搜索结果列表：就地替换诗词卡片；无限分页（页面触底）；手风琴；批量收藏 ======
   async openResults(kw, type) {
     if (!this.indexReady) { this.showStatus("诗词库尚未加载完成，请稍候……"); return; }
-    if (kw || type) {
+    if (type) {
       const full = await data.ensureFullIndex();
       if (!full) { this.showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
       if (!this._authorSet) this._buildKnownSets(full);
+    } else if (kw && this.data.searchMode === "author") {
+      const full = await data.ensureFullIndex(); // 失败不阻断：退化为全库流式扫描
+      if (full && !this._authorSet) this._buildKnownSets(full);
     }
     const base = await data.loadIndex();
-    const mode = kw ? this._effModeFor(kw) : "auto";
+    const mode = this.data.searchMode;
     // 优先用全索引分块（含 authors），作者/朝代收窄才能生效
     const baseChunks = data.getFullChunks() || base.chunks;
     let candidates = type ? data.filterChunks("", "", type) : baseChunks.slice();
     if (kw) {
       candidates = data.sortChunksByKw(candidates, kw, mode);
-      // 作者 / 朝代检索：只扫描含目标的数据块，速度大幅提升
-      if (mode === "author" || mode === "dynasty") candidates = candidates.filter((c) => data.chunkKwScore(c, kw, mode) > 0);
+      // 朝代检索：只扫描含该朝代的数据块（精简索引即含 dynasties，可靠）
+      if (mode === "dynasty") candidates = candidates.filter((c) => data.chunkKwScore(c, kw, mode) > 0);
+      // 作者检索：仅在拿到全索引 authors 时收窄；收窄为空则退回全量流式扫描，避免误报无结果
+      if (mode === "author") {
+        const fc = data.getFullChunks();
+        if (fc) {
+          const n = candidates.filter((c) => Array.isArray(c.authors) && c.authors.some((a) => a.trim() === kw));
+          if (n.length) candidates = n;
+        }
+      }
       if (mode === "title") { await data.ensureSearchIndex(); candidates = data.narrowByDigest(candidates, kw); }
     }
     if (!candidates.length) { this.showStatus("未找到匹配条件的诗词", true); return; }
@@ -916,9 +916,10 @@ Page({
     try {
       while (added < 20 && this._resultCursor < this._resultChunks.length) {
         // 并行拉取 5 个数据块，明显提速
-        const batch = this._resultChunks.slice(this._resultCursor, this._resultCursor + 5);
+        const batch = this._resultChunks.slice(this._resultCursor, this._resultCursor + 6);
         this._resultCursor += batch.length;
         const lists = await Promise.all(batch.map((c) => data.loadChunk(c.file)));
+        await new Promise((r) => setTimeout(r, 0)); // 让出渲染：搜到即显示
         const items = [];
         lists.forEach((poems) => {
           poems.filter((p) => data.matchKw(p, kw, type, mode)).forEach((p) => {

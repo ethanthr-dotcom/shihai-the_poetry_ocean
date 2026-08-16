@@ -315,7 +315,7 @@
     .results-count { font-size: 11px; opacity: .55; margin-left: 6px; letter-spacing: 0; }
     .results-list { max-height: 56vh; overflow-y: auto; }
     .result-item { border-bottom: 1px solid var(--card-border); }
-    .result-head { position: relative; padding: 12px 22px 12px 2px; cursor: pointer; }
+    .result-head { position: relative; padding: 9px 22px 9px 2px; cursor: pointer; text-align: left; }
     .result-head:hover { opacity: .7; }
     .result-t { font-size: 15px; }
     .result-m { font-size: 11px; opacity: .55; margin-top: 3px; }
@@ -350,9 +350,9 @@
     .results-panel { margin-top: 22px; }
     .results-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px solid var(--card-border); margin-bottom: 4px; }
     .results-head-r { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .result-head { display: flex; align-items: center; gap: 10px; }
+    .result-head { display: flex; align-items: center; gap: 8px; }
     .result-hm { flex: 1; min-width: 0; }
-    .result-fav { flex: none; position: relative; width: 24px; height: 24px; padding: 2px; margin: 0 8px 0 16px; cursor: pointer; color: var(--meta-color); opacity: .5; box-sizing: border-box; }
+    .result-fav { flex: none; position: relative; width: 24px; height: 24px; padding: 2px; margin: 0; cursor: pointer; color: var(--meta-color); opacity: .5; box-sizing: border-box; }
     .result-fav:hover { opacity: .95; }
     .result-fav.on { color: var(--seal-color, #a3382f); opacity: 1; }
 
@@ -369,6 +369,7 @@
     .kw-state { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 11px; letter-spacing: 1px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--accent-color); color: var(--accent-color); background: color-mix(in srgb, var(--accent-color) 9%, transparent); white-space: nowrap; pointer-events: none; }
     .kw-state.muted { border-color: var(--input-border); color: var(--meta-color); background: transparent; }
     .mode-seg { position: relative; display: flex; height: 34px; border-radius: 17px; border: 1px solid var(--input-border); background: var(--input-bg); margin-top: 8px; }
+    .mode-seg .ratio-thumb { width: calc(33.333% - 4px); }
     .mode-opt { position: relative; flex: 1; width: auto; margin: 0; padding: 0; border: 0; background: transparent; font-size: 12.5px; letter-spacing: 1px; color: var(--text-color); opacity: .75; cursor: pointer; font-family: inherit; transition: color .2s, opacity .2s; }
     .mode-opt.active { background: transparent; color: var(--button-text); opacity: 1; }
     .results-progress { margin: 6px 0 4px; padding: 7px 11px; font-size: 12px; line-height: 1.5; color: var(--label-color); border: 1px dashed var(--input-border); border-radius: 7px; display: flex; align-items: center; gap: 8px; }
@@ -403,7 +404,7 @@
     .card-note { position: absolute; top: 10px; right: 46px; z-index: 3; background: none; border: 0; width: 26px; height: 26px; padding: 2px; cursor: pointer; color: var(--meta-color); opacity: .55; transition: opacity .2s, color .2s; font-family: inherit; box-sizing: border-box; }
     .card-note:hover { opacity: .95; }
     .card-note.on { color: var(--seal-color, #a3382f); opacity: 1; }
-    .result-note { position: relative; width: 23px; height: 23px; margin: 0 2px 0 12px; color: var(--meta-color); opacity: .5; flex: none; cursor: pointer; }
+    .result-note { position: relative; width: 23px; height: 23px; margin: 0; color: var(--meta-color); opacity: .5; flex: none; cursor: pointer; }
     .result-note.on { color: var(--seal-color, #a3382f); opacity: 1; }
     .card-note .note-svg, .result-note .note-svg { width: 100%; height: 100%; display: block; }
     .note-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 4px; border-bottom: 1px dashed var(--card-border); cursor: pointer; }
@@ -798,14 +799,13 @@
     <section class="controls">
       <div class="row">
         <div>
-          <label for="keyword">搜索<span class="label-tip">留空即随机推荐 · 作者 / 朝代 / 标题（模糊）</span></label>
+          <label for="keyword">搜索<span class="label-tip">留空即随机推荐 · 作者 / 朝代 / 标题</span></label>
           <div class="input-wrap">
             <input id="keyword">
             <span id="kwState" class="kw-state" style="display:none"></span>
           </div>
           <div class="mode-seg">
             <div class="ratio-thumb" id="smThumb"></div>
-            <button class="mode-opt active" data-mode="auto" type="button">智能识别</button>
             <button class="mode-opt" data-mode="author" type="button">按作者</button>
             <button class="mode-opt" data-mode="dynasty" type="button">按朝代</button>
             <button class="mode-opt" data-mode="title" type="button">按标题</button>
@@ -853,7 +853,6 @@
     <!-- 分享与比例：渲染诗词后由 JS 移入卡片内部 -->
     <div id="cardToolsInner" class="card-tools-inner" style="display:none">
       <div class="card-sub-tools">
-        <button id="sameAuthorButton" class="sub-tool" type="button" style="display:none"></button>
       </div>
       <button id="shareButton" type="button" class="secondary">下载或分享卡片</button>
       <div class="ratio-row">
@@ -887,11 +886,11 @@
       <div class="sheet-head">使用指南</div>
       <div class="guide-stats" id="guideStats"></div>
       <div class="guide-list">
-        <div class="guide-item"><span class="guide-k">精致体验</span>卡片下方可<b class="guide-b">同作者再来一首</b>；点作者名<b class="guide-b">搜全部同作者诗词</b>。</div>
+        <div class="guide-item"><span class="guide-k">精致体验</span>点作者名<b class="guide-b">搜全部同作者诗词</b>。</div>
         <div class="guide-item"><span class="guide-k">随机邂逅</span>不填任何条件，点「与诗相逢」<b class="guide-b">随机推荐一首</b>。</div>
         <div class="guide-item"><span class="guide-k">手势</span>在诗词卡片上<b class="guide-b">左右轻滑</b>换一首随机诗；<b class="guide-b">双击卡片</b>快速收藏；<b class="guide-b">长按诗句</b>即可复制该句。</div>
         <div class="guide-item"><span class="guide-k">足迹</span>顶栏时钟图标查看<b class="guide-b">最近读过</b>；收藏夹支持一键<b class="guide-b">导出</b>。</div>
-        <div class="guide-item"><span class="guide-k">条件搜索</span>一框输入搜索词，<b class="guide-b">智能识别</b>作者 / 朝代 / 标题，也可在输入框下手动指定；命中关键词<b class="guide-b">加粗高亮</b>、点开过的条目标记已读；与体裁任意组合，体裁首项「无」表示不限。</div>
+        <div class="guide-item"><span class="guide-k">条件搜索</span>一框输入搜索词，在搜索框下选择<b class="guide-b">按作者 / 按朝代 / 按标题</b>检索；命中关键词<b class="guide-b">加粗高亮</b>、点开过的条目标记已读；与体裁任意组合，体裁首项「无」表示不限。</div>
         <div class="guide-item"><span class="guide-k">列表浏览</span>点击标题行<b class="guide-b">展开全诗</b>，一次只展开一首；<b class="guide-b">上滑自动加载更多</b>。</div>
         <div class="guide-item"><span class="guide-k">批量收藏</span>列表中点「批量收藏」，勾选后<b class="guide-b">一键加入收藏夹</b>。</div>
         <div class="guide-item"><span class="guide-k">收藏</span>点诗词旁的<b class="guide-b">星星</b>收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持<b class="guide-b">批量管理与删除</b>。</div>
@@ -1101,10 +1100,10 @@
     const cardToolsInner = $("cardToolsInner");
     const keywordInput = $("keyword");
     let typeValue = "";
-    // ====== 搜索方式：智能识别 / 作者 / 朝代 / 标题（搜索区标签与设置面板同步） ======
+    // ====== 搜索方式：作者 / 朝代 / 标题（搜索区标签与设置面板同步） ======
     const SEARCH_MODE_KEY = "shihai-search-mode-v1";
     let searchMode = "auto";
-    try { const sm0 = localStorage.getItem(SEARCH_MODE_KEY); if (sm0 === "auto" || sm0 === "author" || sm0 === "dynasty" || sm0 === "title") searchMode = sm0; } catch (e) {}
+    try { const sm0 = localStorage.getItem(SEARCH_MODE_KEY); if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title") searchMode = sm0; else if (sm0 === "auto") { searchMode = "title"; localStorage.setItem(SEARCH_MODE_KEY, "title"); } } catch (e) {}
     function saveSearchMode() { try { localStorage.setItem(SEARCH_MODE_KEY, searchMode); } catch (e) {} }
     // ====== 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名） ======
     const OPTS_KEY = "shihai-opts-v1";
@@ -1157,27 +1156,15 @@
       return "title";
     }
     function effModeFor(kw) {
-      if (searchMode !== "auto") return searchMode;
-      return detectKw(kw);
+      return searchMode;
     }
     function updateKwHint() {
       const st = $("kwState");
       if (!st) return;
-      const kw = keywordInput.value.trim();
-      if (!kw) { st.style.display = "none"; return; }
+      if (!keywordInput.value.trim()) { st.style.display = "none"; return; }
       st.style.display = "";
       st.classList.remove("muted");
-      if (searchMode === "author") { st.textContent = "按作者检索"; return; }
-      if (searchMode === "dynasty") { st.textContent = "按朝代检索"; return; }
-      if (searchMode === "title") { st.textContent = "按标题检索"; return; }
-      if (!INDEX) { st.textContent = "识别中"; st.classList.add("muted"); return; }
-      st.textContent = "识别中"; st.classList.add("muted");
-      ensureFullIndex().then(() => {
-        if (keywordInput.value.trim() !== kw) return;
-        const m = detectKw(kw);
-        st.classList.remove("muted");
-        st.textContent = m === "author" ? "按作者检索" : m === "dynasty" ? "按朝代检索" : "按标题检索";
-      });
+      st.textContent = searchMode === "author" ? "按作者检索" : searchMode === "dynasty" ? "按朝代检索" : "按标题检索";
     }
     function hiliteKw(text) {
       const t = escapeHtml(text ?? "");
@@ -1564,11 +1551,6 @@
       // 分享按钮与卡片比例放进诗词卡片内部
       card.appendChild(cardToolsInner);
       cardToolsInner.style.display = "";
-      const sab = $("sameAuthorButton");
-      if (sab) {
-        sab.style.display = author ? "" : "none";
-        if (author) sab.textContent = "同作者再来一首 · " + author;
-      }
       try {
         if (typeof speechSynthesis !== "undefined" && speechSynthesis.speaking) {
           speechSynthesis.cancel(); aloudOn = false;
@@ -1859,7 +1841,7 @@
       opts.forEach((b) => b.classList.toggle("active", b.dataset.mode === searchMode));
       document.querySelectorAll('.theme-options[data-group="optSearchMode"] .theme-opt').forEach((b) => b.classList.toggle("active", b.dataset.value === searchMode));
       const thumb = $("smThumb");
-      if (thumb) { const idx = opts.findIndex((b) => b.classList.contains("active")); if (idx >= 0) thumb.style.left = "calc(" + idx * 25 + "% + 2px)"; }
+      if (thumb) { const idx = opts.findIndex((b) => b.classList.contains("active")); if (idx >= 0) thumb.style.left = "calc(" + idx * 33.333 + "% + 2px)"; }
     }
     document.querySelectorAll(".mode-opt").forEach((b) => b.addEventListener("click", () => {
       haptic();
@@ -2226,14 +2208,6 @@
         return;
       }
       generateShare(currentPoem, shareButton);
-    });
-    $("sameAuthorButton").addEventListener("click", () => {
-      const a = currentPoem && (currentPoem.a || "").trim();
-      if (!a) return;
-      haptic();
-      keywordInput.value = a;
-      updateKwHint();
-      openResults(a, "");
     });
 
 
@@ -2762,9 +2736,10 @@
       try {
         while (added < 20 && resultCursor < resultChunks.length) {
           // 并行拉取 5 个数据块，明显提速
-          const batch = resultChunks.slice(resultCursor, resultCursor + 5);
+          const batch = resultChunks.slice(resultCursor, resultCursor + 6);
           resultCursor += batch.length;
           const lists = await Promise.all(batch.map((c) => loadChunk(c.file)));
+          await new Promise((r) => setTimeout(r, 0)); // 让出渲染：搜到即显示
           const listEl = $("resultsList");
           lists.forEach((poems) => {
             poems.filter((p) => matchKw(p, kw, type, mode)).forEach((p) => {
@@ -2791,17 +2766,24 @@
     }
     async function openResults(kw, type) {
       if (!INDEX) { showStatus("诗词库尚未加载完成，请稍候……"); return; }
-      if (type || kw) {
+      if (type) {
         const full = await ensureFullIndex();
         if (!full) { showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
+      } else if (kw && searchMode === "author") {
+        await ensureFullIndex(); // 失败不阻断：退化为全库流式扫描，保证总能出结果
       }
-      const mode = kw ? effModeFor(kw) : "auto";
+      const mode = searchMode;
       // 优先用全索引分块（含 authors），作者/朝代收窄才能生效
       let candidates = type ? filterChunks("", "", type) : (FULL_INDEX && FULL_INDEX.chunks ? FULL_INDEX.chunks.slice() : INDEX.chunks.slice());
       if (kw) {
         candidates = sortChunksByKw(candidates, kw, mode);
-        // 作者 / 朝代检索：只扫描含目标的数据块，速度大幅提升
-        if (mode === "author" || mode === "dynasty") candidates = candidates.filter((c) => chunkKwScore(c, kw, mode) > 0);
+        // 朝代检索：只扫描含该朝代的数据块（精简索引即含 dynasties，可靠）
+        if (mode === "dynasty") candidates = candidates.filter((c) => chunkKwScore(c, kw, mode) > 0);
+        // 作者检索：仅在拿到全索引 authors 时收窄；收窄为空则退回全量流式扫描，避免误报无结果
+        if (mode === "author" && FULL_INDEX && FULL_INDEX.chunks) {
+          const n = candidates.filter((c) => Array.isArray(c.authors) && c.authors.some((a) => a.trim() === kw));
+          if (n.length) candidates = n;
+        }
         if (mode === "title") candidates = narrowByDigest(candidates, kw);
       }
       if (!candidates.length) { showStatus("未找到匹配条件的诗词", true); return; }
