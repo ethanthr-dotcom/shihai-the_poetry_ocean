@@ -67,6 +67,10 @@ Page({
     hasPoem: false,
     poem: null,
     verseLines: [],
+    sealText: "",
+    inkAnim: false,
+    histList: [],
+    histShow: false,
     titleStyle: "",
     titleLines: [],
     metaStyle: "",
@@ -163,6 +167,10 @@ Page({
     }
     this.loadFavs();
     this.loadNotes();
+    try { this._history = wx.getStorageSync("shihai-history-v1") || []; } catch (e) { this._history = []; }
+    const h = new Date().getHours();
+    const greet = h >= 5 && h < 8 ? "晨读" : h < 12 ? "上午品读" : h < 14 ? "午间小读" : h < 18 ? "午后漫读" : h < 23 ? "灯下夜读" : "深夜静读";
+    this.setData({ randomTip: greet + " · " + this.data.randomTip });
     this.boot();
     this.fitBtnLabels();
   },
@@ -882,13 +890,13 @@ Page({
   },
 
   // ====== 随机抽取（与网页版 loadRandomPoem 一致） ======
-  async loadRandomPoem(userAction) {
+  async loadRandomPoem(userAction, forceRandom) {
     if (this.data.randomLoading) return;
     this.setData({ randomLoading: true });
     this.progressStart();
-    const author = (this.data.author || "").trim();
-    const dynasty = (this.data.dynasty || "").trim();
-    const type = (this.data.type || "").trim();
+    const author = forceRandom ? "" : (this.data.author || "").trim();
+    const dynasty = forceRandom ? "" : (this.data.dynasty || "").trim();
+    const type = forceRandom ? "" : (this.data.type || "").trim();
     try {
       if (!this.indexReady) {
         this.showStatus("诗词库尚未加载完成，请稍候……");
@@ -907,6 +915,104 @@ Page({
       this.setData({ randomLoading: false });
       this.progressDone();
     }
+  },
+
+  // ====== 最近读过（本地缓存，最多 20 首） ======
+  _recordHistory(poem) {
+    if (!poem) return;
+    this._history = this._history || [];
+    const id = favId(poem);
+    this._history = this._history.filter((p) => favId(p) !== id);
+    this._history.unshift({ t: poem.t, a: poem.a, d: poem.d, y: poem.y, c: poem.c });
+    if (this._history.length > 20) this._history.length = 20;
+    try { wx.setStorageSync("shihai-history-v1", this._history); } catch (e) {}
+  },
+  onHistToggle() {
+    this.haptic();
+    this.setData({ histList: this._history || [], histShow: true });
+  },
+  onHistClose() { this.hideSheet("histShow"); },
+  onHistItemTap(e) {
+    const p = (this._history || [])[e.currentTarget.dataset.index];
+    if (!p) return;
+    this.haptic();
+    this.hideSheet("histShow");
+    this.setData({ listMode: false });
+    this.renderPoem(p);
+    wx.pageScrollTo({ selector: ".card", duration: 300 });
+  },
+  onHistClear() {
+    this.haptic();
+    if (!(this._history || []).length) { wx.showToast({ title: "暂无阅读记录", icon: "none" }); return; }
+    this._history = [];
+    try { wx.setStorageSync("shihai-history-v1", []); } catch (e) {}
+    this.setData({ histList: [] });
+    wx.showToast({ title: "已清空阅读记录", icon: "none" });
+  },
+
+  // ====== 今日之诗：按日期确定性挑选，所有人当天读到同一首 ======
+  onDailyTap() {
+    this.haptic();
+    if (this.data.randomLoading || !this.indexReady) {
+      if (!this.indexReady) this.showStatus("诗词库尚未加载完成，请稍候……");
+      return;
+    }
+    this.setData({ randomLoading: true, listMode: false });
+    this.progressStart();
+    data.findDailyPoem().then((poem) => {
+      this.renderPoem(poem);
+      wx.pageScrollTo({ selector: ".card", duration: 300 });
+      wx.showToast({ title: "今日之诗 · 与大家同读", icon: "none" });
+    }).catch((err) => {
+      this.showStatus("读取失败：" + (err && err.message ? err.message : err), true);
+    }).finally(() => {
+      this.setData({ randomLoading: false });
+      this.progressDone();
+    });
+  },
+
+  // ====== 卡片手势：左右轻滑换诗 / 长按诗句复制 / 双击收藏 ======
+  onCardTouchStart(e) {
+    const t = e.touches[0];
+    this._cardTouch = { x: t.clientX, y: t.clientY };
+  },
+  onCardTouchEnd(e) {
+    if (!this._cardTouch) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - this._cardTouch.x;
+    const dy = t.clientY - this._cardTouch.y;
+    this._cardTouch = null;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    if (!this.currentPoem || this.data.randomLoading) return;
+    this.haptic();
+    this.setData({ listMode: false });
+    this.loadRandomPoem(false, true);
+  },
+  onVerseLongPress(e) {
+    const text = e.currentTarget.dataset.text || "";
+    if (!text) return;
+    this.haptic();
+    wx.setClipboardData({ data: text });
+  },
+  onCardBodyTap() {
+    if (!this.currentPoem) return;
+    const now = Date.now();
+    if (now - (this._lastBodyTap || 0) < 320) {
+      this._lastBodyTap = 0;
+      this.onCardFavTap();
+    } else {
+      this._lastBodyTap = now;
+    }
+  },
+
+  // ====== 收藏夹导出：复制全部收藏为文本 ======
+  onFavExport() {
+    this.haptic();
+    const list = this.data.favList || [];
+    if (!list.length) { wx.showToast({ title: "还没有收藏可导出", icon: "none" }); return; }
+    const text = "诗海 · 我的收藏（" + list.length + " 首）\n\n" +
+      list.map((p) => "《" + (p.t || "无题") + "》 " + [p.d, p.a].filter(Boolean).join(" · ") + "\n" + (p.c || "")).join("\n\n");
+    wx.setClipboardData({ data: text, success: () => wx.showToast({ title: "已复制 " + list.length + " 首收藏", icon: "none" }) });
   },
 
   // ====== 渲染诗词（对齐网页版 renderPoem + fitCardText） ======
@@ -929,8 +1035,11 @@ Page({
       titleStyle: tt.style,
       metaStyle: this._fitInlineStyle(meta, "--meta-font-size"),
       categoryStyle: this._fitInlineStyle(poem.y ? "体裁：" + poem.y : "", "--category-font-size"),
-      verseLines: this.buildVerseLines(poem)
-    }, () => this.fitCardText());
+      verseLines: this.buildVerseLines(poem),
+      sealText: Array.from(poem.a || "").slice(0, 3).join(""),
+      inkAnim: false
+    }, () => { this.fitCardText(); this.setData({ inkAnim: true }); });
+    this._recordHistory(poem);
   },
 
   // 标题排版：放得下则单行；超宽则均分为多行（优先在标点处断句），

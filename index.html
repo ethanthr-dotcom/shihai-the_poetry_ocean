@@ -434,6 +434,38 @@
     #toast { position: fixed; left: 50%; bottom: 12vh; transform: translateX(-50%); background: rgba(0,0,0,.72); color: #fff; padding: 9px 20px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 2000; }
     #toast.show { opacity: 1; }
     body.no-scroll { overflow: hidden; }
+
+    /* 主题切换：颜色柔和过渡 */
+    body, .card, .sheet-box, .theme-panel, .guide-box, .status, .site-header h1, .slogan { transition: background-color .5s ease, color .5s ease, border-color .5s ease; }
+
+    /* 水墨入场：卡片内容淡入上浮 */
+    @keyframes inkIn { from { opacity: 0; transform: translateY(12px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+    .card-body.ink-in { animation: inkIn .55s cubic-bezier(.22,.8,.36,1); }
+
+    /* 作者印章（竖排朱红小印） */
+    .author-seal { display: block; width: fit-content; margin: 10px auto 0; padding: 3px 3px; background: var(--seal-color, #a3382f); color: #fdf6ec; font-size: 10px; line-height: 1.25; letter-spacing: 2px; border-radius: 3px; opacity: .9; writing-mode: vertical-rl; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+
+    /* 空状态：圆相（ ensō ）水墨引导 */
+    .sheet-empty.art { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 30px 0 26px; opacity: .75; }
+    .empty-enso { width: 52px; height: 52px; border: 3px solid currentColor; border-radius: 50%; border-right-color: transparent; transform: rotate(35deg); opacity: .35; margin-bottom: 6px; }
+    .sheet-empty.art .sub { font-size: 12px; opacity: .7; }
+
+    /* 水墨加载：三点晕染 */
+    .ink-loader { display: block; margin: 0 auto 12px; width: fit-content; }
+    .ink-loader i { display: inline-block; width: 8px; height: 8px; margin: 0 3px; border-radius: 50%; background: currentColor; opacity: .3; animation: inkDrop 1.2s ease-in-out infinite; }
+    .ink-loader i:nth-child(2) { animation-delay: .2s; }
+    .ink-loader i:nth-child(3) { animation-delay: .4s; }
+    @keyframes inkDrop { 0%, 100% { transform: scale(.6); opacity: .25; } 50% { transform: scale(1.15); opacity: .7; } }
+
+    /* 最近读过入口（顶栏时钟图标） */
+    .hist-toggle { position: absolute; top: 18px; right: 132px; width: 26px; height: 26px; background: transparent; border: 0; color: var(--text-color); cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 0; opacity: 0; pointer-events: none; transition: opacity .5s ease, transform .18s cubic-bezier(.34,1.56,.64,1); }
+    .hist-toggle svg { width: 100%; height: 100%; opacity: .55; }
+
+    /* 今日之诗入口 */
+    .random-sub { text-align: center; margin-top: 4px; }
+    .link-btn { background: none; border: 0; color: var(--meta-color, #8a7a5f); opacity: .8; font-size: 12px; letter-spacing: 2px; cursor: pointer; font-family: inherit; padding: 4px 10px; transition: opacity .2s, transform .18s cubic-bezier(.34,1.56,.64,1); }
+    .link-btn:hover { opacity: 1; }
+    .link-btn:active { transform: scale(.94); }
     .dev-list { max-height: 46vh; overflow-y: auto; text-align: left; margin: 6px 0 12px; }
     .dev-sec { font-size: 12px; color: var(--meta-color); letter-spacing: 2px; margin: 12px 0 4px; opacity: .85; }
     .dev-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 2px; border-bottom: 1px solid rgba(128, 128, 128, .18); }
@@ -731,10 +763,11 @@
       </div>
       <div class="random-tip">读到心动的一首，可在下方生成卡片保存或分享</div>
       <div class="random-tip">读到会心处，可点诗词旁的 ✎ 纸笔图标写下你的感悟</div>
+      <div class="random-sub"><button id="dailyButton" class="link-btn" type="button">☀ 今日之诗 · 每日与大家同读一首</button></div>
     </section>
 
     <section class="card" id="card">
-      <div class="status">正在加载诗词库……</div>
+      <div class="status"><span class="ink-loader"><i></i><i></i><i></i></span>正在加载诗词库……</div>
     </section>
 
     <!-- 搜索结果列表：就地替换诗词卡片（再随机单首时换回）；页面触底自动翻页 -->
@@ -781,12 +814,15 @@
   <button id="guideToggle" class="guide-toggle" title="使用指南" aria-label="使用指南"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg></button>
   <button id="noteToggle" class="note-toggle" title="批注本" aria-label="批注本"><svg class="note-svg" viewBox="0 0 24 24" fill="currentColor"><path opacity=".4" d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z"/><path d="M14 2l6 6h-6V2z"/><path d="M2.5 17.5L13 7l3.5 3.5L6 21H2.5v-3.5z"/></svg></button>
   <button id="favToggle" class="fav-toggle" title="收藏夹" aria-label="收藏夹"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
+  <button id="histToggle" class="hist-toggle" title="最近读过" aria-label="最近读过"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm1-13h-2v6l4.7 2.8 1-1.7-3.7-2.2z"/></svg></button>
   <div id="guideSheet" class="sheet-overlay">
     <div class="sheet-backdrop" id="guideSheetBackdrop"></div>
     <div class="sheet-box">
       <div class="sheet-head">使用指南</div>
       <div class="guide-list">
         <div class="guide-item"><span class="guide-k">随机邂逅</span>不填任何条件，点「今日与诗相逢」<b class="guide-b">随机推荐一首</b>。</div>
+        <div class="guide-item"><span class="guide-k">手势</span>在诗词卡片上<b class="guide-b">左右轻滑</b>换一首随机诗；<b class="guide-b">双击卡片</b>快速收藏；<b class="guide-b">长按诗句</b>即可复制该句。</div>
+        <div class="guide-item"><span class="guide-k">每日与足迹</span>「今日之诗」每天为你推荐<b class="guide-b">同一首</b>；顶栏时钟图标查看<b class="guide-b">最近读过</b>；收藏夹支持一键<b class="guide-b">导出</b>。</div>
         <div class="guide-item"><span class="guide-k">条件搜索</span>填写作者 / 朝代 / 体裁<b class="guide-b">任意组合</b>；体裁点输入框展开选择，首项「无」表示不限。</div>
         <div class="guide-item"><span class="guide-k">列表浏览</span>点击标题行<b class="guide-b">展开全诗</b>，一次只展开一首；<b class="guide-b">上滑自动加载更多</b>。</div>
         <div class="guide-item"><span class="guide-k">批量收藏</span>列表中点「批量收藏」，勾选后<b class="guide-b">一键加入收藏夹</b>。</div>
@@ -807,11 +843,24 @@
       <div class="fav-tip">★ 收藏仅保存在本浏览器本地缓存（cookie / localStorage）中，清除浏览器缓存后会丢失</div>
       <div class="fav-bar">
         <button class="mini-btn" id="favManage" type="button">批量管理</button>
+        <button class="mini-btn" id="favExport" type="button" style="display:none">导出</button>
         <button class="mini-btn" id="favSelAll" type="button" style="display:none">全选</button>
         <button class="mini-btn danger" id="favDelete" type="button" style="display:none">删除所选(0)</button>
         <button class="mini-btn" id="favManageDone" type="button" style="display:none">完成</button>
       </div>
       <div id="favList" class="fav-list"></div>
+    </div>
+  </div>
+
+  <div id="histSheet" class="sheet-overlay">
+    <div class="sheet-backdrop" id="histSheetBackdrop"></div>
+    <div class="sheet-box">
+      <div class="sheet-head">最近读过<span id="histCount" class="results-count"></span></div>
+      <div class="fav-tip">☯ 阅读记录仅保存在本浏览器本地缓存（cookie / localStorage）中，最多保留 20 首</div>
+      <div class="fav-bar">
+        <button class="mini-btn danger" id="histClear" type="button">清空记录</button>
+      </div>
+      <div id="histList" class="fav-list"></div>
     </div>
   </div>
 
@@ -998,6 +1047,7 @@
       cardToolsInner.style.display = "none";
       card.innerHTML =
         '<div class="status' + (isError ? " error" : "") + '">' +
+        (isError ? "" : '<span class="ink-loader"><i></i><i></i><i></i></span>') +
         escapeHtml(message) +
         "</div>";
     }
@@ -1298,6 +1348,7 @@
 
     function renderPoem(poem) {
       currentPoem = poem;
+      recordHistory(poem);
       const title = poem.t ?? "";
       const author = poem.a ?? "";
       const dynasty = poem.d ?? "";
@@ -1316,12 +1367,17 @@
         '<div class="card-body">' +
         '<div class="title">' + escapeHtml(title || "无题") + "</div>" +
         '<div class="meta">' + escapeHtml(meta) + "</div>" +
+        (author ? '<div class="author-seal">' + escapeHtml(Array.from(author).slice(0, 3).join("")) + "</div>" : "") +
         '<div class="content">' + contentHtml + "</div>" +
         (type ? '<div class="category">体裁：' + escapeHtml(type) + "</div>" : "") +
         "</div>";
       // 分享按钮与卡片比例放进诗词卡片内部
       card.appendChild(cardToolsInner);
       cardToolsInner.style.display = "";
+
+      // 水墨入场：innerHTML 重建后动画自然重播
+      const cardBody = card.querySelector(".card-body");
+      if (cardBody) cardBody.classList.add("ink-in");
 
       // 字体加载完成前隐藏全部卡片内容，加载完同时淡入，避免跳动
       const pendingEls = card.querySelectorAll(".title, .meta, .content, .category");
@@ -1422,14 +1478,14 @@
       return arr;
     }
 
-    async function loadRandomPoem(userAction) {
+    async function loadRandomPoem(userAction, forceRandom) {
       button.disabled = true;
       button.textContent = "正在读取……";
       progressStart();
 
-      const author = authorInput.value.trim();
-      const dynasty = dynastyInput.value.trim();
-      const type = typeInput.value.trim();
+      const author = forceRandom ? "" : authorInput.value.trim();
+      const dynasty = forceRandom ? "" : dynastyInput.value.trim();
+      const type = forceRandom ? "" : typeInput.value.trim();
 
       try {
         if (!INDEX) {
@@ -2492,6 +2548,7 @@
       $("favDelete").style.display = favSelMode ? "" : "none";
       $("favManageDone").style.display = favSelMode ? "" : "none";
       $("favManage").style.display = favSelMode ? "none" : "";
+      $("favExport").style.display = favSelMode || !favs.length ? "none" : "";
       $("favDelete").textContent = "删除所选(" + favSelIds.size + ")";
       $("favSelAll").textContent = favSelIds.size >= favs.length && favs.length ? "取消全选" : "全选";
     }
@@ -2500,7 +2557,7 @@
       list.innerHTML = "";
       $("favCount").textContent = " · " + favs.length + " 首";
       if (!favs.length) {
-        list.innerHTML = '<div class="sheet-empty">还没有收藏 · 在诗词右上角点 ☆ 即可收藏到这里</div>';
+        list.innerHTML = '<div class="sheet-empty art"><div class="empty-enso"></div><div>还没有收藏</div><div class="sub">在诗词右上角点 ☆ 即可收藏到这里</div></div>';
         return;
       }
       favs.forEach((p) => {
@@ -2548,6 +2605,203 @@
       $("favSheet").classList.add("open");
     });
     $("favSheetBackdrop").addEventListener("click", () => { haptic(); closeSheet($("favSheet")); });
+
+    // ====== 最近读过（本地缓存，最多 20 首） ======
+    const HIST_KEY = "shihai-history-v1";
+    let readHistory = [];
+    try { readHistory = JSON.parse(localStorage.getItem(HIST_KEY) || "[]") || []; } catch (e) { readHistory = []; }
+    function saveHistory() {
+      try { localStorage.setItem(HIST_KEY, JSON.stringify(readHistory.slice(0, 20))); } catch (e) {}
+    }
+    function recordHistory(poem) {
+      if (!poem) return;
+      const id = favId(poem);
+      readHistory = readHistory.filter((p) => favId(p) !== id);
+      readHistory.unshift({ t: poem.t, a: poem.a, d: poem.d, y: poem.y, c: poem.c });
+      if (readHistory.length > 20) readHistory.length = 20;
+      saveHistory();
+    }
+    function renderHistList() {
+      const list = $("histList");
+      list.innerHTML = "";
+      $("histCount").textContent = " · " + readHistory.length + " 首";
+      if (!readHistory.length) {
+        list.innerHTML = '<div class="sheet-empty art"><div class="empty-enso"></div><div>还没有阅读记录</div><div class="sub">去「今日与诗相逢」遇见第一首吧</div></div>';
+        return;
+      }
+      readHistory.forEach((p) => {
+        const item = document.createElement("div");
+        item.className = "fav-item";
+        const hm = document.createElement("div");
+        hm.className = "result-hm";
+        const t = document.createElement("div");
+        t.className = "result-t";
+        t.textContent = p.t || "无题";
+        const m = document.createElement("div");
+        m.className = "result-m";
+        m.textContent = (p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : "");
+        hm.append(t, m);
+        item.appendChild(hm);
+        item.addEventListener("click", () => {
+          haptic();
+          closeSheet($("histSheet"));
+          setListMode(false);
+          renderPoem(p);
+          window.scrollTo({ top: Math.max(card.offsetTop - 20, 0), behavior: "smooth" });
+        });
+        list.appendChild(item);
+      });
+    }
+    $("histToggle").addEventListener("click", () => {
+      haptic();
+      renderHistList();
+      $("histSheet").classList.add("open");
+    });
+    $("histSheetBackdrop").addEventListener("click", () => { haptic(); closeSheet($("histSheet")); });
+    $("histClear").addEventListener("click", () => {
+      haptic();
+      if (!readHistory.length) { toast("暂无阅读记录"); return; }
+      readHistory = [];
+      saveHistory();
+      renderHistList();
+      toast("已清空阅读记录");
+    });
+
+    // ====== 今日之诗：按日期确定性挑选，所有人当天读到同一首 ======
+    function dailySeed() {
+      const d = new Date();
+      return (((d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()) >>> 0) * 2654435761) >>> 0;
+    }
+    async function loadDailyPoem() {
+      if (!INDEX) { toast("诗词库尚未加载完成，请稍候"); return; }
+      const seed = dailySeed();
+      const chunks = INDEX.chunks;
+      for (let i = 0; i < 6; i++) {
+        const chunk = chunks[(seed + i * 7919) % chunks.length];
+        let poems;
+        try { poems = await loadChunk(chunk.file); } catch (e) { continue; }
+        if (!poems || !poems.length) continue;
+        for (let j = 0; j < 8; j++) {
+          const p = poems[(((seed >> 3) + i * 31 + j * 97) % poems.length + poems.length) % poems.length];
+          if (!/[\u25a1\ufffd]/.test((p.t ?? "") + (p.a ?? "") + (p.c ?? ""))) {
+            setListMode(false);
+            renderPoem(p);
+            card.scrollIntoView({ behavior: "smooth", block: "start" });
+            toast("今日之诗 · 每天与大家同读一首");
+            return;
+          }
+        }
+      }
+      toast("今日之诗读取失败，请重试");
+    }
+    $("dailyButton").addEventListener("click", () => { haptic(); loadDailyPoem(); });
+
+    // ====== 收藏夹导出：复制全文 + 尝试下载 txt ======
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(() => true).catch(() => legacyCopy(text));
+      }
+      return Promise.resolve(legacyCopy(text));
+    }
+    function legacyCopy(text) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        ta.remove();
+        return ok;
+      } catch (e) { return false; }
+    }
+    $("favExport").addEventListener("click", () => {
+      haptic();
+      if (!favs.length) { toast("还没有收藏可导出"); return; }
+      const head = "诗海 · 我的收藏（" + favs.length + " 首）\n\n";
+      const text = head + favs.map((p) => "《" + (p.t || "无题") + "》 " + [p.d, p.a].filter(Boolean).join(" · ") + "\n" + (p.c || "")).join("\n\n");
+      copyText(text).then((ok) => {
+        try {
+          const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "诗海收藏_" + favs.length + "首.txt";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+          toast(ok ? "已复制全部收藏，并尝试下载 txt" : "已尝试下载 txt 文件");
+        } catch (e) {
+          toast(ok ? "已复制 " + favs.length + " 首收藏" : "导出失败，请重试");
+        }
+      });
+    });
+
+    // ====== 卡片手势：左右轻滑换诗 / 长按诗句复制 / 双击收藏 ======
+    let swipeStart = null;
+    let verseCopyTimer = null;
+    card.addEventListener("pointerdown", (e) => {
+      swipeStart = { x: e.clientX, y: e.clientY };
+      clearTimeout(verseCopyTimer);
+      const line = e.target.closest(".verse-line");
+      if (line) {
+        verseCopyTimer = setTimeout(() => {
+          verseCopyTimer = null;
+          swipeStart = null;
+          const text = line.textContent.trim();
+          haptic();
+          copyText(text).then((ok) => toast(ok ? "已复制诗句：" + text : "复制失败，请重试"));
+        }, 500);
+      }
+    });
+    card.addEventListener("pointermove", (e) => {
+      if (verseCopyTimer && swipeStart && Math.hypot(e.clientX - swipeStart.x, e.clientY - swipeStart.y) > 12) {
+        clearTimeout(verseCopyTimer);
+        verseCopyTimer = null;
+      }
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((t) =>
+      card.addEventListener(t, () => { clearTimeout(verseCopyTimer); verseCopyTimer = null; }));
+    card.addEventListener("pointerup", (e) => {
+      if (!swipeStart) return;
+      const dx = e.clientX - swipeStart.x;
+      const dy = e.clientY - swipeStart.y;
+      swipeStart = null;
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 2) return;
+      if (!currentPoem || button.disabled) return;
+      haptic();
+      setListMode(false);
+      loadRandomPoem(false, true);
+    });
+    let lastCardTap = 0;
+    card.addEventListener("click", (e) => {
+      if (!currentPoem) return;
+      if (e.target.closest("button")) return;
+      const now = Date.now();
+      if (now - lastCardTap < 320) {
+        lastCardTap = 0;
+        haptic();
+        const fav = toggleFav(currentPoem);
+        const btn = $("cardFav");
+        if (btn) {
+          btn.classList.toggle("on", fav);
+          btn.innerHTML = starSVG(fav);
+          if (fav) burst(btn);
+        }
+        syncResultsFav();
+      } else {
+        lastCardTap = now;
+      }
+    });
+
+    // ====== 时段提示：按时辰变换首条提示文案 ======
+    (function () {
+      const h = new Date().getHours();
+      const greet = h >= 5 && h < 8 ? "晨读" : h < 12 ? "上午品读" : h < 14 ? "午间小读" : h < 18 ? "午后漫读" : h < 23 ? "灯下夜读" : "深夜静读";
+      const tips = document.querySelectorAll(".random-tip");
+      if (tips[0]) tips[0].textContent = greet + " · " + tips[0].textContent;
+    })();
 
     // ====== 批注：纸笔图标写感悟，存本机本地缓存；批注本支持批量管理；批注卡片（批注大、诗词小） ======
     const NOTE_KEY = "shihai-notes-v1";
@@ -2729,7 +2983,7 @@
       list.innerHTML = "";
       $("noteCount").textContent = " · " + notes.length + " 条";
       if (!notes.length) {
-        list.innerHTML = '<div class="sheet-empty">还没有批注 · 在诗词右上角点 ✎ 即可写下感悟</div>';
+        list.innerHTML = '<div class="sheet-empty art"><div class="empty-enso"></div><div>还没有批注</div><div class="sub">在诗词右上角点 ✎ 即可写下感悟</div></div>';
         return;
       }
       notes.forEach((n) => {

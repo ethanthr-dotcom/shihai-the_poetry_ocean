@@ -64,21 +64,23 @@
         </button>
       </view>
       <view class="random-tip">{{randomTip}}</view>
+      <view class="daily-row"><view class="link-btn" hover-class="link-btn-hover" bindtap="onDailyTap">☀ 今日之诗 · 每日与大家同读一首</view></view>
     </view>
 
-    <view wx:if="{{!listMode}}" class="card">
+    <view wx:if="{{!listMode}}" class="card" bindtouchstart="onCardTouchStart" bindtouchend="onCardTouchEnd">
       <view class="card-frame"></view>
       <text class="card-watermark">詩</text>
       <block wx:if="{{hasPoem}}">
         <view class="card-fav {{currentFav ? 'on' : ''}} {{favBurst ? 'burst' : ''}}" catchtap="onCardFavTap"><view class="star-glyph"></view></view>
         <view class="card-note {{currentNote ? 'on' : ''}}" catchtap="onCardNoteTap"><view class="note-glyph"></view></view>
-        <view class="card-body">
+        <view class="card-body {{inkAnim ? 'ink-in' : ''}}" bindtap="onCardBodyTap">
           <view class="title" style="{{titleStyle}}">
             <view wx:for="{{titleLines}}" wx:key="index" class="title-line">{{item}}</view>
           </view>
           <view class="meta" style="{{metaStyle}}">{{poem.meta}}</view>
+          <view wx:if="{{sealText}}" class="author-seal"><text>{{sealText}}</text></view>
           <view class="content {{isVertical ? 'vertical' : ''}}">
-            <view wx:for="{{verseLines}}" wx:key="index" class="verse-line {{item.wrap ? 'wrap' : ''}}">
+            <view wx:for="{{verseLines}}" wx:key="index" class="verse-line {{item.wrap ? 'wrap' : ''}}" data-text="{{item.text}}{{item.punct}}" bindlongpress="onVerseLongPress">
               <text>{{item.text}}</text><text wx:if="{{item.punct}}" class="hang-punct">{{item.punct}}</text>
             </view>
           </view>
@@ -100,7 +102,7 @@
           </view>
         </view>
       </block>
-      <view wx:else class="status {{statusError ? 'error' : ''}}">{{statusText}}</view>
+      <view wx:else class="status {{statusError ? 'error' : ''}}"><view wx:if="{{!statusError}}" class="ink-loader"><view class="ink-dot"></view><view class="ink-dot"></view><view class="ink-dot"></view></view>{{statusText}}</view>
     </view>
 
     <!-- 搜索结果列表：就地替换诗词卡片（再随机单首时换回卡片）；页面触底自动翻页 -->
@@ -180,6 +182,9 @@
   <view class="note-toggle {{uiReady ? 'ready' : ''}}" catchtap="onNoteToggle">
     <view class="note-icon"></view>
   </view>
+  <view class="hist-toggle {{uiReady ? 'ready' : ''}}" catchtap="onHistToggle">
+    <view class="hist-icon"></view>
+  </view>
 
   <!-- 主题设置按钮 -->
   <!-- 设置图标：纯色齿轮（跟随主题文字色），点击绕中心旋转 -->
@@ -252,6 +257,8 @@
       <view class="sheet-head">使用指南</view>
       <view class="guide-list">
         <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「今日与诗相逢」<text class="guide-b">随机推荐一首</text>。</view>
+        <view class="guide-item"><text class="guide-k">手势</text>在诗词卡片上<text class="guide-b">左右轻滑</text>换一首随机诗；<text class="guide-b">双击卡片</text>快速收藏；<text class="guide-b">长按诗句</text>即可复制该句。</view>
+        <view class="guide-item"><text class="guide-k">每日与足迹</text>「今日之诗」每天为你推荐<text class="guide-b">同一首</text>；顶栏时钟图标查看<text class="guide-b">最近读过</text>；收藏夹支持一键<text class="guide-b">导出</text>。</view>
         <view class="guide-item"><text class="guide-k">条件搜索</text>填写作者 / 朝代 / 体裁<text class="guide-b">任意组合</text>；体裁点输入框展开选择，首项「无」表示不限。</view>
         <view class="guide-item"><text class="guide-k">列表浏览</text>点击标题行<text class="guide-b">展开全诗</text>，一次只展开一首；<text class="guide-b">上滑自动加载更多</text>。</view>
         <view class="guide-item"><text class="guide-k">批量收藏</text>列表中点「批量收藏」，勾选后<text class="guide-b">一键加入收藏夹</text>。</view>
@@ -271,13 +278,18 @@
       <view class="fav-tip">★ 收藏仅保存在本机本地缓存（相当于浏览器 cookie），清除缓存或卸载小程序后会丢失</view>
       <view class="fav-bar">
         <view class="mini-btn" bindtap="onFavManage">{{favSelMode ? '完成' : '批量管理'}}</view>
+        <view wx:if="{{!favSelMode && favList.length}}" class="mini-btn" bindtap="onFavExport">导出</view>
         <block wx:if="{{favSelMode}}">
           <view class="mini-btn" bindtap="onFavSelAll">{{favSelCount >= favList.length && favList.length ? '取消全选' : '全选'}}</view>
           <view class="mini-btn danger {{favSelCount ? '' : 'disabled'}}" bindtap="onFavDelete">删除所选({{favSelCount}})</view>
         </block>
       </view>
       <scroll-view class="fav-list" scroll-y>
-        <view wx:if="{{!favList.length}}" class="sheet-empty">还没有收藏 · 在诗词右上角点 ☆ 即可收藏到这里</view>
+        <view wx:if="{{!favList.length}}" class="sheet-empty art">
+          <view class="empty-enso"></view>
+          <view>还没有收藏</view>
+          <view class="empty-sub">在诗词右上角点 ☆ 即可收藏到这里</view>
+        </view>
         <view wx:for="{{favList}}" wx:key="id" class="fav-item" data-index="{{index}}" bindtap="onFavItemTap">
           <view wx:if="{{favSelMode}}" class="chk {{favSelIds[item.id] ? 'on' : ''}}">✓</view>
           <view class="result-hm">
@@ -285,6 +297,30 @@
             <view class="result-m">{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</view>
           </view>
           <view class="fav-heart"><view class="star-glyph"></view></view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 最近读过（顶栏时钟图标呼出） -->
+  <view wx:if="{{histShow || histShowClosing}}" class="picker-mask {{histShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onHistClose">
+    <view class="fav-sheet" catchtap="noop">
+      <view class="sheet-head">最近读过<text class="results-count"> · {{histList.length}} 首</text></view>
+      <view class="fav-tip">☯ 阅读记录仅保存在本机本地缓存（相当于浏览器 cookie），最多保留 20 首</view>
+      <view class="fav-bar">
+        <view class="mini-btn danger" bindtap="onHistClear">清空记录</view>
+      </view>
+      <scroll-view class="fav-list" scroll-y>
+        <view wx:if="{{!histList.length}}" class="sheet-empty art">
+          <view class="empty-enso"></view>
+          <view>还没有阅读记录</view>
+          <view class="empty-sub">去「今日与诗相逢」遇见第一首吧</view>
+        </view>
+        <view wx:for="{{histList}}" wx:key="index" class="fav-item" data-index="{{index}}" bindtap="onHistItemTap">
+          <view class="result-hm">
+            <view class="result-t">{{item.t || '无题'}}</view>
+            <view class="result-m">{{item.d}} · {{item.a}}{{item.y ? ' · ' + item.y : ''}}</view>
+          </view>
         </view>
       </scroll-view>
     </view>
@@ -318,7 +354,11 @@
         </block>
       </view>
       <scroll-view class="fav-list" scroll-y>
-        <view wx:if="{{!noteListData.length}}" class="sheet-empty">还没有批注 · 在诗词右上角点 ✎ 即可写下感悟</view>
+        <view wx:if="{{!noteListData.length}}" class="sheet-empty art">
+          <view class="empty-enso"></view>
+          <view>还没有批注</view>
+          <view class="empty-sub">在诗词右上角点 ✎ 即可写下感悟</view>
+        </view>
         <view wx:for="{{noteListData}}" wx:key="id" class="note-item" data-index="{{index}}" bindtap="onNoteItemTap">
           <view wx:if="{{noteSelMode}}" class="chk {{noteSelIds[item.id] ? 'on' : ''}}">✓</view>
           <view class="note-body">

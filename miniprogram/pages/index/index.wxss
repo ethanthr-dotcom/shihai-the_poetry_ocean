@@ -508,6 +508,38 @@ button[disabled]:active { transform: none; }
 .guide-item { font-size: 26rpx; line-height: 1.85; color: var(--text-color); opacity: .88; padding: 12rpx 0; border-bottom: 1rpx dashed var(--card-border); text-align: left; }
 .guide-k { display: inline-block; color: var(--seal-color, #a3382f); font-weight: bold; margin-right: 14rpx; }
 .guide-b { font-weight: 600; }
+
+/* 主题切换：颜色柔和过渡 */
+page, .card, .fav-sheet, .guide-box, .note-edit-box, .note-ask-box, .dev-sheet, .theme-panel, .status { transition: background-color .5s ease, color .5s ease; }
+
+/* 水墨入场：卡片内容淡入上浮 */
+@keyframes inkIn { from { opacity: 0; transform: translateY(20rpx); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+.card-body.ink-in { animation: inkIn .55s cubic-bezier(.22,.8,.36,1); }
+
+/* 作者印章（竖排朱红小印） */
+.author-seal { display: block; width: fit-content; margin: 16rpx auto 0; padding: 6rpx 5rpx; background: var(--seal-color, #a3382f); color: #fdf6ec; font-size: 20rpx; line-height: 1.25; letter-spacing: 4rpx; border-radius: 6rpx; opacity: .9; writing-mode: vertical-rl; box-shadow: 0 2rpx 6rpx rgba(0,0,0,.15); }
+
+/* 空状态：圆相水墨引导 */
+.sheet-empty.art { display: flex; flex-direction: column; align-items: center; padding: 56rpx 0 48rpx; opacity: .75; }
+.empty-enso { width: 100rpx; height: 100rpx; border: 6rpx solid currentColor; border-radius: 50%; border-right-color: transparent; transform: rotate(35deg); opacity: .35; margin-bottom: 20rpx; }
+.sheet-empty.art .empty-sub { font-size: 24rpx; opacity: .7; margin-top: 8rpx; }
+
+/* 水墨加载：三点晕染 */
+.ink-loader { display: block; margin: 0 auto 20rpx; width: fit-content; }
+.ink-dot { display: inline-block; width: 14rpx; height: 14rpx; margin: 0 6rpx; border-radius: 50%; background: currentColor; opacity: .3; animation: inkDrop 1.2s ease-in-out infinite; }
+.ink-dot:nth-child(2) { animation-delay: .2s; }
+.ink-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes inkDrop { 0%, 100% { transform: scale(.6); opacity: .25; } 50% { transform: scale(1.15); opacity: .7; } }
+
+/* 今日之诗入口 */
+.daily-row { text-align: center; margin-top: 6rpx; }
+.link-btn { display: inline-block; color: var(--meta-color, #8a7a5f); opacity: .8; font-size: 24rpx; letter-spacing: 4rpx; padding: 8rpx 20rpx; transition: opacity .2s; }
+.link-btn-hover { opacity: 1; transform: scale(.96); }
+
+/* 最近读过入口（顶栏时钟图标） */
+.hist-toggle { position: absolute; top: 36rpx; right: 264rpx; width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; color: var(--text-color); z-index: 1200; opacity: 0; transition: opacity .5s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1); }
+.hist-toggle.ready { opacity: 1; pointer-events: auto; }
+.hist-icon { width: 42rpx; height: 42rpx; background: var(--meta-color); opacity: .55; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm1-13h-2v6l4.7 2.8 1-1.7-3.7-2.2z'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm1-13h-2v6l4.7 2.8 1-1.7-3.7-2.2z'/%3E%3C/svg%3E") no-repeat center / contain; }
 .guide-ok { margin-top: 8rpx; }
 
 /* 查询结果：□ 现象说明（显眼内联提示，非弹窗） */

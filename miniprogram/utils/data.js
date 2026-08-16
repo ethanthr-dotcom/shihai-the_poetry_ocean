@@ -164,6 +164,26 @@ async function findPoemByMeta(title, author, dynasty) {
   return null;
 }
 
+// 今日之诗：按日期确定性挑选，所有人当天读到同一首
+async function findDailyPoem() {
+  const idx = await loadIndex();
+  const d = new Date();
+  let seed = ((d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()) >>> 0);
+  seed = (seed * 2654435761) >>> 0;
+  const chunks = idx.chunks;
+  for (let i = 0; i < 6; i++) {
+    const chunk = chunks[(seed + i * 7919) % chunks.length];
+    let poems;
+    try { poems = await loadChunk(chunk.file); } catch (e) { continue; }
+    if (!poems || !poems.length) continue;
+    for (let j = 0; j < 8; j++) {
+      const p = poems[(((seed >> 3) + i * 31 + j * 97) % poems.length + poems.length) % poems.length];
+      if (!/[\u25a1\ufffd]/.test((p.t || "") + (p.a || "") + (p.c || ""))) return p;
+    }
+  }
+  throw new Error("今日之诗读取失败");
+}
+
 // 收集全部体裁（按出现的分块数降序，过滤乱码条目），体裁选择器用；带缓存
 let TYPES_LIST = null;
 function collectTypes() {
@@ -195,6 +215,7 @@ module.exports = {
   matchPoem,
   findRandomPoem,
   findPoemByMeta,
+  findDailyPoem,
   collectTypes,
   cacheStats
 };
