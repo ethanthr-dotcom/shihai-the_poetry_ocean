@@ -444,7 +444,7 @@
     /* 轻提示 */
     #toast { position: fixed; left: 50%; bottom: 12vh; transform: translateX(-50%); background: rgba(0,0,0,.72); color: #fff; padding: 9px 20px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 2000; }
     #toast.show { opacity: 1; }
-    body.no-scroll { overflow: hidden; }
+    body.no-scroll { overflow: hidden; position: fixed; left: 0; right: 0; width: 100%; }
 
     /* 主题切换：颜色柔和过渡 */
     body, .card, .sheet-box, .theme-panel, .guide-box, .status, .site-header h1, .slogan { transition: background-color .5s ease, color .5s ease, border-color .5s ease; }
@@ -651,7 +651,8 @@
       margin-bottom: 8px;
       font-weight: 600;
     }
-    .theme-options { display: flex; flex-wrap: wrap; gap: 6px; }
+    .theme-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+    .theme-opt { text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .theme-opt {
       width: auto;
       padding: 6px 12px;
@@ -676,6 +677,26 @@
       .deco-mountains { width: 70vw; }
     }
   
+    /* ====== Round-18 搜索与设置精化 ====== */
+    .kw-hint { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .kw-hint-t { font-size: 12px; color: var(--meta-color); }
+    .kw-badge { font-size: 11px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--accent-color); color: var(--accent-color); background: color-mix(in srgb, var(--accent-color) 9%, transparent); letter-spacing: 1px; white-space: nowrap; }
+    .type-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+    .type-chip { font-size: 12.5px; padding: 5px 13px; border-radius: 999px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); cursor: pointer; font-family: inherit; transition: all .2s; }
+    .type-chip:hover { opacity: .75; }
+    .type-chip.active { background: var(--accent-color); color: var(--button-text); border-color: var(--accent-color); }
+    .type-chip.more { border-style: dashed; }
+    .type-group-h { font-size: 11px; color: var(--meta-color); margin: 12px 0 7px; letter-spacing: 2px; }
+    .settings-group-h { font-size: 12.5px; font-weight: 600; letter-spacing: 2px; color: var(--label-color); display: flex; justify-content: space-between; align-items: center; padding: 10px 0 8px; margin-bottom: 8px; border-bottom: 1px dashed color-mix(in srgb, var(--accent-color) 40%, transparent); cursor: pointer; user-select: none; }
+    .settings-group-h:first-child { padding-top: 0; }
+    .settings-caret { font-size: 11px; opacity: .55; transition: transform .2s; }
+    .settings-group.closed .settings-body { display: none; }
+    .settings-group.closed .settings-caret { transform: rotate(-90deg); }
+    .card-sub-tools .sub-tool { display: inline-flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--accent-color) 45%, transparent); background: color-mix(in srgb, var(--accent-color) 9%, transparent); color: var(--text-color); font-size: 12.5px; letter-spacing: 1px; cursor: pointer; font-family: inherit; transition: all .2s; }
+    .card-sub-tools .sub-tool:hover { background: color-mix(in srgb, var(--accent-color) 18%, transparent); }
+    .card-sub-tools .sub-tool:active { transform: scale(.95); }
+    .card-sub-tools .sub-tool svg { width: 14px; height: 14px; flex: none; opacity: .8; }
+    .results-panel.card { text-align: left; padding: var(--card-padding); min-height: 240px; }
     /* ====== Round-17 精致化 ====== */
     .ink-ripple { position: fixed; z-index: 400; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, color-mix(in srgb, var(--seal-color) 28%, transparent) 0%, transparent 70%); opacity: .85; animation: inkRipple .65s ease-out forwards; }
     @keyframes inkRipple { to { transform: scale(10); opacity: 0; } }
@@ -786,7 +807,7 @@
         </div>
         <div class="type-wrap">
           <label>体裁</label>
-          <div id="typePicker" class="input type-field" tabindex="0" role="button"><span class="ph">点击选择体裁</span><span id="typeCaret" class="type-caret">▾</span></div>
+          <div id="typeChips" class="type-chips"></div>
         </div>
       </div>
       <!-- 体裁选择面板：整行内联展开（推挤布局，稳定可靠） -->
@@ -807,7 +828,7 @@
     </section>
 
     <!-- 搜索结果列表：就地替换诗词卡片（再随机单首时换回）；页面触底自动翻页 -->
-    <section id="resultsPanel" class="results-panel" style="display:none">
+    <section id="resultsPanel" class="card results-panel" style="display:none">
       <div class="results-head">
         <div class="results-head-l">匹配结果<span id="resultsCount" class="results-count"></span></div>
         <div class="results-head-r">
@@ -827,9 +848,9 @@
     <!-- 分享与比例：渲染诗词后由 JS 移入卡片内部 -->
     <div id="cardToolsInner" class="card-tools-inner" style="display:none">
       <div class="card-sub-tools">
-        <button id="sameAuthorButton" class="link-btn" type="button" style="display:none"></button>
-        <button id="copyPoemButton" class="link-btn" type="button">复制全诗</button>
-        <button id="readAloudButton" class="link-btn" type="button">朗读</button>
+        <button id="sameAuthorButton" class="sub-tool" type="button" style="display:none"></button>
+        <button id="copyPoemButton" class="sub-tool" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg><span>复制全诗</span></button>
+        <button id="readAloudButton" class="sub-tool" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg><span>朗读</span></button>
       </div>
       <button id="shareButton" type="button" class="secondary">下载或分享卡片</button>
       <div class="ratio-row">
@@ -991,6 +1012,9 @@
 
   <button id="themeToggle" class="theme-toggle" title="主题设置" aria-label="主题设置"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
   <div id="themePanel" class="theme-panel">
+    <div class="settings-group" data-sg="style">
+      <div class="settings-group-h" data-sg-toggle="style">主题样式<span class="settings-caret">▾</span></div>
+      <div class="settings-body">
     <div class="theme-section">
       <div class="theme-label">配色</div>
       <div class="theme-options" data-group="color">
@@ -1027,6 +1051,11 @@
         <button class="theme-opt" data-value="vertical">竖排</button>
       </div>
     </div>
+      </div>
+    </div>
+    <div class="settings-group" data-sg="opts">
+      <div class="settings-group-h" data-sg-toggle="opts">体验开关<span class="settings-caret">▾</span></div>
+      <div class="settings-body">
     <div class="theme-section">
       <div class="theme-label">批注卡片提醒</div>
       <div class="theme-options" data-group="notePrompt">
@@ -1066,6 +1095,8 @@
         <button class="theme-opt" data-value="author">按作者</button>
         <button class="theme-opt" data-value="dynasty">按朝代</button>
         <button class="theme-opt" data-value="title">按标题</button>
+      </div>
+    </div>
       </div>
     </div>
   </div>
@@ -1108,6 +1139,35 @@
     let kwHist = [];
     try { kwHist = JSON.parse(localStorage.getItem(KW_HIST_KEY) || "[]") || []; } catch (e) { kwHist = []; }
     function saveKwHist() { try { localStorage.setItem(KW_HIST_KEY, JSON.stringify(kwHist.slice(0, 6))); } catch (e) {} }
+    // ====== 搜索摘要索引：每块标题字符集，标题模糊检索先收窄数据块 ======
+    const SEARCH_INDEX_KEY = "poetry-search-index-v1";
+    let SEARCH_IDX = null;
+    async function ensureSearchIndex() {
+      if (SEARCH_IDX) return SEARCH_IDX;
+      try {
+        const cached = JSON.parse(localStorage.getItem(SEARCH_INDEX_KEY) || "null");
+        if (cached && Date.now() - cached.ts < CACHE_TTL) { SEARCH_IDX = cached.data; return SEARCH_IDX; }
+      } catch (e) {}
+      try {
+        const res = await fetch(DATA_BASE + "data/search-index.json");
+        if (res.ok) {
+          SEARCH_IDX = await res.json();
+          try { localStorage.setItem(SEARCH_INDEX_KEY, JSON.stringify({ data: SEARCH_IDX, ts: Date.now() })); } catch (e) {}
+        }
+      } catch (e) {}
+      return SEARCH_IDX;
+    }
+    function narrowByDigest(candidates, kw) {
+      if (!SEARCH_IDX || !Array.isArray(SEARCH_IDX.chunks) || !kw || kw.length < 2) return candidates;
+      const map = new Map();
+      SEARCH_IDX.chunks.forEach((c) => map.set(c.f, c.cs));
+      const uniq = [...new Set(kw)];
+      return candidates.filter((c) => {
+        const cs = map.get(c.file);
+        if (!cs) return true;
+        return uniq.every((ch) => cs.indexOf(ch) >= 0);
+      });
+    }
     let kwHintTimer = null;
     let AUTHOR_SET = null, DYNASTY_SET = null;
     function buildKnownSets() {
@@ -1127,23 +1187,26 @@
       if (searchMode !== "auto") return searchMode;
       return detectKw(kw);
     }
+    function kwHintHtml(tag, text) {
+      return (tag ? '<span class="kw-badge">' + tag + "</span>" : "") + '<span class="kw-hint-t">' + escapeHtml(text) + "</span>";
+    }
     function updateKwHint() {
       const hint = $("kwHint");
       if (!hint) return;
       const kw = keywordInput.value.trim();
       if (!kw) { hint.style.display = "none"; return; }
       hint.style.display = "";
-      if (searchMode === "author") { hint.textContent = "按作者精确检索「" + kw + "」"; return; }
-      if (searchMode === "dynasty") { hint.textContent = "按朝代精确检索「" + kw + "」"; return; }
-      if (searchMode === "title") { hint.textContent = "按标题模糊检索「" + kw + "」"; return; }
-      if (!INDEX) { hint.textContent = "智能识别：诗词库加载中……"; return; }
-      hint.textContent = "智能识别中……";
+      if (searchMode === "author") { hint.innerHTML = kwHintHtml("作者", "「" + kw + "」· 精确检索"); return; }
+      if (searchMode === "dynasty") { hint.innerHTML = kwHintHtml("朝代", "「" + kw + "」· 精确检索"); return; }
+      if (searchMode === "title") { hint.innerHTML = kwHintHtml("标题", "「" + kw + "」· 模糊检索"); return; }
+      if (!INDEX) { hint.innerHTML = kwHintHtml("", "智能识别：诗词库加载中……"); return; }
+      hint.innerHTML = kwHintHtml("识别中", "正在判断输入类型……");
       ensureFullIndex().then(() => {
         if (keywordInput.value.trim() !== kw) return;
         const m = detectKw(kw);
-        hint.textContent = m === "author" ? "识别为作者「" + kw + "」· 按作者精确检索"
-          : m === "dynasty" ? "识别为朝代「" + kw + "」· 按朝代精确检索"
-          : "未识别为作者/朝代 · 按标题模糊检索";
+        hint.innerHTML = m === "author" ? kwHintHtml("作者", "「" + kw + "」· 将按作者精确检索")
+          : m === "dynasty" ? kwHintHtml("朝代", "「" + kw + "」· 将按朝代精确检索")
+          : kwHintHtml("标题", "「" + kw + "」· 将按标题模糊检索");
       });
     }
     function hiliteKw(text) {
@@ -1534,7 +1597,7 @@
       const sab = $("sameAuthorButton");
       if (sab) {
         sab.style.display = author ? "" : "none";
-        if (author) sab.textContent = "同作者再来一首 · " + author;
+        if (author) sab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg><span>同作者再来一首 · ' + escapeHtml(author) + "</span>";
       }
       try {
         if (typeof speechSynthesis !== "undefined" && speechSynthesis.speaking) {
@@ -1700,6 +1763,7 @@
           const m = effModeFor(kw);
           candidates = sortChunksByKw(candidates, kw, m);
           if (m === "author" || m === "dynasty") candidates = candidates.filter((c) => chunkKwScore(c, kw, m) > 0);
+          if (m === "title") candidates = narrowByDigest(candidates, kw);
         }
         if (!candidates.length) {
           showStatus("未找到匹配条件的诗", true);
@@ -2563,56 +2627,87 @@
       } catch (e) {}
     }
 
-    // ====== 体裁选择器：数据库全部体裁，按常见度排序，支持搜索 ======
-    let typeOptions = [];
-    function updateTypePickerLabel() {
-      $("typePicker").innerHTML = typeValue
-        ? "" : '<span class="ph">点击选择体裁</span>';
-      if (typeValue) $("typePicker").textContent = typeValue;
+    // ====== 体裁选择器：全部体裁内嵌代码（按常见度排序），常见体裁 chips 直达，完整面板分组可搜索 ======
+    const TYPE_LIST_ALL = ["七言绝句","七言律诗","五言律诗","五言古风","五言绝句","七言古风","元曲","浣溪沙","水调歌头","菩萨蛮","鹧鸪天","满江红","临江仙","西江月","念奴娇","减字木兰花","沁园春","蝶恋花","点绛唇","清平乐","失调名","贺新郎","满庭芳","虞美人","诗经","好事近","水龙吟","朝中措","渔家傲","卜算子","谒金门","南乡子","玉楼春","南歌子","踏莎行","生查子","柳梢青","蓦山溪","望江南・忆江南","浪淘沙","鹊桥仙","如梦令","诉衷情","木兰花慢","洞仙歌","阮郎归","青玉案","采桑子","醉落魄・一斛珠","江城子","摸鱼儿","瑞鹤仙","小重山","长相思","感皇恩","八声甘州","醉蓬莱","喜迁莺","酹江月・念奴娇","忆秦娥","霜天晓角","导引","齐天乐","木兰花・玉楼春","眼儿媚","定风波","少年游","汉宫春","永遇乐","江神子・江城子","更漏子","千秋岁","声声慢","祝英台近","风入松","楚辞","瑞鹧鸪","渔父词・渔父","行香子","丑奴儿・采桑子","乌夜啼","桃源忆故人","风流子","南柯子・南歌子","一翦梅","凤栖梧・蝶恋花","酒泉子","烛影摇红","武陵春","最高楼","夜行船","杏花天","调笑・调笑令","天仙子","一落索","秦楼月・忆秦娥","望海潮","醉桃源・阮郎归","画堂春","昭君怨","醉花阴","兰陵王","思佳客","恋绣衾","河传","品令","壶中天・念奴娇","花心动","忆王孙","雨中花・夜行船","十二时・忆少年","金缕曲・贺新郎","应天长","御街行","桂枝香","苏幕遮","惜奴娇","捣练子","词","六州","六州歌头","夜游宫","女冠子","燕归梁","玉蝴蝶","解连环","贺新凉・贺新郎","高阳台","万年欢","忆旧游","惜分飞","探春令","杨柳枝","人娇","宴清都","调笑令","乐语","太常引","扫花游・扫地游","木兰花令","相见欢","九张机","唐多令","多丽","步蟾宫","绛都春","一丛花","天香","宴桃源・如梦令","玉漏迟","疏影","秋蕊香","台城路・齐天乐","渔歌子","破阵子","糖多令・唐多令","一萼红","二郎神","六么令","婆罗门引","宝鼎现","新荷叶","河满子","法曲献仙音","法驾导引","甘州・八声甘州","哨遍","庆清朝","春光好","真珠帘","荷叶杯","贺圣朝","迎春乐","东风第一枝","乳燕飞・贺新郎","减字浣溪沙・浣溪沙","归朝欢","忆仙姿・如梦令","摊破浣溪沙・山花子","水调歌・水调","渡江云","玲珑四犯","花舞","莺啼序","西河","满路花・促拍满路花","相思引","绮罗香","胜胜慢・声声慢","雨中花慢","一剪梅・一翦梅","倦寻芳","南楼令・唐多令","意难忘","渔父・渔歌子","琐窗寒","百字令・念奴娇","菊花新","豆叶黄・忆王孙","七娘子","三姝媚","两同心","于飞乐","人月圆","传言玉女","塞翁吟","暗香","望远行","渔家傲引・渔家傲","滴滴金","留春令","百字谣・念奴娇","祝英台・祝英台近","绿头鸭・多丽","解语花","调笑转踏・调笑令","过秦楼","隔浦莲・隔浦莲近拍","雨中花令","东坡引","促拍满路花","垂丝钓","安阳好・忆江南","尾犯","梅花引","瑞龙吟","秋夜雨","花犯","薄媚","选冠子","锦堂春・锦堂春慢","一斛珠","八六子","减兰十梅・减字木兰花","剔银灯","南徐好","夜合花","安公子","定西番","庆春宫・高阳台","极相思","柳枝","渔歌・渔父","满庭霜・满庭芳","潇湘神","看花回","解佩令","霓裳中序第一","霜叶飞","三登乐","倾杯・倾杯乐","华胥引","南浦","大","巫山一段云","徵招","探芳信","摸鱼子","昼锦堂","洞庭春色・沁园春","浣沙溪・浣溪沙","玉烛新","秋霁","红林擒近","金人捧露盘","鼓笛慢・水龙吟","一寸金","侧犯","凤凰台上忆吹箫","卖花声","夏云峰","夜飞鹊・夜飞鹊慢","愁倚阑・春光好","探春慢","梦江南","梦玉人引","氐州第一","水调歌","江城梅花引","河渎神","海棠春","添字浣溪沙・山花子","渔夫舞","粉蝶儿","荔枝香近・荔枝香","采莲舞","金盏子","金蕉叶","鱼游春水","鹊踏枝・蝶恋花","鹤冲天","三部乐","六丑","凤衔杯","大圣乐","太清舞","奉礼歌","尉迟杯","忆少年","惜双双・惜分飞","折丹桂","早梅芳・喜迁莺","月上海棠","步虚词・西江月","浪淘沙令","瑶台第一层","瑶台聚八仙・新雁过妆楼","绮寮怨","芰荷香","解蹀躞","转调二郎神・二郎神","醉太平","锁窗寒・琐寒窗","长相思令・长相思","后庭花","塞垣春","大酺","孤鸾","山花子","庆宫春・高阳台","庆春泽","度清霄","归国遥","怨王孙・忆王孙","惜黄花","扑蝴蝶","扬州慢","摊破浣溪沙","斗百花","月下笛","望仙门","木兰花","桂殿秋","沙塞子","清商怨","渔父乐・渔歌子","石州慢","碧牡丹","罗敷歌・采桑子","薄幸","西地锦","西平乐","踏青游","还京乐","醉公子","醉春风","重叠金・菩萨蛮","雨霖铃","丁香结","上林春・一落萦","上西平・金人捧露盘","丑奴儿慢・采桑子慢","丹凤吟","于中好","侍香金童","倒犯","倾杯乐","凤凰阁","十月桃","千秋岁引","喜朝天・踏莎行","四字令・醉太平","夏初临","好女儿","定风波令・定风波","归田乐","忆帝京","思越人・朝天子","惜秋华","折红梅","无闷","木兰花减字・减字木兰花","梁州令","江梅引・江城梅花引","浣溪纱・浣溪沙","潇湘夜雨・满庭芳","燕山亭","玉交枝・忆秦娥","玉团儿","甘州子","百字歌・自度曲","红窗迥","绕佛阁","芳草渡・系裙腰","苏武慢","荔枝香","谢新恩","谢池春","赤枣子","醉思仙","醉翁操","金盏倒垂莲","金菊对芙蓉","长亭怨・长亭怨慢","黄莺儿","鼓笛令","一枝春","上行杯","下水船","买陂塘・摸鱼儿","亭前柳","伤情怨・清商怨","促拍丑奴儿","偷声木兰花","八拍蛮","凄凉犯","凤皇台上忆吹箫・凤凰台上忆吹箫","凤箫吟・芳草","击梧桐","双头莲","合宫歌","四园竹","国香","子夜歌","宜男草","宴琼林","开元乐・三台","引驾行","思帝乡","思越人","惜红衣","惜馀春慢・选冠子","惜黄花慢","愁倚阑令・春光好","拜星月慢","摊破丑奴儿・采桑子","新雁过妆楼","早梅芳近・早梅芳","昼夜乐","曲江秋","曲游春","望梅花","柳初新","柳含烟","梦游仙・戚氏","江南好・忆江南","汤泉应制","洛阳春・一落萦","淡黄柳","湘月・念奴娇","玉女摇仙佩","玉胡蝶・玉蝴蝶","玉连环・解连环","珍珠帘・真珠帘","甘草子","端正好","系裙腰","聒龙谣","苍梧谣・归字谣","茶瓶儿","连理枝","迷神引","遐方怨","长寿乐","隔浦莲近・隔浦莲近拍","隔浦莲近拍","露华","青门引・青门饮","青门饮","龙吟曲・水龙吟","龙山会","万年欢慢・万年欢","上阳春・蓦山溪","临江仙引","八宝妆","八归","关河令・清商怨","内家娇","凤归云","凤来朝","十拍子・破阵子","千年调","南海子","卷珠帘・蝶恋花","双雁儿","古记・如梦令","合欢带","喜迁莺令・喜迁莺","圣无忧・乌夜啼","城头月","声声令・胜胜令","孤雁儿・御街行","宴山亭・燕山亭","宴春台","寿星明・沁园春","小桃红・连理枝","忆瑶姬","恨春迟","拂霓裳","拟古","摊声浣溪沙・浣溪沙","摊破木兰花・木兰花","於中好","明月引・江城梅花引","明月逐人来","春从天上来","月中行・月宫春","月华清","月照梨花・河传","望梅","望汉月・忆汉月","望江南","望秦川・南歌子","柘枝舞","梅花曲","梦江南・忆江南","楼心月","江南曲・踏莎行","洞仙歌令・洞仙歌","浪淘沙慢","渔父","满宫花","满朝欢","玉堂春","玉联环・解连环","瑶台月","甘露歌","白苎","盐角儿","相思令・相思儿令","相思儿令","石州引・石州慢","离亭宴","离亭燕・离亭宴","笛家弄・笛家","红窗听","胡捣练","花发沁园春","蕙兰芳引","蜡梅香","西施","西溪子","踏歌","透碧霄","遍地花","醉垂鞭","金凤钩","金缕曲","钗头凤・撷芳词","锦帐春","阳关曲","降仙台","雁後归・临江仙","雪梅香","驻马听","一丛花令・一丛花","一井金","一箩金・蝶恋花","一络索","一络索・一落萦","三台春曲","三字令","三犯渡江云・渡江云","上平西・金人捧露盘","上林春令・一落索","不见・如梦令","丑奴儿令・采桑子","五彩结同心","五福降中天","佳人醉","倒垂柳","八节长欢","六桥行","冉冉云","凤凰台忆吹箫・凤凰台上忆吹箫","劝金船","卓牌儿・卓牌子","卜算子慢","厅前柳","双双燕","双燕儿","发引","古阳关・阳关引","向湖边","吴山青・长相思","吴门柳・渔家傲","吴音子","喜团圆","喜迁莺慢・喜迁莺","塞孤","壶中天慢・念奴娇","夜半乐","大有","大江东去・念奴娇","天门谣","如意令・如梦令","如鱼水","安平乐・安平乐慢","安平乐慢","宴瑶池・越江吟","寻梅","小冲山・小重山","小品","小秦王","小重山令・小重山","少年心","山亭柳","庆佳节","庆春时","庆清朝慢・庆清朝","庆金枝","归去来","归国谣・归国遥","归字谣","归田乐引・归田乐","忆东坡","忆人人・鹊桥仙","忆旧游慢","忆桃源","忆汉月","忆江南","忆闷令","思远人","怨三三","怨春郎","怨春风・一斛珠","恋情深","情久长","惜分钗・撷芳词","惜春令","感恩多","戚氏","戛金钗","扑蝴蝶近・扑蝴蝶","抛球乐","拜星月・拜星月慢","拟冬日景忠山应制","拨棹子","探春・探春慢","探芳讯","握金钗","摊破诉衷情・诉衷情","摘得新","摘红英","撼庭竹","斗百草","明月棹孤舟・夜行船","月宫春","望仙楼・胡捣练","朝天子","朝玉阶・朝天子","杜韦娘","极相思令・极相思","柳枝・杨柳枝","梅子黄时雨","楼上曲","步月","水仙子","江南春・秋风清","泛兰舟","浣溪沙慢","海月谣","海棠春令・海棠春","清波引","湘灵瑟","燕归来・喜迁莺","燕春台","独脚令・忆王孙","献衷心","玉京秋","玉抱肚","玉树后庭花・后庭花","玉蹀躞・解蹀躞","瑞鹤仙令・临江仙","瑞鹧鸪慢・瑞鹧鸪","瑶池月・瑶台月","瑶花慢","甘州遍","留客住","番女怨","白雪","相思引・琴调","眉妩","睿恩新","石州词・石州慢","破阵乐","祭天神","离别难","秋日田父辞","秋波媚・眼儿媚","竹枝","竹马子・竹马儿","红窗怨","红罗袄","纱窗恨","罗敷媚・采桑子","翻香令","脱银袍","舜韶新","菩萨・菩萨蛮","菩萨蛮令・菩萨蛮","蕙兰芳・蕙兰芳引","西子妆慢・西子妆","西平乐慢・西平乐","西楼子・相见欢","西江月慢","西湖明月引・江城梅花引","西湖月","角招","诉衷情令","诉衷情近","调啸・调笑令","贺圣朝影・添声杨柳枝","贺明朝","蹋莎行・踏莎行","转调满庭芳・满庭芳","转调蝶恋花・蝶恋花","转调踏莎行・踏莎行","轮台子","过涧歇近・过涧歇","过龙门・浪淘沙令","远朝归","迷仙引","醉花间","采莲令","采莲子","金明池","金缕歌・贺新郎","金缕词・贺新郎","锦园春三犯・锦园春","锦缠道","长亭怨慢","长寿仙促拍","长生乐","雪狮儿","青房并蒂莲","飞雪满群山","黄河清","黄鹂绕碧树","一丝风・诉衷情令","一枝花・促拍满路花","万年歌","万里春","三台","三台令","三段子・宝鼎现","上林春慢","上西楼・相见欢","与团圆・喜团圆","且坐令","东吴乐・尉迟杯","东邻妙・玉楼春","东阳叹・清商怨","东风齐著力","个侬","中兴乐","乃词","乌啼月・乌夜啼","九回肠・好女儿","买坡塘・摸鱼儿","二色宫桃","二色莲","于飞乐令・于飞乐","云仙引","云鬓松令","人南渡・感皇恩","人月圆令・人月园","付金钗・更漏子","伊川令・伊州令","伊州三台","伊州三台令・伊州三台","伊州曲","传花枝","伤春曲・满江红","伴云来・天香","伴登临・采桑子","似娘儿","何满子・河满子","使牛子","保寿乐","倚秋千・好事近","倚西楼","倚阑人","倚阑令・春光好","倚风娇近","倦寻芳慢・倦寻芳","倾杯令・倾杯乐","倾杯令・杯倾乐","倾杯序・倾杯乐","倾杯近","偶相逢・诉衷情","入塞","八宝装・八宝妆","八犯玉交枝・八宝妆","八音谐","六花飞","凉州令・梁州令","凌・金人捧露盘","凤孤飞","凤时春","凤楼春","凤求凰・声声慢","凤池吟","凤皇枝令・凤凰枝令","凤鸾双舞","凯歌","出塞・谒金门","别怨","别瑶姬慢・忆瑶姬","别素质・忆瑶姬","剑器近","剑舞","北山移文哨遍・哨遍","十二时慢","十二郎・二郎神","十六贤","十月梅・十月桃","十样花","千叶莲・鹧鸪天","千春词","千秋万岁・千秋岁引","千秋岁令・千秋岁引","千金意","升平乐","半死桐・鹧鸪天","华清引","卓牌子慢・卓牌子","卓牌子近","南楼令","南浦月・点绛唇","占春芳","卷春空・定风波","双","双声子","双头莲令","双瑞莲","双翠羽","双荷叶・忆秦娥","双韵子","受恩深","古倾杯・倾杯乐","古香慢","台城游・水调歌头","吊严陵","后庭花破子","吹柳絮・瑞鹧鸪","呈纤手・玉楼春","唤春愁・添声杨柳枝","唱金缕・贺新郎","啄木儿","喜长新","喝火令","四代好・宴清都","四和香・四犯令","四槛花","四犯令","四犯翦梅花","国门东・好女儿","国香慢・国香","垂丝钓近・垂丝钓","垂杨","垂杨碧・谒金门","城里钟・菩萨蛮","夏日宴黉堂・夏日燕黉堂","夏日燕黉堂","夜厌厌・夜行船","夜如年・捣练子","夜度娘","夜捣衣・捣练子","夜飞鹊慢","大圣乐令・玉团儿","大椿","大江乘・念奴娇","大江西上曲・念奴娇","大江词・念奴娇","天下乐","天下乐令・减字木兰花","天宁乐・金人捧露盘","太平年慢・太平年","太平时・添声杨柳枝","太平欢・念奴娇","太清歌词","头盏曲","夹竹桃花","好女儿令・好女儿","好溪山","如此江山・齐天乐","娇木笪・木笪","婆罗门・婆罗门引","婆罗门令","孟家蝉","孤馆深沈","安庆摸・摸鱼儿","定情曲","定风波慢","宛溪柳・六么令","宝鼎见・宝鼎现","宣州竹・虞美人","宣清","宴春台慢・宴春台","宴清堂","宴齐云・南歌子","家山好","寒松叹・声声慢","寰海清","寿延长中腔令・寿延长","寿延长破字令","寿楼春","将进酒・梅花引","尉迟杯慢・尉迟杯","小木兰花・木兰花","小梅花・梅花引","小楼连苑・水龙吟","小镇西・小镇西犯","小镇西犯","小阑干・少年游","少年游慢","尔汝歌・清商怨","山亭宴","山亭宴慢・山亭宴","山庄劝酒","山渐青・长相思","山鬼谣・摸鱼儿","峭寒轻","市桥柳","师师令","帝台春","幔卷绸・慢卷绸","平阳兴・踏莎行","并蒂芙蓉","广寒秋・鹊桥仙","庄椿岁・水龙吟","庆千秋","庆双椿・浣溪沙","庆同天・河传","庆寿光","庆灵椿・摊破南乡子","庆金枝令・庆金枝","庆长春・念奴娇","庆青春","应天长令・应天长","应景乐","弄珠英・蓦山溪","归去来兮引・归去来兮","归去难・促拍满路花","归平遥・归国遥","归朝歌","归田乐令・归田乐","归自谣","归风便・玉楼春","彩云归","彩凤飞","彩鸾归令","征部乐","御带花","御阶行・御街行","徵招调中腔・徵招","忆君王・忆王孙","忆吹箫・凤凰台上忆吹箫","忆吹箫慢・凤凰台上忆吹箫","忆少年令・忆少年","忆故人・烛影摇红","忆真妃・相见欢","忆萝月・清平乐","忆黄梅","忍泪吟・采桑子","快活年","快活年近拍","念彩云・夜游宫","念离群・沁园春","念良游・满江红","思佳客令・思佳客","思归乐","思牛女・踏莎行","恋绣衣","恋芳春慢","恋香衾","恨来迟","恨欢迟・恨来迟","惜双双令・惜分飞","惜寒梅","惜时芳・思归乐","惜春郎","惜琼花","惜花容","惜花春起早","惜花春起早慢","惜芳时・思归乐","惜芳菲・惜分飞","惜馀妍・惜余妍","惜馀春・踏莎行","惜馀欢・惜余欢","想车音・兀令","愁倚栏・春光好","愁风月・生查子","感庭秋・撼庭秋","感恩多令・山花子","感皇恩令・感皇恩","慢卷绸","扑胡蝶・扑蝴蝶","扫地舞","扫地花・扫地游","扫市舞","折新荷引・折新荷","折红英・撷芳词","抛球乐小抛球乐・抛球乐","抛球乐折花令・抛球乐","抛球乐水龙吟令・抛球乐","拥鼻吟・吴音子","拾翠羽","换巢鸾凤","换追风・浣溪沙","换遍歌头","捣练子令","探芳新","接贤宾","掩萧斋・浣溪沙","摊破南乡子","摊破江城子・江城梅花引","撒金钱","撷芳词","撼庭秋","攀鞍态・迎春乐","教池回","散天花","散馀霞","数花风・凤凰阁","斗婵娟・霜叶飞","斗鸡回","断湘弦・万年欢","断肠声・南歌子","新念别・夜游宫","新水令","无愁可解","无月不登楼","早梅香","昆明池・金明池","明月棹孤舟","明月照高楼慢・明月照高楼","映山红","映山红慢","春云怨","春声碎","春夏两相期","春归怨","春晓曲","春晴","春草碧・番枪子","春雪间早梅","春霁・秋霁","春风袅娜","晕眉山・踏莎行","晚云高・添声杨柳枝","晴偏好","暗香疏影","暮花天・花发沁园春","曲玉管","替人愁・添声杨柳枝","最多宜・浣溪沙","月上海棠慢・月上海棠","月上瓜洲・相见欢","月中桂","月先圆・好女儿","月华清慢・月华清","月城春・四犯翦梅花","月底修箫谱・祝英台近","月当厅","月当窗・霜天晓角","月边娇","有有令","望书归・捣练子","望云涯引","望南云慢","望扬州・长相思慢","望明河","望春回","望梅词・望梅","望江东","望江怨","望江梅","望湘人","望西飞・清商怨","望长安・蝶恋花","期夜月","木兰香・减字木兰花","杏园芳","杏梁燕・解连环","杏花天慢","杨州慢","杨柳陌・浣溪沙","杵声齐・捣练子","松梢月","枕屏儿","柳垂金","柳摇金・思归乐","柳腰轻","柳长春・踏莎行","桂华明・四犯令","桂枝香慢・桂枝香","桂飘香","桃园忆故人・桃源忆故人","桃源行・蝶恋花","梁州令叠韵・梁州令","梅弄影","梅香慢","梦仙乡","梦兰堂","梦扬州","梦横塘","梦相亲・玉楼春","梦芙蓉","梦行云","梦还京","梧桐影","楚宫春・楚宫春慢","楚宫春慢","楼下柳・天香","横塘路・青玉案","檐前铁","步花间・诉衷情","步虚子令","武林春・武陵春","比梅・如梦令","水晶帘・南歌子","水龙吟慢・水龙吟","永同欢","永裕陵歌","汉宫春慢・汉宫春","江南柳","江城子慢","江如练・蝶恋花","江楼令","江神子慢・江城子慢","沙头雨・点绛唇","法曲入破第一・法曲","法曲入破第三・法曲","法曲入破第二・法曲","法曲入破第四・法曲","法曲散序・法曲","法曲歌头・法曲","法曲第二・法曲","法曲第五煞・法曲","法曲第四・法曲","法曲遍第一・法曲","法曲遍第三・法曲","法曲遍第二・法曲","泛清波摘遍","泛清苕","洛妃怨・昭君怨","洞天春","浣沙溪","浦湘曲","浪涛沙・浪淘沙","浪淘沙近・浪淘沙","消息・永遇乐","淮甸春・念奴娇","添字丑奴儿・采桑子","添春色・醉乡春","清夜游","清平乐令・清平乐","清平令破子・清平乐","清风满桂楼","渔父家风・诉衷情令","渡江云三犯・渡江云","游月宫令","湘春夜月","湘江静","满园花・促拍满路花","满宫春","满庭芳慢・满庭芳","满朝欢令","潇湘忆故人慢","潇湘雨・满庭芳","潇湘静・湘江静","潇潇雨・踏莎行","澡兰香","熙州慢","爪茉莉","爱孤云・添声杨柳枝","爱月夜眠迟・爱月夜眠迟慢","爱月夜眠迟慢","独倚楼・更漏子","献仙桃","献仙音・法曲献仙音","献天寿令","献天寿慢・献天寿","献金杯・厌金杯","玉京谣","玉人歌","玉叶重黄","玉女迎春慢・玉女迎春","玉山枕","玉梅令","玉梅香慢","玉楼人","玉楼宴","玉楼春令・玉楼春","玉珑璁","玉簟凉","玉连环・一落索","玉阑干","王子高六么大曲・自度曲","王孙信・寻芳草","玲珑玉","珍珠令","琐寒窗","琵琶仙","琵琶仙・自度曲","瑞云浓","瑞云浓慢","瑞庭花引","瑶华","瑶池宴令・越江吟","瑶池燕","瑶花","瑶阶草","璧月堂・小重山","甘州令","甘露滴乔松","画堂春令・画堂春","画娥眉・忆王孙","画楼空・诉衷情","画眉郎・好女儿","番枪子","疏帘淡月・桂枝香","百媚娘","百字令","百宜娇・眉妩","百宝妆・新雁过妆楼","百宝装・新燕过妆楼","百岁令","皂罗特髻","相思会・千年调","眉峰碧・卜算子","真珠髻","睡花阴令・醉花阴","石湖仙","破子清平乐・清平乐","破字令","碧云深・忆秦娥","碧桃春・阮郎归","祝英台令","福寿千春・自度曲","秋兰香","秋千儿词","秋夜月・相见欢","秋宵吟","秋思","秋蕊香令","秋蕊香引","秋风叹・燕瑶池","秦刷子","窗下绣・一落萦","章台月・一斛珠","竹香子","竹马儿","第一花・鹧鸪天","簇水","簇水近","粉蝶儿慢","索酒","紫玉箫","紫萸香慢","红","红娘子・连理枝","红情・暗香","红楼慢","红窗月","红芍药","结带巾","绕池游","绕池游慢","绣停针","绣带儿・好女儿","绣带子・好女儿","绣鸾凤花犯・花犯","续渔歌・玉楼春","绮筵张・好女儿","维扬好","绿意・疏影","绿盖舞风轻・绿尽舞风轻","绿罗裙・生查子","群玉轩・小重山","翠楼吟","翠羽吟","翦征袍・捣练子","翦朝霞・鹧鸪天","翦牡丹","翻翠袖・更漏子","耍鼓令","胜胜令","胡捣练令・胡捣练","舞杨花","舞迎春・迎春乐","艳声歌・添声杨柳枝","芙蓉月","芭蕉雨","花上月令","花前饮","花发状元红慢","花幕暗・添声杨柳枝","花心动慢・花心动","花想容・武陵春","花自落・谒金门","花酒令","芳心苦・踏莎行","芳洲泊・踏莎行","芳草","苏武令","苗而秀・采桑子","荆溪咏・渔家傲","荐金蕉","荔子丹","荷华媚","荷叶铺水面","莫思归・抛球乐","莺声绕红楼","菱花怨","落梅慢・落梅","落梅花・落梅","落梅风・落梅","落花时","蓦溪山・蓦山溪","蕊珠闲","蕙清风","蕙香囊・鹊桥仙","薄命女","虞主歌","虞神・虞神歌","虞神歌","虞美人令・虞美人","虞美人影・桃源忆故人","蜀溪春","蝴蝶儿","行路难・梅花引","行香子慢","被花恼","西吴曲","西楼月・春晓曲","西湖念语","西湖曲・玉楼春","西窗烛","西笑吟・蝶恋花","要销凝・清商怨","解仙佩","解佩环・疏影","试周郎・诉衷情","误桃源","调笑歌・调笑令","谢池春慢","貂裘换酒・贺新郎","负心期・浣溪沙","赏南枝","赏松菊","赞成功","赞浦子","赤壁词・念奴娇","越女镜心・法曲献仙音","越山青・长相思","越江吟","越溪春","踏莎行慢","转声虞美人・桃源忆故人","转调丑奴儿・采桑子","转调定风波・定风波","转调贺圣朝・贺圣朝","辊绣球","辘轳金井・四犯翦梅花","辟寒金・迎春乐","辨弦声・迎春乐","过涧歇","迎仙客","迎新春","迎春乐令・迎春乐","还宫乐","送入我门来","送征衣","选官子・选冠子","逍遥乐","遂宁好","遥天奉翠华引","避少年・鹧鸪天","郭郎儿近拍","酷相思","醉中真・浣溪沙","醉乡曲","醉亭楼","醉厌厌・南歌子","醉吟商小品・小品","醉思凡・醉太平","醉桃园・桃源忆故人","醉梅花・鹧鸪天","醉梦迷・采桑子","醉琼枝・定风波","醉瑶池","醉红妆","醉落托","醉高楼","采明珠","采桑子慢","采绿吟","采莲入破・采莲令","采莲实催・采莲令","采莲延遍・采莲令","采莲摇捱遍・采莲令","采莲歇拍・采莲令","采莲煞衮・采莲令","采莲衮・采莲令","采莲衮遍・采莲令","野庵曲","金明春・金明池","金殿乐慢","金盏子令","金盏子慢・金盏子","金缕衣・贺新郎","金莲绕凤楼","金落索","金钱子","钓船归・添声杨柳枝","钓船笛・好事近","钗头凤・撷坊词","钿带长中腔","锦园春","锦堂春","锦标归","锦瑟清商引","锦缠头・浣溪沙","锦缠绊・锦缠道","锦被堆","锦香囊","锯解令","镇西・小镇西犯","镜中人・相思引","长相思慢","问歌颦・雨中花令","闻鹊喜","阑干万里心・忆王孙","阳关三叠","阳关引","阳台怨","阳台梦","阳台路","阳春","阳春曲・阳春","阳羡歌・踏莎行","陇头泉・多丽","陌上郎・生查子","陵歌","隔帘听","隔帘花","雁侵云慢","集贤宾・接贤宾","雨淋铃","雪夜渔舟","雪明鹊夜慢・雪明鹊夜","雪月交光・醉蓬莱","雪花飞","霜天晓月","霜花腴","青山远","青衫湿","青门怨","韵令","频载酒・浣溪沙","题醉袖・踏莎行","风中柳・谢池春","风中柳令・谢池春","风光好","风瀑竹","风蝶令・南歌子","飞雪满堆山・飞雪满群山","飞龙宴","饮马歌","香山会","马家春慢","马索","高山流水","鬓云松令","鬓边华","鬲溪梅令","鱼水同欢・蝶恋花","鸣梭","鸳鸯梦・临江仙","鸳鸯语・七娘子","鹊桥仙令・鹊桥仙","鹧鸪词・瑞鹧鸪","黄金缕・蝶恋花","黄钟乐","黄鹤引"];
+    let typeOptions = TYPE_LIST_ALL;
+    const TYPE_COMMON = TYPE_LIST_ALL.slice(0, 12);
+    function typeGroup(t) {
+      if (/^(五|七|六|四|三|杂)言/.test(t) || /(绝句|律诗|古风|排律|乐府|歌行)$/.test(t) || t === "诗经" || t === "楚辞" || t === "元曲" || t === "民谣") return "诗";
+      return "词牌 · 曲牌";
+    }
+    function renderTypeChips() {
+      const wrap = $("typeChips");
+      if (!wrap) return;
+      wrap.innerHTML = "";
+      ["无"].concat(TYPE_COMMON).forEach((t) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "type-chip" + ((t === "无" ? !typeValue : t === typeValue) ? " active" : "");
+        b.textContent = t;
+        b.addEventListener("click", () => {
+          haptic();
+          typeValue = t === "无" ? "" : (t === typeValue ? "" : t);
+          renderTypeChips();
+          closeTypeDropdown();
+        });
+        wrap.appendChild(b);
+      });
+      const more = document.createElement("button");
+      more.type = "button";
+      more.className = "type-chip more";
+      more.textContent = "全部 " + TYPE_LIST_ALL.length + " ▾";
+      more.addEventListener("click", () => {
+        haptic();
+        const dd = $("typeDropdown");
+        if (dd.classList.contains("open")) { closeTypeDropdown(); return; }
+        $("typeQuery").value = "";
+        renderTypeGrid();
+        dd.classList.add("open");
+      });
+      wrap.appendChild(more);
     }
     function renderTypeGrid() {
       const grid = $("typeGrid");
       const q = $("typeQuery").value.trim();
-      // 首项固定「无」= 清除体裁条件
-      const shown = ["无"].concat((q ? typeOptions.filter((t) => t.includes(q)) : typeOptions).slice(0, 299));
       grid.innerHTML = "";
-      shown.forEach((t) => {
+      const mk = (t) => {
         const el = document.createElement("span");
         el.className = "type-tag" + ((t === "无" ? !typeValue : t === typeValue) ? " active" : "");
         el.textContent = t;
         el.addEventListener("click", () => {
           haptic();
           typeValue = t === "无" ? "" : (t === typeValue ? "" : t);
-          updateTypePickerLabel();
+          renderTypeChips();
+          renderTypeGrid();
           closeTypeDropdown();
         });
-        grid.appendChild(el);
+        return el;
+      };
+      const gh = (label) => {
+        const h = document.createElement("div");
+        h.className = "type-group-h";
+        h.textContent = label;
+        grid.appendChild(h);
+      };
+      if (q) {
+        typeOptions.filter((t) => t.includes(q)).slice(0, 299).forEach((t) => grid.appendChild(mk(t)));
+        return;
+      }
+      gh("常见");
+      ["无"].concat(TYPE_COMMON).forEach((t) => grid.appendChild(mk(t)));
+      const rest = typeOptions.slice(TYPE_COMMON.length);
+      ["诗", "词牌 · 曲牌"].forEach((g) => {
+        const list = rest.filter((t) => typeGroup(t) === g);
+        if (!list.length) return;
+        gh(g + " · " + list.length);
+        list.forEach((t) => grid.appendChild(mk(t)));
       });
     }
-    $("typePicker").addEventListener("click", async () => {
-      haptic();
-      if ($("typeDropdown").classList.contains("open")) { closeTypeDropdown(); return; }
-      if (!INDEX) { showStatus("诗词库尚未加载完成，请稍候……"); return; }
-      if (!typeOptions.length) {
-        const full = await ensureFullIndex();
-        const counts = new Map();
-        ((full && full.chunks) || []).forEach((c) =>
-          (c.types || []).forEach((t) => {
-            if (!t || t.charAt(0) === "□" || t.includes("“")) return;
-            counts.set(t, (counts.get(t) || 0) + 1);
-          })
-        );
-        typeOptions = [...counts.entries()].sort((a, b) => b[1] - a[1]).map((x) => x[0]);
-      }
-      $("typeQuery").value = "";
-      renderTypeGrid();
-      $("typeDropdown").classList.add("open");
-      $("typeCaret").classList.add("up");
-    });
+    renderTypeChips();
     $("typeQuery").addEventListener("input", renderTypeGrid);
     // 下拉之外任意点击收起
     document.addEventListener("click", (e) => {
-      if (!e.target.closest("#typeDropdown") && !e.target.closest("#typePicker")) {
+      if (!e.target.closest("#typeDropdown") && !e.target.closest("#typeChips")) {
         closeTypeDropdown();
       }
     });
@@ -2798,6 +2893,7 @@
         candidates = sortChunksByKw(candidates, kw, mode);
         // 作者 / 朝代检索：只扫描含目标的数据块，速度大幅提升
         if (mode === "author" || mode === "dynasty") candidates = candidates.filter((c) => chunkKwScore(c, kw, mode) > 0);
+        if (mode === "title") candidates = narrowByDigest(candidates, kw);
       }
       if (!candidates.length) { showStatus("未找到匹配条件的诗词", true); return; }
       resultChunks = candidates; resultCursor = 0; resultFilter = { kw, type, mode };
@@ -3685,6 +3781,12 @@
       $("themePanel").classList.toggle("open");
     });
     themeToggleBtn.querySelector("svg").addEventListener("animationend", () => themeToggleBtn.classList.remove("spin"));
+    // 设置分组折叠
+    document.querySelectorAll(".settings-group-h").forEach((h) => {
+      h.addEventListener("click", () => { haptic(); h.parentElement.classList.toggle("closed"); });
+    });
+    // 预热搜索摘要索引，标题模糊检索更快
+    ensureSearchIndex();
 
     // 点击页面空白处关闭面板
     document.addEventListener("click", (e) => {
@@ -3697,7 +3799,17 @@
     // 浮层 / 设置面板打开时锁定主页滚动，只允许滚动浮层内部内容
     const scrollLockSync = () => {
       const locked = !!document.querySelector('.sheet-overlay.open, .theme-panel.open, #disclaimer:not([style*="none"])');
-      document.body.classList.toggle("no-scroll", locked);
+      const isLocked = document.body.classList.contains("no-scroll");
+      if (locked && !isLocked) {
+        document.body.dataset.lockY = String(window.scrollY);
+        document.body.style.top = -window.scrollY + "px";
+        document.body.classList.add("no-scroll");
+      } else if (!locked && isLocked) {
+        const y = Number(document.body.dataset.lockY || 0);
+        document.body.classList.remove("no-scroll");
+        document.body.style.top = "";
+        window.scrollTo(0, y);
+      }
     };
     new MutationObserver(scrollLockSync).observe(document.body, { subtree: true, attributeFilter: ["class", "style"] });
     scrollLockSync();
@@ -3962,7 +4074,7 @@
       const dd = $("typeDropdown");
       if (!dd.classList.contains("open")) return;
       dd.classList.add("closing");
-      setTimeout(() => { dd.classList.remove("open", "closing"); $("typeCaret").classList.remove("up"); }, 160);
+      setTimeout(() => { dd.classList.remove("open", "closing"); const tc = $("typeCaret"); if (tc) tc.classList.remove("up"); }, 160);
     }
 
     // ====== 启动 ======

@@ -50,6 +50,30 @@ async function ensureFullIndex() {
   return FULL_INDEX;
 }
 
+// 搜索摘要索引：每块标题字符集，标题模糊检索先收窄数据块
+let SEARCH_IDX = null;
+async function ensureSearchIndex() {
+  if (SEARCH_IDX) return SEARCH_IDX;
+  const cached = readCache(cfg.SEARCH_CACHE_KEY);
+  if (cached) { SEARCH_IDX = cached; return SEARCH_IDX; }
+  try {
+    SEARCH_IDX = await fetchJson(cfg.DATA_BASE + "data/search-index.json");
+    writeCache(cfg.SEARCH_CACHE_KEY, SEARCH_IDX);
+  } catch (e) {}
+  return SEARCH_IDX;
+}
+function narrowByDigest(candidates, kw) {
+  if (!SEARCH_IDX || !Array.isArray(SEARCH_IDX.chunks) || !kw || kw.length < 2) return candidates;
+  const map = new Map();
+  SEARCH_IDX.chunks.forEach((c) => map.set(c.f, c.cs));
+  const uniq = [...new Set(kw)];
+  return candidates.filter((c) => {
+    const cs = map.get(c.file);
+    if (!cs) return true;
+    return uniq.every((ch) => cs.indexOf(ch) >= 0);
+  });
+}
+
 // 按需加载单个分块（内存缓存，限制数量防膨胀）
 async function loadChunk(file) {
   if (chunkCache.has(file)) return chunkCache.get(file);
@@ -156,6 +180,7 @@ async function findRandomPoemByKw(kw, type, maxLen, mode) {
   if (kw) {
     candidates = sortChunksByKw(candidates, kw, mode);
     if (mode === "author" || mode === "dynasty") candidates = candidates.filter((c) => chunkKwScore(c, kw, mode) > 0);
+    if (mode === "title") { await ensureSearchIndex(); candidates = narrowByDigest(candidates, kw); }
   }
   if (!candidates.length) throw new Error("未找到匹配条件的诗");
 
@@ -286,6 +311,8 @@ module.exports = {
   findPoemByMeta,
   findDailyPoem,
   collectTypes,
+  ensureSearchIndex,
+  narrowByDigest,
   getFullChunks,
   cacheStats
 };

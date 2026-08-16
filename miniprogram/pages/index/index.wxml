@@ -41,7 +41,10 @@
             <view class="mode-chip {{searchMode === 'dynasty' ? 'active' : ''}}" data-mode="dynasty" bindtap="onSearchModeTap">按朝代</view>
             <view class="mode-chip {{searchMode === 'title' ? 'active' : ''}}" data-mode="title" bindtap="onSearchModeTap">按标题</view>
           </view>
-          <view wx:if="{{kwHint}}" class="kw-hint">{{kwHint}}</view>
+          <view wx:if="{{kwHintText}}" class="kw-hint">
+            <text wx:if="{{kwHintTag}}" class="kw-badge">{{kwHintTag}}</text>
+            <text class="kw-hint-t">{{kwHintText}}</text>
+          </view>
           <view wx:if="{{kwHist.length}}" class="kw-hist">
             <view wx:for="{{kwHist}}" wx:key="*this" class="kw-hist-chip" data-kw="{{item}}" bindtap="onKwHistTap">{{item}}</view>
             <view class="kw-hist-clear" bindtap="onKwHistClear">✕</view>
@@ -49,10 +52,10 @@
         </view>
         <view class="field type-wrap">
           <view class="label">体裁</view>
-          <view class="input type-field" catchtap="onTypeFieldTap">
-            <text wx:if="{{type}}">{{type}}</text>
-            <text wx:else class="ph">点击选择体裁</text>
-            <text class="type-caret {{typeDropdownShow ? 'up' : ''}}">▾</text>
+          <view class="type-chips">
+            <view wx:for="{{typeChips}}" wx:key="t"
+              class="type-chip {{(item.t === '无' && !type) || item.t === type ? 'active' : ''}}" data-value="{{item.t}}" bindtap="onTypeChipTap">{{item.t}}</view>
+            <view class="type-chip more" bindtap="onTypeMoreTap">全部 {{typeTotal}} ▾</view>
           </view>
         </view>
       </view>
@@ -61,8 +64,11 @@
         <input class="input dd-search" placeholder="搜索体裁，如：绝句" placeholder-class="ph" value="{{typeQuery}}" bindinput="onTypeQuery" />
         <scroll-view class="dd-list" scroll-y>
           <view class="type-grid">
-            <view wx:for="{{typeOptionsShown}}" wx:key="*this"
-              class="type-tag {{(item === '无' && !type) || item === type ? 'active' : ''}}" data-value="{{item}}" bindtap="onTypeOptTap">{{item}}</view>
+            <block wx:for="{{typeOptionsShown}}" wx:key="k">
+              <view wx:if="{{item.g}}" class="type-group-h">{{item.g}}</view>
+              <view wx:else
+                class="type-tag {{(item.t === '无' && !type) || item.t === type ? 'active' : ''}}" data-value="{{item.t}}" bindtap="onTypeOptTap">{{item.t}}</view>
+            </block>
           </view>
         </scroll-view>
       </view>
@@ -100,8 +106,8 @@
         </view>
         <view class="card-tools">
           <view class="card-sub-tools">
-            <view wx:if="{{poem.pa}}" class="link-btn" hover-class="link-btn-hover" bindtap="onMetaAuthorTap">同作者再来一首 · {{poem.pa}}</view>
-            <view class="link-btn" hover-class="link-btn-hover" bindtap="onCopyPoemTap">复制全诗</view>
+            <view wx:if="{{poem.pa}}" class="sub-tool" hover-class="sub-tool-hover" bindtap="onMetaAuthorTap"><text class="st-ico">⇄</text>同作者再来一首 · {{poem.pa}}</view>
+            <view class="sub-tool" hover-class="sub-tool-hover" bindtap="onCopyPoemTap"><text class="st-ico">⧉</text>复制全诗</view>
           </view>
           <button class="btn secondary" disabled="{{shareLoading}}" bindtap="onShareTap">
             <block wx:if="{{shareLoading}}">生成中……</block>
@@ -122,7 +128,7 @@
     </view>
 
     <!-- 搜索结果列表：就地替换诗词卡片（再随机单首时换回卡片）；页面触底自动翻页 -->
-    <view wx:if="{{listMode}}" class="results-panel">
+    <view wx:if="{{listMode}}" class="card results-panel">
       <view class="results-head">
         <view class="results-head-l">
           <text class="results-title">匹配结果</text>
@@ -218,6 +224,9 @@
 
   <!-- 主题面板（配色/文字方向，与网页版一致） -->
   <view class="theme-panel {{themePanelOpen ? 'open' : ''}}" catchtap="noop" catchtouchmove="noop">
+    <view class="settings-group">
+      <view class="settings-group-h" bindtap="onSgStyleToggle">主题样式<text class="settings-caret {{sgStyleClosed ? 'closed' : ''}}">▾</text></view>
+      <view wx:if="{{!sgStyleClosed}}" class="settings-body">
     <view class="theme-section">
       <view class="theme-label">配色</view>
       <view class="theme-options">
@@ -232,6 +241,11 @@
           data-group="direction" data-value="{{item.value}}" bindtap="onThemeOptTap">{{item.label}}</view>
       </view>
     </view>
+      </view>
+    </view>
+    <view class="settings-group">
+      <view class="settings-group-h" bindtap="onSgOptsToggle">体验开关<text class="settings-caret {{sgOptsClosed ? 'closed' : ''}}">▾</text></view>
+      <view wx:if="{{!sgOptsClosed}}" class="settings-body">
     <view class="theme-section">
       <view class="theme-label">批注卡片提醒</view>
       <view class="theme-options">
@@ -272,6 +286,8 @@
     <view class="theme-section">
       <view class="theme-label">分享签名</view>
       <input class="input opt-sign" maxlength="20" placeholder="展示在分享卡片页脚（可留空）" value="{{optSign}}" bindinput="onSignInput" />
+    </view>
+      </view>
     </view>
     <view class="panel-hint">点击页面空白处即可关闭</view>
   </view>

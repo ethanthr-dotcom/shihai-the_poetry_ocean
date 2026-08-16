@@ -30,5 +30,6 @@ module.exports = {
   CLOUDBASE_SPLIT,
   INDEX_CACHE_KEY: "shihai-index-v1",
   FULL_CACHE_KEY: "shihai-index-full-v1",
+  SEARCH_CACHE_KEY: "shihai-search-index-v1",
   CACHE_TTL: 24 * 3600 * 1000 // 索引缓存 24 小时
 };
