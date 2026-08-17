@@ -58,22 +58,22 @@ App({
         setTimeout(() => FONT_FILES.forEach((file, i) => this._loadFont(file, i, 0)), 1200);
       }
       // 网络恢复后若访问计数未取到，重试一次
-      if (res.isConnected && !this.globalData.visitCount) this._trackVisit(true);
+      if (res.isConnected && !this.globalData.visitCount) this._trackVisit();
     });
   },
 
-  // 访问统计：本地记录上次上报日期，同一天内多次打开不重复计数；云端持久化保存
-  _trackVisit(force) {
-    const LAST_KEY = "shihai-visit-last-day";
-    const today = (() => { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); })();
-    let lastDay = "";
-    try { lastDay = wx.getStorageSync(LAST_KEY) || ""; } catch (e) {}
-    if (!force && lastDay === today) {
-      // 当天已上报：仅查询展示用计数
+  // 访问统计：每次打开都计数（每日可多次）；仅用 10 秒短节流防止异常重启刷量；云端持久化保存
+  _trackVisit() {
+    const LAST_KEY = "shihai-visit-last-ts";
+    const now = Date.now();
+    let lastTs = 0;
+    try { lastTs = wx.getStorageSync(LAST_KEY) || 0; } catch (e) {}
+    if (now - lastTs < 10000) {
+      // 10 秒内已上报：仅查询展示用计数
       this._queryVisit();
       return;
     }
-    try { wx.setStorageSync(LAST_KEY, today); } catch (e) {}
+    try { wx.setStorageSync(LAST_KEY, now); } catch (e) {}
     if (cfg.DATA_MODE !== "cloudbase" || !cfg.CLOUDBASE_ENV) return;
     wx.cloud.callFunction({
       name: "visitStats",
