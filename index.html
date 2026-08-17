@@ -733,6 +733,36 @@
     body.font-kai .content, body.font-kai .title, body.font-kai .verse-line { font-family: "LXGW WenKai", var(--font-content); }
     body.font-xing .content, body.font-xing .title, body.font-xing .verse-line { font-family: "Long Cang", var(--font-content); font-size: 1.05em; }
     body.font-cao .content, body.font-cao .title, body.font-cao .verse-line { font-family: "Liu Jian Mao Cao", var(--font-content); font-size: 1.08em; }
+    /* ====== 意象选择面板 ====== */
+    .sheet-mask { position: fixed; inset: 0; z-index: 1250; background: rgba(0,0,0,.45); }
+    .imagery-circle { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1300; max-height: 88vh; display: flex; flex-direction: column; }
+    .tc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .tc-title { font-size: 16px; letter-spacing: 3px; }
+    .tc-close { font-size: 24px; cursor: pointer; opacity: .55; line-height: 1; padding: 0 6px; user-select: none; }
+    .tc-close:hover { opacity: 1; }
+    .tc-search-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .tc-search { flex: 1; margin: 0; }
+    .tc-hint { font-size: 11px; opacity: .5; white-space: nowrap; }
+    .ic-body { display: flex; gap: 12px; height: 48vh; }
+    .ic-cats { flex: 0 0 100px; overflow-y: auto; background: rgba(0,0,0,0.03); border-radius: 12px; }
+    .ic-cat { padding: 12px 8px; font-size: 13px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.06); cursor: pointer; transition: all .2s; }
+    .ic-cat:hover { background: rgba(0,0,0,0.06); }
+    .ic-cat.active { background: var(--accent-color, #8b5e3c); color: #fff; }
+    .ic-items { flex: 1; overflow-y: auto; }
+    .ic-item { display: inline-block; padding: 6px 12px; margin: 4px; font-size: 14px; background: rgba(0,0,0,0.04); border-radius: 14px; border: 1px solid rgba(0,0,0,0.08); cursor: pointer; transition: all .2s; }
+    .ic-item:hover { background: var(--accent-color, #8b5e3c); color: #fff; }
+    .ic-empty { text-align: center; color: var(--meta-color, #999); padding: 20px; font-size: 13px; }
+    .ic-sel-area { margin: 12px 0; padding: 12px; background: rgba(0,0,0,0.03); border-radius: 12px; }
+    .ic-sel-title { font-size: 12px; color: var(--meta-color, #999); margin-bottom: 8px; }
+    .ic-sel-scroll { white-space: nowrap; overflow-x: auto; }
+    .ic-sel-tag { display: inline-block; padding: 4px 10px; margin-right: 8px; font-size: 13px; background: var(--accent-color, #8b5e3c); color: #fff; border-radius: 12px; cursor: pointer; }
+    .ic-sel-empty { font-size: 13px; color: var(--meta-color, #999); }
+    .tc-btns { display: flex; gap: 10px; margin-top: 10px; }
+    .tc-btn { flex: 1; width: 50%; margin: 0; }
+    body.theme-dark .ic-cats { background: rgba(255,255,255,0.05); }
+    body.theme-dark .ic-cat { border-bottom-color: rgba(255,255,255,0.08); }
+    body.theme-dark .ic-item { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
+    body.theme-dark .ic-sel-area { background: rgba(255,255,255,0.05); }
   </style>
 </head>
 <body>
@@ -823,6 +853,10 @@
           <label>体裁</label>
           <div id="typeField" class="type-field" title="点击展开体裁选择"><span id="typeFieldLabel" class="ph">体裁：点击选择</span><span class="caret">▾</span></div>
         </div>
+        <div class="type-wrap">
+          <label>意象</label>
+          <div id="imageryField" class="type-field" title="点击展开意象选择"><span id="imageryFieldLabel" class="ph">意象：点击选择</span><span class="caret">▾</span></div>
+        </div>
       </div>
       <!-- 体裁选择面板：整行内联展开（推挤布局，稳定可靠） -->
       <div id="typeDropdown" class="type-panel">
@@ -831,6 +865,30 @@
         <div class="dd-foot">
           <button id="ddClearBtn" class="dd-btn ghost" type="button">清空</button>
           <button id="ddConfirmBtn" class="dd-btn solid" type="button">确认</button>
+        </div>
+      </div>
+      <!-- 意象选择面板：底部弹层，分类切换 + 搜索 + 多选 -->
+      <div class="sheet-mask" id="imageryMask" style="display:none"></div>
+      <div class="sheet-box imagery-circle" id="imageryCircle" style="display:none">
+        <div class="tc-header">
+          <span class="tc-title">选择意象</span>
+          <span class="tc-close" id="imageryCloseBtn">×</span>
+        </div>
+        <div class="tc-search-row">
+          <input class="tc-search" id="imageryQueryInput" placeholder="搜索意象（如：月、酒、剑）">
+          <span class="tc-hint">点击页面空白处可关闭</span>
+        </div>
+        <div class="ic-body">
+          <div class="ic-cats" id="imageryCats"></div>
+          <div class="ic-items" id="imageryItems"></div>
+        </div>
+        <div class="ic-sel-area">
+          <div class="ic-sel-title">已选（点击移出）</div>
+          <div class="ic-sel-scroll" id="imagerySelScroll"></div>
+        </div>
+        <div class="tc-btns">
+          <button class="btn secondary tc-btn" id="imageryClearBtn" type="button">清空</button>
+          <button class="btn secondary tc-btn" id="imageryConfirmBtn" type="button">确认</button>
         </div>
       </div>
       <div class="btn-row">
@@ -904,6 +962,7 @@
         <div class="guide-item"><span class="guide-k">手势</span>在诗词卡片上<b class="guide-b">左右轻滑</b>换一首随机诗；<b class="guide-b">双击卡片</b>快速收藏；<b class="guide-b">长按诗句</b>即可复制该句。</div>
         <div class="guide-item"><span class="guide-k">足迹</span>顶栏时钟图标查看<b class="guide-b">最近读过</b>；收藏夹支持一键<b class="guide-b">导出</b>。</div>
         <div class="guide-item"><span class="guide-k">条件搜索</span>一框输入搜索词，在搜索框下选择<b class="guide-b">按作者 / 按朝代 / 按标题</b>检索；命中关键词<b class="guide-b">加粗高亮</b>、点开过的条目标记已读；与体裁任意组合，体裁首项「无」表示不限。</div>
+        <div class="guide-item"><span class="guide-k">意象筛选</span>点「意象」入口按分类挑选<b class="guide-b">月、酒、剑</b>等意象词，可多选并与搜索词、体裁任意组合；选中后诗词卡片也会标注所含意象。</div>
         <div class="guide-item"><span class="guide-k">列表浏览</span>点击标题行<b class="guide-b">展开全诗</b>，一次只展开一首；<b class="guide-b">上滑自动加载更多</b>。</div>
         <div class="guide-item"><span class="guide-k">批量收藏</span>列表中点「批量收藏」，勾选后<b class="guide-b">一键加入收藏夹</b>。</div>
         <div class="guide-item"><span class="guide-k">收藏</span>点诗词旁的<b class="guide-b">星星</b>收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持<b class="guide-b">批量管理与删除</b>。</div>
@@ -1138,6 +1197,12 @@
         typeValue = tl0.length === 1 ? tl0[0] : tl0[0] + " · 等" + tl0.length + "种";
       }
     } catch (e) {}
+    // 意象多选数组（与小程序一致）：确认后写入 localStorage，刷新自动恢复
+    let imagerySel = [];
+    try {
+      const il0 = JSON.parse(localStorage.getItem("shihai-imagery-list-v1") || "null");
+      if (Array.isArray(il0) && il0.length) imagerySel = il0;
+    } catch (e) {}
     // ====== 搜索方式：作者 / 朝代 / 标题（搜索区标签与设置面板同步） ======
     const SEARCH_MODE_KEY = "shihai-search-mode-v1";
     let searchMode = "auto";
@@ -1276,6 +1341,58 @@
         for (let i = 0; i < uniq.length; i++) if (!set.has(uniq[i])) return false;
         return true;
       });
+    }
+    // ====== 意象索引：独立于原始数据库，记录每块包含的意象词 ======
+    let IMAGERY_IDX = null;
+    let _imageryMap = null;
+    let _imageryVer = 0;
+    async function ensureImageryIndex() {
+      if (IMAGERY_IDX) return IMAGERY_IDX;
+      try {
+        const raw = localStorage.getItem("shihai-imagery-index-v1");
+        if (raw) {
+          const obj = JSON.parse(raw);
+          if (obj && Date.now() - obj.ts < 24 * 3600 * 1000) { IMAGERY_IDX = obj.data; _imageryVer++; return IMAGERY_IDX; }
+        }
+      } catch (e) {}
+      try {
+        const res = await fetch(DATA_BASE + "data/imagery-index.json");
+        if (res.ok) {
+          IMAGERY_IDX = await res.json();
+          try { localStorage.setItem("shihai-imagery-index-v1", JSON.stringify({ data: IMAGERY_IDX, ts: Date.now() })); } catch (e) {}
+          _imageryVer++;
+        }
+      } catch (e) {}
+      return IMAGERY_IDX;
+    }
+    function filterByImagery(candidates, images) {
+      if (!images || !images.length || !IMAGERY_IDX || !Array.isArray(IMAGERY_IDX.chunks)) return candidates;
+      if (!_imageryMap || _imageryMap._ver !== _imageryVer) {
+        _imageryMap = new Map();
+        IMAGERY_IDX.chunks.forEach((c) => _imageryMap.set(c.f, new Set(c.images)));
+        _imageryMap._ver = _imageryVer;
+      }
+      return candidates.filter((c) => {
+        const set = _imageryMap.get(c.file);
+        if (!set) return true;
+        for (let i = 0; i < images.length; i++) if (set.has(images[i])) return true;
+        return false;
+      });
+    }
+    function matchImagery(poem, images) {
+      if (!images || !images.length) return true;
+      const text = (poem.t || "") + (poem.c || "");
+      for (let i = 0; i < images.length; i++) if (text.indexOf(images[i]) >= 0) return true;
+      return false;
+    }
+    function extractImageryTags(poem) {
+      if (!IMAGERY_IDX || !IMAGERY_IDX.categories) return [];
+      const text = (poem.t || "") + (poem.c || "");
+      const tags = [];
+      IMAGERY_IDX.categories.forEach((cat) => {
+        (cat.items || []).forEach((img) => { if (text.indexOf(img) >= 0) tags.push(img); });
+      });
+      return tags;
     }
     let kwHintTimer = null;
     let AUTHOR_SET = null, DYNASTY_SET = null;
@@ -1662,6 +1779,8 @@
       const dynasty = poem.d ?? "";
       const type = poem.y ?? "";
       const content = poem.c ?? "";
+      // 意象标签：仅在意象索引已加载时提取，避免每次渲染都触发加载
+      const imageryTags = (IMAGERY_IDX && IMAGERY_IDX.categories) ? extractImageryTags(poem).join("、") : "";
       const metaHtml = escapeHtml(dynasty ? dynasty + (author ? " · " : "") : "") +
         (author ? '<span class="meta-link" title="搜索该作者全部诗词">' + escapeHtml(author) + "</span>" : "");
       const verses = splitVerses(content);
@@ -1684,6 +1803,7 @@
         '<div class="meta">' + metaHtml + "</div>" +
         '<div class="content">' + contentHtml + "</div>" +
         (type ? '<div class="category">体裁：' + escapeHtml(type) + "</div>" : "") +
+        (imageryTags ? '<div class="category">意象：' + escapeHtml(imageryTags) + "</div>" : "") +
         "</div>";
       // 分享按钮与卡片比例放进诗词卡片内部
       card.appendChild(cardToolsInner);
@@ -1889,6 +2009,9 @@
           if (m === "author" || m === "dynasty") candidates = candidates.filter((c) => chunkKwScore(c, kw, m) > 0);
           if (m === "title") candidates = narrowByDigest(candidates, kw);
         }
+        // 意象收窄（与列表检索一致）
+        const effImagery = imagerySel && imagerySel.length ? imagerySel : null;
+        if (effImagery) { await ensureImageryIndex(); candidates = filterByImagery(candidates, effImagery); }
         if (!candidates.length) {
           showStatus("未找到匹配条件的诗", true);
           return;
@@ -1905,7 +2028,7 @@
         for (let i = 0; i < maxTries; i++) {
           const chunk = order[i];
           const poems = await loadChunk(chunk.file);
-          let matched = poems.filter((p) => matchKw(p, kw, type, kw ? effModeFor(kw) : "auto"));
+          let matched = poems.filter((p) => matchKw(p, kw, type, kw ? effModeFor(kw) : "auto") && matchImagery(p, effImagery));
           if (vMax) matched = matched.filter((p) => Array.from(p.c || "").length <= vMax);
           if (matched.length) {
             const poem = matched[Math.floor(Math.random() * matched.length)];
@@ -2006,8 +2129,10 @@
       const typeDisplay = (typeValue || "").trim();
       // 用真实的多选数组判断是否选了体裁；显示字符串仅供兜底（排除「xxx · 等N种」旧值）
       const effTypeStr = typeDisplay && typeDisplay.indexOf(" · 等") < 0 && typeDisplay.indexOf("体裁：") < 0 ? typeDisplay : "";
-      // 填了搜索词或体裁 → 每次都重新开始搜索（重置列表）；未填 → 随机一首
-      if (kw || hasTypeArr || effTypeStr) { openResults(kw, hasTypeArr ? typeSelArr : effTypeStr); return; }
+      // 选了意象也进入列表检索（与搜索词/体裁并列）
+      const hasImagery = Array.isArray(imagerySel) && imagerySel.length > 0;
+      // 填了搜索词或体裁或意象 → 每次都重新开始搜索（重置列表）；未填 → 随机一首
+      if (kw || hasTypeArr || effTypeStr || hasImagery) { openResults(kw, hasTypeArr ? typeSelArr : effTypeStr); return; }
       setListMode(false);
       loadRandomPoem();
     });
@@ -2820,6 +2945,116 @@
       }
     });
 
+    // ====== 意象多选面板：分类切换 + 搜索 + 多选，确认后写入 localStorage ======
+    let imageryIdx = null;
+    let imageryCatIdx = 0;
+    let imageryQueryVal = "";
+    const imageryField = $("imageryField");
+    const imageryFieldLabel = $("imageryFieldLabel");
+    const imageryCircle = $("imageryCircle");
+    const imageryMask = $("imageryMask");
+    const imageryCatsEl = $("imageryCats");
+    const imageryItemsEl = $("imageryItems");
+    const imagerySelScroll = $("imagerySelScroll");
+    const imageryQueryInput = $("imageryQueryInput");
+    function renderImageryFieldLabel() {
+      if (!imageryFieldLabel) return;
+      const n = imagerySel.length;
+      imageryFieldLabel.textContent = n ? (n === 1 ? imagerySel[0] : imagerySel[0] + " · 等" + n + "种") : "意象：点击选择";
+      imageryFieldLabel.classList.toggle("ph", !n);
+    }
+    renderImageryFieldLabel();
+    function renderImageryCats() {
+      if (!imageryIdx || !imageryIdx.categories) return;
+      imageryCatsEl.innerHTML = imageryIdx.categories.map((c, i) =>
+        `<div class="ic-cat ${i === imageryCatIdx ? 'active' : ''}" data-idx="${i}">${escapeHtml(c.name)}</div>`
+      ).join("");
+      imageryCatsEl.querySelectorAll(".ic-cat").forEach((el) => {
+        el.addEventListener("click", () => {
+          imageryCatIdx = parseInt(el.dataset.idx, 10);
+          renderImageryCats();
+          renderImageryItems();
+        });
+      });
+    }
+    function renderImageryItems() {
+      if (!imageryIdx || !imageryIdx.categories) return;
+      const sel = new Set(imagerySel);
+      let pool = [];
+      if (imageryQueryVal) {
+        imageryIdx.categories.forEach((c) => {
+          (c.items || []).forEach((img) => {
+            if (img.indexOf(imageryQueryVal) >= 0 && !sel.has(img)) pool.push(img);
+          });
+        });
+      } else {
+        const cat = imageryIdx.categories[imageryCatIdx];
+        if (cat) pool = (cat.items || []).filter((t) => !sel.has(t));
+      }
+      imageryItemsEl.innerHTML = pool.length ?
+        pool.map((img) => `<div class="ic-item" data-val="${escapeHtml(img)}">${escapeHtml(img)}</div>`).join("") :
+        '<div class="ic-empty">无匹配意象</div>';
+      imageryItemsEl.querySelectorAll(".ic-item").forEach((el) => {
+        el.addEventListener("click", () => {
+          imagerySel.push(el.dataset.val);
+          renderImageryItems();
+          renderImagerySel();
+        });
+      });
+    }
+    function renderImagerySel() {
+      imagerySelScroll.innerHTML = imagerySel.length ?
+        imagerySel.map((img) => `<span class="ic-sel-tag" data-val="${escapeHtml(img)}">${escapeHtml(img)} ×</span>`).join("") :
+        '<span class="ic-sel-empty">尚未选择意象</span>';
+      imagerySelScroll.querySelectorAll(".ic-sel-tag").forEach((el) => {
+        el.addEventListener("click", () => {
+          imagerySel = imagerySel.filter((x) => x !== el.dataset.val);
+          renderImageryItems();
+          renderImagerySel();
+        });
+      });
+    }
+    async function openImageryCircle() {
+      if (!imageryIdx) imageryIdx = await ensureImageryIndex();
+      imageryCatIdx = 0;
+      imageryQueryVal = "";
+      if (imageryQueryInput) imageryQueryInput.value = "";
+      imageryCircle.style.display = "flex";
+      imageryMask.style.display = "block";
+      renderImageryCats();
+      renderImageryItems();
+      renderImagerySel();
+    }
+    function closeImageryCircle() {
+      imageryCircle.style.display = "none";
+      imageryMask.style.display = "none";
+    }
+    if (imageryField) imageryField.addEventListener("click", () => { haptic(); openImageryCircle(); });
+    if ($("imageryCloseBtn")) $("imageryCloseBtn").addEventListener("click", closeImageryCircle);
+    if (imageryMask) imageryMask.addEventListener("click", closeImageryCircle);
+    if (imageryQueryInput) {
+      imageryQueryInput.addEventListener("input", (e) => {
+        imageryQueryVal = e.target.value.trim();
+        renderImageryItems();
+      });
+    }
+    if ($("imageryClearBtn")) {
+      $("imageryClearBtn").addEventListener("click", () => {
+        haptic();
+        imagerySel = [];
+        renderImageryItems();
+        renderImagerySel();
+      });
+    }
+    if ($("imageryConfirmBtn")) {
+      $("imageryConfirmBtn").addEventListener("click", () => {
+        haptic();
+        try { localStorage.setItem("shihai-imagery-list-v1", JSON.stringify(imagerySel)); } catch (e) {}
+        renderImageryFieldLabel();
+        closeImageryCircle();
+      });
+    }
+
     // ====== 搜索结果列表：就地替换诗词卡片；页面触底翻页；手风琴；批量收藏 ======
     let resultChunks = [], resultCursor = 0, resultFilter = {}, resultBusy = false;
     let results = [], resultsDone = false, pendingHits = [];
@@ -2948,7 +3183,7 @@
       if (resultBusy || resultsDone) return;
       resultBusy = true;
       $("resultsFoot").textContent = "正在加载……";
-      const { kw, type, mode } = resultFilter;
+      const { kw, type, mode, imagery } = resultFilter;
       const pg = $("resultsProgress");
       const listEl = $("resultsList");
       let added = 0;
@@ -2972,7 +3207,7 @@
           await Promise.all(batch.map(async (c) => {
             try {
               const poems = await loadChunk(c.file);
-              poems.filter((p) => matchKw(p, kw, type, mode)).forEach((p) => {
+              poems.filter((p) => matchKw(p, kw, type, mode) && matchImagery(p, imagery)).forEach((p) => {
                 allHits.push({ ...p, id: favId(p) });
               });
             } catch (e) {}
@@ -3032,8 +3267,11 @@
         }
         if (mode === "title") candidates = narrowByDigest(candidates, kw);
       }
+      // 意象收窄：在体裁/关键词筛选之后，按数据块包含的意象词进一步过滤
+      const effImagery = imagerySel && imagerySel.length ? imagerySel : null;
+      if (effImagery) { await ensureImageryIndex(); candidates = filterByImagery(candidates, effImagery); }
       if (!candidates.length) { showStatus("未找到匹配条件的诗词", true); return; }
-      resultChunks = candidates; resultCursor = 0; resultFilter = { kw, type, mode };
+      resultChunks = candidates; resultCursor = 0; resultFilter = { kw, type, mode, imagery: effImagery };
       results = []; resultsDone = false; resultBusy = false; openItem = null; pendingHits = [];
       selMode = false; selIds.clear(); updateSelBar();
       $("resultsList").innerHTML = "";

@@ -50,6 +50,13 @@
             <text class="caret">▾</text>
           </view>
         </view>
+        <view class="field type-wrap">
+          <view class="label">意象</view>
+          <view class="type-field" hover-class="type-field-hover" bindtap="onImageryMoreTap">
+            <text class="{{imagery ? '' : 'ph'}}">{{imagery ? ('意象：' + imagery) : '意象：点击选择'}}</text>
+            <text class="caret">▾</text>
+          </view>
+        </view>
       </view>
       <view class="btn-row">
         <button class="btn primary" disabled="{{randomLoading}}" bindtap="onRandomTap">
@@ -83,6 +90,7 @@
             </view>
           </view>
           <view wx:if="{{poem.type}}" class="category" style="{{categoryStyle}}">体裁：{{poem.type}}</view>
+          <view wx:if="{{poem.imagery && poem.imagery.length}}" class="category" style="{{categoryStyle}}">意象：{{poem.imagery}}</view>
         </view>
         <view class="card-tools">
           <view class="card-sub-tools">
@@ -287,6 +295,35 @@
     </view>
   </view>
 
+  <!-- 意象多选面板：左分类 + 右意象 + 已选区 -->
+  <view wx:if="{{imageryCircleShow || imageryCircleShowClosing}}" class="picker-mask {{imageryCircleShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onImageryClose">
+    <view class="tc-box imagery-circle" catchtap="noop">
+      <view class="sheet-head">选择意象<text class="tc-count">{{imagerySel.length ? ' · 已选 ' + imagerySel.length + ' 种' : '（可多选）'}}</text></view>
+      <input class="input tc-search" placeholder="搜索意象，如：月、酒、剑" placeholder-class="ph" value="{{imageryQuery}}" bindinput="onImageryQuery" />
+      <view class="ic-body">
+        <scroll-view class="ic-cats" scroll-y="{{true}}">
+          <view wx:for="{{imageryCatList}}" wx:key="*this" class="ic-cat {{imageryCatIdx === index ? 'active' : ''}}" data-idx="{{index}}" bindtap="onImageryCatTap">{{item}}</view>
+        </scroll-view>
+        <scroll-view class="ic-items" scroll-y="{{true}}" bindscroll="onImageryScroll">
+          <view wx:for="{{imageryPool}}" wx:key="*this" class="ic-item" data-value="{{item}}" bindtap="onImageryPick">{{item}}</view>
+          <view wx:if="{{!imageryPool.length}}" class="ic-empty">无匹配意象</view>
+        </scroll-view>
+      </view>
+      <view class="ic-sel-area">
+        <view class="ic-sel-title">已选（点击移出）</view>
+        <scroll-view class="ic-sel-scroll" scroll-x="{{true}}">
+          <view wx:for="{{imagerySel}}" wx:key="*this" class="ic-sel-tag" data-value="{{item}}" bindtap="onImageryUnpick">{{item}} ×</view>
+          <view wx:if="{{!imagerySel.length}}" class="ic-sel-empty">尚未选择意象</view>
+        </scroll-view>
+      </view>
+      <view class="tc-foot">
+        <button class="btn secondary tc-clear" bindtap="onImageryClear">清空</button>
+        <button class="btn secondary tc-ok" bindtap="onImageryConfirm">确认</button>
+      </view>
+      <view class="tc-tip">点击页面空白处可关闭</view>
+    </view>
+  </view>
+
   <!-- 首次使用提示（确认一次后不再显示） -->
   <view wx:if="{{disclaimerShow || disclaimerShowClosing}}" class="disclaimer {{disclaimerShowClosing ? ' sheet-closing' : ''}}" catchtap="noop" catchtouchmove="noop">
     <view class="disclaimer-sheet">
@@ -332,6 +369,7 @@
         <view class="guide-item"><text class="guide-k">手势</text>在诗词卡片上<text class="guide-b">左右轻滑</text>换一首随机诗；<text class="guide-b">双击卡片</text>快速收藏；<text class="guide-b">长按诗句</text>即可复制该句。</view>
         <view class="guide-item"><text class="guide-k">足迹</text>顶栏时钟图标查看<text class="guide-b">最近读过</text>；收藏夹支持一键<text class="guide-b">导出</text>。</view>
         <view class="guide-item"><text class="guide-k">条件搜索</text>一框输入搜索词，在搜索框下选择<text class="guide-b">按作者 / 按朝代 / 按标题</text>检索；命中关键词<text class="guide-b">加粗高亮</text>、点开过的条目标记已读；与体裁任意组合，体裁首项「无」表示不限。</view>
+        <view class="guide-item"><text class="guide-k">意象筛选</text>选择意象筛选诗词：点击意象行，按分类选择意象词（如<text class="guide-b">月、酒、剑</text>），<text class="guide-b">可多选</text>，与搜索词、体裁任意组合。</view>
         <view class="guide-item"><text class="guide-k">列表浏览</text>点击标题行<text class="guide-b">展开全诗</text>，一次只展开一首；<text class="guide-b">上滑自动加载更多</text>。</view>
         <view class="guide-item"><text class="guide-k">批量收藏</text>列表中点「批量收藏」，勾选后<text class="guide-b">一键加入收藏夹</text>。</view>
         <view class="guide-item"><text class="guide-k">收藏</text>点诗词旁的<text class="guide-b">星星</text>收藏，星星会绽放成红色；右上角星标按钮打开收藏夹，支持<text class="guide-b">批量管理与删除</text>。</view>

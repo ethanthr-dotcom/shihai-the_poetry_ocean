@@ -103,6 +103,13 @@ Page({
     optShake: false,
     optBrief: false,
     optSign: "",
+    imagery: "",
+    imageryCircleShow: false,
+    imageryQuery: "",
+    imageryCatIdx: 0,
+    imageryCatList: [],
+    imageryPool: [],
+    imagerySel: [],
     optFontFace: "",
     solarTheme: false,
     themeDark: false,
@@ -224,6 +231,7 @@ Page({
     this.setData({ randomTip: greet + " · " + this.data.randomTip });
     try { let sm0 = wx.getStorageSync("shihai-search-mode-v1"); if (sm0 === "auto") { sm0 = "title"; try { wx.setStorageSync("shihai-search-mode-v1", "title"); } catch (e2) {} } if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title") this.setData({ searchMode: sm0, smIdx: ["author", "dynasty", "title"].indexOf(sm0) }); } catch (e) {}
     try { const tl = wx.getStorageSync("shihai-type-list-v1"); if (Array.isArray(tl) && tl.length) { this._typesArr = tl; this.setData({ type: tl.length === 1 ? tl[0] : tl[0] + " · 等" + tl.length + "种" }); } } catch (e) {}
+    try { const il = wx.getStorageSync("shihai-imagery-list-v1"); if (Array.isArray(il) && il.length) { this._imageryArr = il; this.setData({ imagery: il.length === 1 ? il[0] : il[0] + " · 等" + il.length + "种" }); } } catch (e) {}
     // 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名）
     this._opts = { preview: true, shake: false, brief: false, sign: "", fontFace: "", solarTheme: false };
     try { const o0 = wx.getStorageSync("shihai-opts-v1"); if (o0) this._opts = { ...this._opts, ...o0 }; } catch (e) {}
@@ -408,11 +416,12 @@ Page({
     this.haptic();
     const kw = (this.data.keyword || "").trim();
     const hasTypeArr = Array.isArray(this._typesArr) && this._typesArr.length > 0;
+    const hasImageryArr = Array.isArray(this._imageryArr) && this._imageryArr.length > 0;
     const typeDisplay = (this.data.type || "").trim();
     // 用真实的多选数组判断是否选了体裁；显示字符串仅供兜底
     const effTypeStr = typeDisplay && typeDisplay.indexOf(" · 等") < 0 && typeDisplay.indexOf("体裁：") < 0 ? typeDisplay : "";
     // 填了搜索词 或 选了体裁 → 重新搜索（重置列表状态）；未填 → 随机一首（恢复卡片）
-    if (kw || hasTypeArr || effTypeStr) {
+    if (kw || hasTypeArr || effTypeStr || hasImageryArr) {
       this.openResults(kw, effTypeStr);
       return;
     }
@@ -476,6 +485,91 @@ Page({
   },
   onTypeCircleClose() {
     this.hideSheet("typeCircleShow");
+  },
+  // ====== 意象选择器入口 ======
+  async onImageryMoreTap() {
+    this.haptic();
+    await this.openImageryCircle();
+  },
+  // ====== 意象多选面板（左分类 + 右意象 + 已选区） ======
+  async openImageryCircle() {
+    this._imageryArr = this._imageryArr || [];
+    // 首次打开时加载意象索引
+    if (!this._imageryIdx) {
+      this._imageryIdx = await data.ensureImageryIndex();
+    }
+    const cats = (this._imageryIdx && this._imageryIdx.categories) || [];
+    this.setData({
+      imageryCircleShow: true,
+      imageryQuery: "",
+      imageryCatIdx: 0,
+      imageryCatList: cats.map((c) => c.name),
+      imagerySel: this._imageryArr.slice()
+    });
+    this._rebuildImageryPool();
+  },
+  _rebuildImageryPool() {
+    if (!this._imageryIdx || !this._imageryIdx.categories) return;
+    const q = (this.data.imageryQuery || "").trim();
+    const sel = new Set(this.data.imagerySel || []);
+    const catIdx = this.data.imageryCatIdx || 0;
+    const cat = this._imageryIdx.categories[catIdx];
+    if (!cat) return;
+    let pool = cat.items.filter((t) => !sel.has(t));
+    if (q) {
+      // 搜索模式：跨所有分类搜索
+      pool = [];
+      this._imageryIdx.categories.forEach((c) => {
+        c.items.forEach((img) => {
+          if (img.indexOf(q) >= 0 && !sel.has(img)) pool.push(img);
+        });
+      });
+    }
+    this.setData({ imageryPool: pool });
+  },
+  onImageryCatTap(e) {
+    this.haptic();
+    const idx = parseInt(e.currentTarget.dataset.idx, 10);
+    this.setData({ imageryCatIdx: idx });
+    this._rebuildImageryPool();
+  },
+  onImageryQuery(e) {
+    this.setData({ imageryQuery: e.detail.value });
+    this._rebuildImageryPool();
+  },
+  onImageryPick(e) {
+    const t = e.currentTarget.dataset.value;
+    this.haptic();
+    this.setData({ imagerySel: (this.data.imagerySel || []).concat([t]) });
+    this._rebuildImageryPool();
+  },
+  onImageryUnpick(e) {
+    const t = e.currentTarget.dataset.value;
+    this.haptic();
+    this.setData({ imagerySel: (this.data.imagerySel || []).filter((x) => x !== t) });
+    this._rebuildImageryPool();
+  },
+  onImageryClear() {
+    this.haptic();
+    this.setData({ imagerySel: [] });
+    this._rebuildImageryPool();
+  },
+  onImageryConfirm() {
+    this.haptic();
+    const sel = this.data.imagerySel || [];
+    this._imageryArr = sel.slice();
+    try { wx.setStorageSync("shihai-imagery-list-v1", sel); } catch (e2) {}
+    this.setData({ imagery: sel.length === 0 ? "" : (sel.length === 1 ? sel[0] : sel[0] + " · 等" + sel.length + "种") });
+    this.hideSheet("imageryCircleShow");
+  },
+  onImageryScroll() {
+    const now = Date.now();
+    if (now - (this._icScrollHapticAt || 0) < 120) return;
+    this._icScrollHapticAt = now;
+    this.haptic();
+  },
+  onImageryClose() {
+    this.hideSheet("imageryCircleShow");
   },
   // 设置面板分组折叠
   onSgStyleToggle() { this.haptic(); this.setData({ sgStyleClosed: !this.data.sgStyleClosed }); },
@@ -932,6 +1026,8 @@ Page({
 
   // ====== 搜索结果列表：就地替换诗词卡片；无限分页（页面触底）；手风琴；批量收藏 ======
   async openResults(kw, type) {
+    // 意象筛选：优先用多选数组 _imageryArr
+    const effImagery = (this._imageryArr && this._imageryArr.length) ? this._imageryArr : null;
     // 优先用多选数组 _typesArr；如果 type 是「xxx · 等N种」格式但 _typesArr 为空，说明是之前的旧值，需要忽略
     let effType = null;
     if (this._typesArr && this._typesArr.length) {
@@ -949,11 +1045,15 @@ Page({
       const full = await data.ensureFullIndex(); // 失败不阻断：退化为全库流式扫描
       if (full && !this._authorSet) this._buildKnownSets(full);
     }
+    if (effImagery) {
+      await data.ensureImageryIndex();
+    }
     const base = await data.loadIndex();
     const mode = this.data.searchMode;
     // 优先用全索引分块（含 authors），作者/朝代收窄才能生效
     const baseChunks = data.getFullChunks() || base.chunks;
     let candidates = effType ? data.filterChunks("", "", effType) : baseChunks.slice();
+    if (effImagery) candidates = data.filterByImagery(candidates, effImagery);
     if (kw) {
       candidates = data.sortChunksByKw(candidates, kw, mode);
       // 朝代检索：只扫描含该朝代的数据块（精简索引即含 dynasties，可靠）
@@ -972,7 +1072,7 @@ Page({
     this._resultChunks = candidates;
     this._resultCursor = 0;
     this._pendingItems = [];
-    this._resultFilter = { kw, type: effType, mode };
+    this._resultFilter = { kw, type: effType, imagery: effImagery, mode };
     this._resultsBusy = false;
     this._openIdx = null;
     this._seenIds = this._seenIds || new Set();
@@ -988,7 +1088,7 @@ Page({
     if (this._resultsBusy || this.data.resultsDone || !this.data.listMode) return;
     this._resultsBusy = true;
     this.setData({ resultsLoading: true });
-    const { kw, type, mode } = this._resultFilter;
+    const { kw, type, imagery, mode } = this._resultFilter;
     let added = 0;
     this._pendingItems = this._pendingItems || [];
     try {
@@ -1013,7 +1113,7 @@ Page({
         await Promise.all(batch.map(async (c) => {
           try {
             const poems = await data.loadChunk(c.file);
-            poems.filter((p) => data.matchKw(p, kw, type, mode)).forEach((p) => {
+            poems.filter((p) => data.matchKw(p, kw, type, mode) && data.matchImagery(p, imagery)).forEach((p) => {
               const id = favId(p);
               allHits.push({ id, t: p.t, a: p.a, d: p.d, y: p.y, c: p.c, open: false, seen: this._seenIds.has(id), fav: this._favSet.has(id), hasNote: !!(this._noteMap && this._noteMap.has(id)), tSegs: this._kwSegs(p.t || "无题", kw), mSegs: this._kwSegs((p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : ""), kw) });
             });
@@ -1284,7 +1384,7 @@ Page({
       currentNote: !!(this._noteMap && this._noteMap.has(favId(poem))),
       statusText: "",
       statusError: false,
-      poem: { t: poem.t || "无题", meta, pd: poem.d || "", pa: poem.a || "", type: poem.y || "" },
+      poem: { t: poem.t || "无题", meta, pd: poem.d || "", pa: poem.a || "", type: poem.y || "", imagery: data.extractImageryTags(poem) },
       briefQuote,
       briefFull: newPoem ? false : this.data.briefFull,
       titleLines: tt.lines,

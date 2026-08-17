@@ -9,7 +9,7 @@ const cache = new Map(); // 热实例内存缓存，重复读取零开销
 exports.main = async (event) => {
   const name = String((event && event.file) || "");
   // 严格校验文件名：只允许 数字.json，杜绝路径穿越
-  if (!/^\d{3}\.json$/.test(name) && name !== "index.json" && name !== "index-full.json" && name !== "search-index.json") {
+  if (!/^\d{3}\.json$/.test(name) && name !== "index.json" && name !== "index-full.json" && name !== "search-index.json" && name !== "imagery-index.json") {
     return { code: 400 };
   }
   if (cache.has(name)) return { code: 200, data: cache.get(name) };
