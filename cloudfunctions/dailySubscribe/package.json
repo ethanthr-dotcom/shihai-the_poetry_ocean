@@ -1,0 +1,9 @@
+{
+  "name": "dailySubscribe",
+  "version": "1.0.0",
+  "description": "每日推送订阅管理：记录/取消用户对每日诗词推送的订阅",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

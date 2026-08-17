@@ -729,6 +729,10 @@
     @keyframes onboardPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
     .onboard-tip { position: fixed; transform: translateX(-50%); background: var(--card-bg, #fff); color: var(--text-color); border: 1px solid var(--accent-color); padding: 8px 14px; border-radius: 10px; font-size: 13px; white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.25); pointer-events: none; }
     .card-sub-tools { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: nowrap; margin-top: 12px; margin-bottom: 10px; }
+    /* ====== 书法字体（用户选择时动态加载对应字体CSS） ====== */
+    body.font-kai .content, body.font-kai .title, body.font-kai .verse-line { font-family: "LXGW WenKai", var(--font-content); }
+    body.font-xing .content, body.font-xing .title, body.font-xing .verse-line { font-family: "Long Cang", var(--font-content); font-size: 1.05em; }
+    body.font-cao .content, body.font-cao .title, body.font-cao .verse-line { font-family: "Liu Jian Mao Cao", var(--font-content); font-size: 1.08em; }
   </style>
 </head>
 <body>
@@ -831,6 +835,7 @@
       </div>
       <div class="btn-row">
         <button id="randomButton" type="button">与诗相逢</button>
+        <button class="btn secondary" id="dailyBtn" title="每日推荐">今日推荐</button>
       </div>
       <div class="random-tip">读到心动的一首，可在下方生成卡片保存或分享</div>
       <div class="random-tip">读到会心处，可点诗词旁的 ✎ 纸笔图标写下你的感悟</div>
@@ -1081,6 +1086,22 @@
       <div class="theme-label">分享签名</div>
       <input id="optSignInput" class="input opt-sign" maxlength="20" placeholder="展示在分享卡片页脚（可留空）">
     </div>
+    <div class="theme-section">
+      <div class="theme-label">字体风格</div>
+      <div class="theme-options" data-group="optFontFace">
+        <button class="theme-opt active" data-value="">默认</button>
+        <button class="theme-opt" data-value="kai">楷书</button>
+        <button class="theme-opt" data-value="xing">行书</button>
+        <button class="theme-opt" data-value="cao">草书</button>
+      </div>
+    </div>
+    <div class="theme-section">
+      <div class="theme-label">节气主题<span class="theme-sub">按节气自动配色</span></div>
+      <div class="theme-options" data-group="optSolarTheme">
+        <button class="theme-opt" data-value="on">开</button>
+        <button class="theme-opt active" data-value="off">关</button>
+      </div>
+    </div>
       </div>
     </div>
   </div>
@@ -1122,11 +1143,97 @@
     let searchMode = "auto";
     try { const sm0 = localStorage.getItem(SEARCH_MODE_KEY); if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title") searchMode = sm0; else if (sm0 === "auto") { searchMode = "title"; localStorage.setItem(SEARCH_MODE_KEY, "title"); } } catch (e) {}
     function saveSearchMode() { try { localStorage.setItem(SEARCH_MODE_KEY, searchMode); } catch (e) {} }
+    // ====== 二十四节气 ======
+    const SOLAR_TERMS = [
+      { name: "小寒", month: 1, day: 6, theme: { "--bg-color": "#f5f0e8", "--card-bg": "#fffaf5", "--accent-color": "#8a6d3b", "--seal-color": "#8a6d3b" } },
+      { name: "大寒", month: 1, day: 21, theme: { "--bg-color": "#f0ebe3", "--card-bg": "#fffcf7", "--accent-color": "#6b5b4e", "--seal-color": "#6b5b4e" } },
+      { name: "立春", month: 2, day: 4, theme: { "--bg-color": "#f4f9ee", "--card-bg": "#fdfff6", "--accent-color": "#4a7c3a", "--seal-color": "#4a7c3a" } },
+      { name: "雨水", month: 2, day: 19, theme: { "--bg-color": "#eef4f5", "--card-bg": "#f6fffa", "--accent-color": "#3a6b6b", "--seal-color": "#3a6b6b" } },
+      { name: "惊蛰", month: 3, day: 6, theme: { "--bg-color": "#f5f0f5", "--card-bg": "#fff6ff", "--accent-color": "#7a3a6b", "--seal-color": "#7a3a6b" } },
+      { name: "春分", month: 3, day: 21, theme: { "--bg-color": "#f0f9f0", "--card-bg": "#f6fff6", "--accent-color": "#3a8a3a", "--seal-color": "#3a8a3a" } },
+      { name: "清明", month: 4, day: 5, theme: { "--bg-color": "#f0f5f0", "--card-bg": "#f6fff0", "--accent-color": "#4a8a4a", "--seal-color": "#4a8a4a" } },
+      { name: "谷雨", month: 4, day: 20, theme: { "--bg-color": "#f5f9ee", "--card-bg": "#fcfff6", "--accent-color": "#5a7a2a", "--seal-color": "#5a7a2a" } },
+      { name: "立夏", month: 5, day: 6, theme: { "--bg-color": "#fff8f0", "--card-bg": "#fffdf6", "--accent-color": "#b85a2a", "--seal-color": "#b85a2a" } },
+      { name: "小满", month: 5, day: 21, theme: { "--bg-color": "#fff9ee", "--card-bg": "#fffef8", "--accent-color": "#a0702a", "--seal-color": "#a0702a" } },
+      { name: "芒种", month: 6, day: 6, theme: { "--bg-color": "#fff8ee", "--card-bg": "#fffdf5", "--accent-color": "#8a6a2a", "--seal-color": "#8a6a2a" } },
+      { name: "夏至", month: 6, day: 21, theme: { "--bg-color": "#fff6f0", "--card-bg": "#fffcf8", "--accent-color": "#c04a2a", "--seal-color": "#c04a2a" } },
+      { name: "小暑", month: 7, day: 7, theme: { "--bg-color": "#fff5ee", "--card-bg": "#fffcf5", "--accent-color": "#c0402a", "--seal-color": "#c0402a" } },
+      { name: "大暑", month: 7, day: 23, theme: { "--bg-color": "#fff4ee", "--card-bg": "#fffbf5", "--accent-color": "#b8382a", "--seal-color": "#b8382a" } },
+      { name: "立秋", month: 8, day: 8, theme: { "--bg-color": "#f9f5ee", "--card-bg": "#fffaf2", "--accent-color": "#8a6a2a", "--seal-color": "#8a6a2a" } },
+      { name: "处暑", month: 8, day: 23, theme: { "--bg-color": "#f8f5f0", "--card-bg": "#fffaf0", "--accent-color": "#7a5a3a", "--seal-color": "#7a5a3a" } },
+      { name: "白露", month: 9, day: 8, theme: { "--bg-color": "#f4f5f9", "--card-bg": "#faffff", "--accent-color": "#3a5a7a", "--seal-color": "#3a5a7a" } },
+      { name: "秋分", month: 9, day: 23, theme: { "--bg-color": "#f5f0f5", "--card-bg": "#fffaff", "--accent-color": "#6a3a6a", "--seal-color": "#6a3a6a" } },
+      { name: "寒露", month: 10, day: 8, theme: { "--bg-color": "#f5f0f0", "--card-bg": "#fff8f8", "--accent-color": "#8a3a4a", "--seal-color": "#8a3a4a" } },
+      { name: "霜降", month: 10, day: 24, theme: { "--bg-color": "#f0f0f5", "--card-bg": "#f8f8ff", "--accent-color": "#5a4a7a", "--seal-color": "#5a4a7a" } },
+      { name: "立冬", month: 11, day: 7, theme: { "--bg-color": "#f0f4f5", "--card-bg": "#f6faff", "--accent-color": "#3a5a8a", "--seal-color": "#3a5a8a" } },
+      { name: "小雪", month: 11, day: 22, theme: { "--bg-color": "#eef0f5", "--card-bg": "#f5f8ff", "--accent-color": "#3a4a8a", "--seal-color": "#3a4a8a" } },
+      { name: "大雪", month: 12, day: 7, theme: { "--bg-color": "#eef0f5", "--card-bg": "#f5f8ff", "--accent-color": "#2a4a8a", "--seal-color": "#2a4a8a" } },
+      { name: "冬至", month: 12, day: 22, theme: { "--bg-color": "#edeef5", "--card-bg": "#f5f6ff", "--accent-color": "#3a3a8a", "--seal-color": "#3a3a8a" } }
+    ];
+    function getCurrentSolarTerm() {
+      const now = new Date();
+      const m = now.getMonth() + 1, d = now.getDate();
+      let current = SOLAR_TERMS[SOLAR_TERMS.length - 1]; // 默认冬至
+      for (const t of SOLAR_TERMS) {
+        if (m < t.month || (m === t.month && d < t.day)) break;
+        current = t;
+      }
+      return current;
+    }
     // ====== 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名） ======
     const OPTS_KEY = "shihai-opts-v1";
-    let appOpts = { preview: true, shake: false, brief: false, sign: "" };
+    let appOpts = { preview: true, shake: false, brief: false, sign: "", fontFace: "", solarTheme: false };
     try { const o0 = JSON.parse(localStorage.getItem(OPTS_KEY) || "null"); if (o0) appOpts = { ...appOpts, ...o0 }; } catch (e) {}
-    function saveOpts() { try { localStorage.setItem(OPTS_KEY, JSON.stringify(appOpts)); } catch (e) {}
+    function saveOpts() { try { localStorage.setItem(OPTS_KEY, JSON.stringify(appOpts)); } catch (e) {} }
+    // ====== 书法字体（动态加载开源字体CSS） ======
+    const FONT_CSS_LOADED = {};
+    function ensureFontCss(face) {
+      if (!face || FONT_CSS_LOADED[face]) return;
+      const urls = {
+        kai: "https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont/lxgwwenkai-regular.css",
+        xing: "https://cdn.jsdelivr.net/npm/@fontsource/long-cang/400.css",
+        cao: "https://cdn.jsdelivr.net/npm/@fontsource/liu-jian-mao-cao/400.css"
+      };
+      const url = urls[face];
+      if (!url) return;
+      FONT_CSS_LOADED[face] = true;
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = url;
+      document.head.appendChild(link);
+    }
+    function applyFontFace() {
+      const face = appOpts.fontFace || "";
+      document.body.classList.remove("font-kai", "font-xing", "font-cao");
+      if (face) {
+        document.body.classList.add("font-" + face);
+        ensureFontCss(face);
+      }
+    }
+    function applySolarTheme() {
+      if (!appOpts.solarTheme) return;
+      const term = getCurrentSolarTerm();
+      const root = document.documentElement;
+      Object.entries(term.theme).forEach(([k, v]) => root.style.setProperty(k, v));
+    }
+    // ====== 每日推荐（按日期种子随机选诗） ======
+    let dailyPoem = null;
+    async function loadDailyPoem() {
+      if (dailyPoem) return dailyPoem;
+      try {
+        await loadIndex();
+        if (!INDEX || !INDEX.chunks || !INDEX.chunks.length) return null;
+        const now = new Date();
+        const seed = now.getFullYear() * 1000 + (now.getMonth() + 1) * 50 + now.getDate();
+        const chunkIdx = seed % INDEX.chunks.length;
+        const chunk = INDEX.chunks[chunkIdx];
+        const poems = await loadChunk(chunk.file);
+        if (!poems || !poems.length) return null;
+        const poemIdx = (seed * 7 + 13) % poems.length;
+        dailyPoem = poems[poemIdx];
+        return dailyPoem;
+      } catch (e) { return null; }
+    }
     // ====== 搜索历史（最近 6 条） ======
     // ====== 搜索摘要索引：每块标题字符集，标题模糊检索先收窄数据块 ======
     const SEARCH_INDEX_KEY = "poetry-search-index-v2";
@@ -2582,7 +2689,7 @@
       // 同步面板选中状态
       document.querySelectorAll(".theme-options").forEach((container) => {
         const group = container.dataset.group;
-        if (group === "notePrompt" || group === "optSearchMode" || group === "optPreview" || group === "optShake" || group === "optBrief") return; // 非主题项，单独同步
+        if (group === "notePrompt" || group === "optSearchMode" || group === "optPreview" || group === "optShake" || group === "optBrief" || group === "optFontFace" || group === "optSolarTheme") return; // 非主题项，单独同步
         const value = currentTheme[group];
         container.querySelectorAll(".theme-opt").forEach((btn) => {
           btn.classList.toggle("active", btn.dataset.value === value);
@@ -3303,9 +3410,9 @@
       });
     }
     function syncOptsUI() {
-      [["optPreview", appOpts.preview], ["optShake", appOpts.shake], ["optBrief", appOpts.brief]].forEach(([g, on]) => {
+      [["optPreview", appOpts.preview], ["optShake", appOpts.shake], ["optBrief", appOpts.brief], ["optFontFace", appOpts.fontFace || ""], ["optSolarTheme", appOpts.solarTheme]].forEach(([g, on]) => {
         document.querySelectorAll('.theme-options[data-group="' + g + '"] .theme-opt').forEach((b) =>
-          b.classList.toggle("active", (b.dataset.value === "on") === !!on));
+          b.classList.toggle("active", (g === "optFontFace") ? (b.dataset.value === on) : ((b.dataset.value === "on") === !!on)));
       });
       document.body.classList.toggle("no-preview", !appOpts.preview);
     }
@@ -3839,6 +3946,21 @@
           if (key === "brief" && currentPoem) { briefFull = false; briefOverrideId = ""; renderPoem(currentPoem); }
           return;
         }
+        if (group === "optFontFace") {
+          appOpts.fontFace = value;
+          saveOpts();
+          syncOptsUI();
+          applyFontFace();
+          return;
+        }
+        if (group === "optSolarTheme") {
+          appOpts.solarTheme = value === "on";
+          saveOpts();
+          syncOptsUI();
+          if (!appOpts.solarTheme) location.reload(); // 关闭时重新加载恢复主题
+          else applySolarTheme();
+          return;
+        }
         if (group === "optSearchMode") {
           searchMode = value; saveSearchMode(); renderModeChips(); updateKwHint(); return;
         }
@@ -4117,8 +4239,21 @@
       signInput.value = appOpts.sign || "";
       signInput.addEventListener("input", () => { appOpts.sign = signInput.value.trim(); saveOpts(); });
     }
+    const dailyBtn = document.getElementById("dailyBtn");
+    if (dailyBtn) {
+      dailyBtn.addEventListener("click", async () => {
+        dailyBtn.disabled = true;
+        dailyBtn.textContent = "加载中...";
+        const p = await loadDailyPoem();
+        dailyBtn.disabled = false;
+        dailyBtn.textContent = "今日推荐";
+        if (p) { currentPoem = p; renderPoem(p); }
+      });
+    }
     syncOptsUI();
     if (appOpts.shake) setShake(true);
+    applyFontFace();
+    applySolarTheme();
     setTimeout(maybeOnboard, 4200);
 
     (async () => {

@@ -1,4 +1,4 @@
-<view class="app {{themeDark ? 'theme-dark' : ''}}" style="{{varsStyle}}" bindtap="onPageTap" bindtouchstart="onRippleTouch">
+<view class="app {{themeDark ? 'theme-dark' : ''}} {{optFontFace ? 'font-' + optFontFace : ''}}" style="{{varsStyle}}" bindtap="onPageTap" bindtouchstart="onRippleTouch">
   <!-- 顶部加载进度条 -->
   <view class="progress {{progressState}}"></view>
   <view wx:if="{{ripple}}" class="ink-ripple" style="left:{{ripple.x}}px;top:{{ripple.y}}px"></view>
@@ -56,6 +56,8 @@
           <block wx:if="{{randomLoading}}">正在读取……</block>
           <block wx:else><text class="btn-line" wx:for="{{randomBtnLines}}" wx:key="index">{{item}}</text></block>
         </button>
+        <button class="btn secondary" bindtap="onDailyTap">今日推荐</button>
+        <button class="btn secondary" bindtap="onSubscribeDaily">订阅推送</button>
       </view>
       <view class="random-tip">{{randomTip}}</view>
     </view>
@@ -233,6 +235,22 @@
     <view class="theme-section">
       <view class="theme-label">分享签名</view>
       <input class="input opt-sign" maxlength="20" placeholder="展示在分享卡片页脚（可留空）" value="{{optSign}}" bindinput="onSignInput" />
+    </view>
+    <view class="theme-section">
+      <view class="theme-label">字体风格</view>
+      <view class="theme-options">
+        <view class="theme-opt {{optFontFace === '' ? 'active' : ''}}" data-value="" bindtap="onFontFaceTap">默认</view>
+        <view class="theme-opt {{optFontFace === 'kai' ? 'active' : ''}}" data-value="kai" bindtap="onFontFaceTap">楷书</view>
+        <view class="theme-opt {{optFontFace === 'xing' ? 'active' : ''}}" data-value="xing" bindtap="onFontFaceTap">行书</view>
+        <view class="theme-opt {{optFontFace === 'cao' ? 'active' : ''}}" data-value="cao" bindtap="onFontFaceTap">草书</view>
+      </view>
+    </view>
+    <view class="theme-section">
+      <view class="theme-label">节气主题<text class="theme-sub">按节气自动配色</text></view>
+      <view class="theme-options">
+        <view class="theme-opt {{solarTheme ? 'active' : ''}}" data-value="on" bindtap="onSolarThemeTap">开</view>
+        <view class="theme-opt {{solarTheme ? '' : 'active'}}" data-value="off" bindtap="onSolarThemeTap">关</view>
+      </view>
     </view>
       </view>
     </view>
