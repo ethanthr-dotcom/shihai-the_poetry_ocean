@@ -362,55 +362,6 @@ function cacheStats() {
 
 function getFullChunks() { return FULL_INDEX && Array.isArray(FULL_INDEX.chunks) ? FULL_INDEX.chunks : null; }
 
-// ====== 意象索引：独立于原始数据库，记录每块包含的意象词 ======
-let IMAGERY_IDX = null;
-let _imageryMap = null;   // 缓存 file -> Set<image>，O(1) 查找
-let _imageryVer = 0;
-async function ensureImageryIndex() {
-  if (IMAGERY_IDX) return IMAGERY_IDX;
-  const cached = readCache("shihai-imagery-index-v1");
-  if (cached) { IMAGERY_IDX = cached; _imageryVer++; return IMAGERY_IDX; }
-  try {
-    IMAGERY_IDX = await fetchJson(cfg.DATA_BASE + "data/imagery-index.json");
-    writeCache("shihai-imagery-index-v1", IMAGERY_IDX);
-    _imageryVer++;
-  } catch (e) {}
-  return IMAGERY_IDX;
-}
-// 按意象收窄候选分块：保留包含任一所选意象的分块
-function filterByImagery(candidates, images) {
-  if (!images || !images.length || !IMAGERY_IDX || !Array.isArray(IMAGERY_IDX.chunks)) return candidates;
-  // 首次或索引变更时构建 file -> Set<image> 映射
-  if (!_imageryMap || _imageryMap._ver !== _imageryVer) {
-    _imageryMap = new Map();
-    IMAGERY_IDX.chunks.forEach((c) => _imageryMap.set(c.f, new Set(c.images)));
-    _imageryMap._ver = _imageryVer;
-  }
-  return candidates.filter((c) => {
-    const set = _imageryMap.get(c.file);
-    if (!set) return true; // 未知分块不过滤
-    for (let i = 0; i < images.length; i++) if (set.has(images[i])) return true;
-    return false;
-  });
-}
-// 块内逐首匹配意象：诗词标题或正文包含任一所选意象词即命中
-function matchImagery(poem, images) {
-  if (!images || !images.length) return true;
-  const text = (poem.t || "") + (poem.c || "");
-  for (let i = 0; i < images.length; i++) if (text.indexOf(images[i]) >= 0) return true;
-  return false;
-}
-// 提取一首诗的意象标签（用于展示）
-function extractImageryTags(poem) {
-  if (!IMAGERY_IDX || !IMAGERY_IDX.categories) return [];
-  const text = (poem.t || "") + (poem.c || "");
-  const tags = [];
-  IMAGERY_IDX.categories.forEach((cat) => {
-    (cat.items || []).forEach((img) => { if (text.indexOf(img) >= 0) tags.push(img); });
-  });
-  return tags;
-}
-
 module.exports = {
   loadIndex,
   ensureFullIndex,
@@ -430,9 +381,5 @@ module.exports = {
   ensureSearchIndex,
   narrowByDigest,
   getFullChunks,
-  cacheStats,
-  ensureImageryIndex,
-  filterByImagery,
-  matchImagery,
-  extractImageryTags
+  cacheStats
 };
