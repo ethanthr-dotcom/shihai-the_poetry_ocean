@@ -1208,8 +1208,8 @@
     let searchMode = "auto";
     try { const sm0 = localStorage.getItem(SEARCH_MODE_KEY); if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title") searchMode = sm0; else if (sm0 === "auto") { searchMode = "title"; localStorage.setItem(SEARCH_MODE_KEY, "title"); } } catch (e) {}
     function saveSearchMode() { try { localStorage.setItem(SEARCH_MODE_KEY, searchMode); } catch (e) {} }
-    // ====== 二十四节气 ======
-    const SOLAR_TERMS = [
+    // ====== 二十四节气（主题配色） ======
+    const SOLAR_TERM_THEMES = [
       { name: "小寒", month: 1, day: 6, theme: { "--bg-color": "#f5f0e8", "--card-bg": "#fffaf5", "--accent-color": "#8a6d3b", "--seal-color": "#8a6d3b" } },
       { name: "大寒", month: 1, day: 21, theme: { "--bg-color": "#f0ebe3", "--card-bg": "#fffcf7", "--accent-color": "#6b5b4e", "--seal-color": "#6b5b4e" } },
       { name: "立春", month: 2, day: 4, theme: { "--bg-color": "#f4f9ee", "--card-bg": "#fdfff6", "--accent-color": "#4a7c3a", "--seal-color": "#4a7c3a" } },
@@ -1238,8 +1238,8 @@
     function getCurrentSolarTerm() {
       const now = new Date();
       const m = now.getMonth() + 1, d = now.getDate();
-      let current = SOLAR_TERMS[SOLAR_TERMS.length - 1]; // 默认冬至
-      for (const t of SOLAR_TERMS) {
+      let current = SOLAR_TERM_THEMES[SOLAR_TERM_THEMES.length - 1]; // 默认冬至
+      for (const t of SOLAR_TERM_THEMES) {
         if (m < t.month || (m === t.month && d < t.day)) break;
         current = t;
       }
