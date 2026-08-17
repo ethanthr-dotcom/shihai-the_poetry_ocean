@@ -381,7 +381,7 @@
 
 /* ====== 浮层关闭退场动画（遮罩淡出 + 盒子下滑） ====== */
 .sheet-closing.picker-mask, .sheet-closing.share-mask, .sheet-closing.dev-mask, .sheet-closing.disclaimer { animation: maskOut .22s ease-in forwards; }
-.sheet-closing .tc-box, .sheet-closing .guide-box, .sheet-closing .fav-sheet, .sheet-closing .note-edit-box, .sheet-closing .note-ask-box, .sheet-closing .share-sheet, .sheet-closing .dev-sheet, .sheet-closing .disclaimer-sheet { animation: sheetDrop .22s ease-in forwards; }
+.sheet-closing .tc-box, .sheet-closing .dd-box, .sheet-closing .guide-box, .sheet-closing .fav-sheet, .sheet-closing .note-edit-box, .sheet-closing .note-ask-box, .sheet-closing .share-sheet, .sheet-closing .dev-sheet, .sheet-closing .disclaimer-sheet { animation: sheetDrop .22s ease-in forwards; }
 .sheet-closing.type-panel { animation: dropOut .18s ease-in forwards; }
 .splash.sheet-closing { animation: maskOut .35s ease-in forwards; }
 @keyframes maskOut { to { opacity: 0; } }
@@ -467,8 +467,9 @@
 .type-caret { position: absolute; right: 16rpx; top: 50%; transform: translateY(-50%); opacity: .5; font-size: 22rpx; transition: transform .2s; }
 .type-caret.up { transform: translateY(-50%) rotate(180deg); }
 .type-panel { margin-top: 8rpx; margin-bottom: 28rpx; border: 2rpx solid var(--card-border); background: var(--sheet-bg, var(--bg-color)); border-radius: 20rpx; padding: 20rpx; }
+.dd-box { width: 100%; background: var(--sheet-bg, var(--bg-color)); border-radius: 36rpx 36rpx 0 0; padding: 36rpx 32rpx calc(28rpx + env(safe-area-inset-bottom)); animation: sheetUp .28s ease-out; }
 .dd-search { margin-bottom: 16rpx; }
-.dd-list { max-height: 46vh; }
+.dd-list { max-height: 44vh; }
 .mini-btn.solid { background: var(--button-bg, #8b2c2c); border-color: var(--button-bg, #8b2c2c); color: var(--button-text, #fff); opacity: 1; font-size: 26rpx; padding: 12rpx 32rpx; }
 .card-fav, .result-fav, .fav-heart { font-style: normal; flex: none; line-height: 1; }
 .input { font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; }
