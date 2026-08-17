@@ -1657,56 +1657,6 @@ Page({
     if (on) this._applySolarTheme();
     else this.applyTheme(this.data.themeIdx || 0);
   },
-  // ====== 每日推荐 ======
-  async loadDailyPoem() {
-    if (this._dailyPoem) return this._dailyPoem;
-    try {
-      const idx = await data.loadIndex();
-      if (!idx || !idx.chunks || !idx.chunks.length) return null;
-      const now = new Date();
-      const seed = now.getFullYear() * 1000 + (now.getMonth() + 1) * 50 + now.getDate();
-      const chunkIdx = seed % idx.chunks.length;
-      const chunk = idx.chunks[chunkIdx];
-      const poems = await data.loadChunk(chunk.file);
-      if (!poems || !poems.length) return null;
-      const poemIdx = (seed * 7 + 13) % poems.length;
-      this._dailyPoem = poems[poemIdx];
-      return this._dailyPoem;
-    } catch (e) { return null; }
-  },
-  async onDailyTap() {
-    this.haptic();
-    wx.showLoading({ title: "加载中..." });
-    const p = await this.loadDailyPoem();
-    wx.hideLoading();
-    if (p) {
-      this.setData({ listMode: false });
-      this.renderPoem(p);
-      wx.pageScrollTo({ selector: ".card", duration: 300 });
-    }
-  },
-  // ====== 每日推送（订阅消息） ======
-  onSubscribeDaily() {
-    this.haptic();
-    const tmplId = "DAILY_POEM_TMPL_ID"; // 用户在小程序后台创建模板后替换
-    wx.requestSubscribeMessage({
-      tmplIds: [tmplId],
-      success: (res) => {
-        if (res[tmplId] === "accept") {
-          wx.showToast({ title: "订阅成功", icon: "success" });
-          // 调用云函数记录订阅
-          if (wx.cloud) {
-            wx.cloud.callFunction({
-              name: "dailySubscribe",
-              data: { action: "subscribe" },
-              fail: () => {}
-            });
-          }
-        }
-      },
-      fail: () => {}
-    });
-  },
   onBriefFullTap() {
     this.haptic();
     this.setData({ briefFull: true });

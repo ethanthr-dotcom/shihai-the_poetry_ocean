@@ -56,8 +56,6 @@
           <block wx:if="{{randomLoading}}">正在读取……</block>
           <block wx:else><text class="btn-line" wx:for="{{randomBtnLines}}" wx:key="index">{{item}}</text></block>
         </button>
-        <button class="btn secondary" bindtap="onDailyTap">今日推荐</button>
-        <button class="btn secondary" bindtap="onSubscribeDaily">订阅推送</button>
       </view>
       <view class="random-tip">{{randomTip}}</view>
     </view>

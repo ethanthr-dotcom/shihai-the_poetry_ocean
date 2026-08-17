@@ -1,9 +1,0 @@
-{
-  "name": "dailyPoem",
-  "version": "1.0.0",
-  "description": "每日诗词推送：定时触发，向订阅用户发送一首随机诗词的订阅消息",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "~2.6.3"
-  }
-}

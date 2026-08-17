@@ -835,7 +835,6 @@
       </div>
       <div class="btn-row">
         <button id="randomButton" type="button">与诗相逢</button>
-        <button class="btn secondary" id="dailyBtn" title="每日推荐">今日推荐</button>
       </div>
       <div class="random-tip">读到心动的一首，可在下方生成卡片保存或分享</div>
       <div class="random-tip">读到会心处，可点诗词旁的 ✎ 纸笔图标写下你的感悟</div>
@@ -1215,24 +1214,6 @@
       const term = getCurrentSolarTerm();
       const root = document.documentElement;
       Object.entries(term.theme).forEach(([k, v]) => root.style.setProperty(k, v));
-    }
-    // ====== 每日推荐（按日期种子随机选诗） ======
-    let dailyPoem = null;
-    async function loadDailyPoem() {
-      if (dailyPoem) return dailyPoem;
-      try {
-        await loadIndex();
-        if (!INDEX || !INDEX.chunks || !INDEX.chunks.length) return null;
-        const now = new Date();
-        const seed = now.getFullYear() * 1000 + (now.getMonth() + 1) * 50 + now.getDate();
-        const chunkIdx = seed % INDEX.chunks.length;
-        const chunk = INDEX.chunks[chunkIdx];
-        const poems = await loadChunk(chunk.file);
-        if (!poems || !poems.length) return null;
-        const poemIdx = (seed * 7 + 13) % poems.length;
-        dailyPoem = poems[poemIdx];
-        return dailyPoem;
-      } catch (e) { return null; }
     }
     // ====== 搜索历史（最近 6 条） ======
     // ====== 搜索摘要索引：每块标题字符集，标题模糊检索先收窄数据块 ======
@@ -4238,17 +4219,6 @@
     if (signInput) {
       signInput.value = appOpts.sign || "";
       signInput.addEventListener("input", () => { appOpts.sign = signInput.value.trim(); saveOpts(); });
-    }
-    const dailyBtn = document.getElementById("dailyBtn");
-    if (dailyBtn) {
-      dailyBtn.addEventListener("click", async () => {
-        dailyBtn.disabled = true;
-        dailyBtn.textContent = "加载中...";
-        const p = await loadDailyPoem();
-        dailyBtn.disabled = false;
-        dailyBtn.textContent = "今日推荐";
-        if (p) { currentPoem = p; renderPoem(p); }
-      });
     }
     syncOptsUI();
     if (appOpts.shake) setShake(true);
