@@ -527,7 +527,7 @@ button[disabled]:active { transform: none; }
 
 /* 使用指南弹层 */
 .guide-box { width: 100%; background: var(--sheet-bg, var(--bg-color)); border-radius: 36rpx 36rpx 0 0; padding: 36rpx 40rpx calc(28rpx + env(safe-area-inset-bottom)); animation: sheetUp .28s ease-out; }
-.guide-list { margin: 12rpx 0 30rpx; max-height: 58vh; overflow-y: auto; }
+.guide-list { margin: 12rpx 0 30rpx; height: 58vh; }
 .guide-item { font-size: 26rpx; line-height: 1.85; color: var(--text-color); opacity: .88; padding: 12rpx 0; border-bottom: 1rpx dashed var(--card-border); text-align: left; }
 .guide-k { display: inline-block; color: var(--seal-color, #a3382f); font-weight: bold; margin-right: 14rpx; }
 .guide-b { font-weight: 600; }

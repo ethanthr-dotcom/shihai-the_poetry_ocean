@@ -1860,7 +1860,7 @@ Page({
   },
 
   haptic() {
-    wx.vibrateShort({ type: "medium", fail: () => wx.vibrateShort({ fail: () => {} }) });
+    wx.vibrateShort({ type: "heavy", fail: () => wx.vibrateShort({ fail: () => {} }) });
   },
 
   // 关闭分享浮层

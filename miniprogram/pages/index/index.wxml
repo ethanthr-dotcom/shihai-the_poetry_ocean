@@ -334,7 +334,7 @@
     <view class="guide-box" catchtap="noop">
       <view class="sheet-head">使用指南</view>
       <view class="guide-stats">{{statsLine}}</view>
-      <view class="guide-list">
+      <scroll-view class="guide-list" scroll-y>
         <view class="guide-item"><text class="guide-k">精致体验</text>点作者名<text class="guide-b">搜全部同作者诗词</text>。</view>
         <view class="guide-item"><text class="guide-k">随机邂逅</text>不填任何条件，点「与诗相逢」<text class="guide-b">随机推荐一首</text>。</view>
         <view class="guide-item"><text class="guide-k">手势</text>在诗词卡片上<text class="guide-b">左右轻滑</text>换一首随机诗；<text class="guide-b">双击卡片</text>快速收藏；<text class="guide-b">长按诗句</text>即可复制该句。</view>
@@ -348,7 +348,7 @@
         <view class="guide-item"><text class="guide-k">主题排版</text>右上角<text class="guide-b">齿轮</text>可切换主题配色、横竖排版与字号版式。</view>
         <view class="guide-item"><text class="guide-k">缺字说明</text>个别文字显示为<text class="guide-b">「□」</text>，是原始古籍数据缺损或字体未收录所致，<text class="guide-b">属正常现象，并非程序错误</text>。</view>
         <view class="guide-item"><text class="guide-k">温馨提示</text>收藏与批注仅保存在本机<text class="guide-b">本地缓存</text>（相当于 cookie），清除缓存或卸载后会丢失，心仪的诗词与感悟请<text class="guide-b">及时生成卡片保存</text>。</view>
-      </view>
+      </scroll-view>
       <button class="btn primary guide-ok" bindtap="onGuideClose">我知道了</button>
     </view>
   </view>
