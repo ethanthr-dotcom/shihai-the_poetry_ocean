@@ -8,8 +8,6 @@
 
 ![Language](https://img.shields.io/badge/language-Chinese%20%7C%20English-blue)![License](https://img.shields.io/github/license/ethanthr-dotcom/shihai-the_poetry_ocean)
 
-![License](https://img.shields.io/github/license/ethanthr-dotcom/shihai-the_poetry_ocean)
-
 An open-source digital showcase for classical Chinese poetry — featuring **344,240 poems**, built as a pure front-end static website with no server and no back-end dependencies, using modern web technology to let a thousand years of verse be seen anew.
 
 <p align="center">

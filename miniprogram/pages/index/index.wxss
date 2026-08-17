@@ -578,6 +578,7 @@ page, .card, .fav-sheet, .guide-box, .note-edit-box, .note-ask-box, .dev-sheet, 
 .tc-empty { font-size: 24rpx; opacity: .5; text-align: center; padding: 28rpx 0; }
 .tc-foot { display: flex; gap: 20rpx; margin-top: 26rpx; }
 .tc-foot .btn { flex: 1; width: 50%; margin: 0 !important; height: 88rpx; padding: 0 !important; line-height: 88rpx; box-sizing: border-box; font-size: 30rpx; border-radius: 20rpx; }
+.tc-tip { margin-top: 18rpx; font-size: 22rpx; opacity: .5; text-align: center; letter-spacing: 1rpx; }
 .tc-foot .btn.secondary { border-width: 2rpx; }
 
 /* 查询结果：□ 现象说明（显眼内联提示，非弹窗） */

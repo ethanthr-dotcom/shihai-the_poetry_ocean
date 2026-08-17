@@ -257,8 +257,7 @@
     <view class="theme-section">
       <view class="theme-label">体裁选择方式</view>
       <view class="theme-options">
-        <view class="theme-opt {{typePickerMode === 'circle' ? 'active' : ''}}" data-value="circle" bindtap="onTypePickerTap">双圆多选</view>
-        <view class="theme-opt {{typePickerMode === 'dropdown' ? 'active' : ''}}" data-value="dropdown" bindtap="onTypePickerTap">下拉多选</view>
+        <view class="theme-opt active">双圆多选</view>
       </view>
     </view>
       </view>
@@ -292,6 +291,7 @@
         <button class="btn secondary tc-clear" bindtap="onTypeCircleClear">清空</button>
         <button class="btn primary tc-ok" bindtap="onTypeCircleConfirm">确认</button>
       </view>
+      <view class="tc-tip">点击页面空白处可关闭</view>
     </view>
   </view>
 
