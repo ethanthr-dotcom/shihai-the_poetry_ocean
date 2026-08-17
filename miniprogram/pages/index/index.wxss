@@ -640,3 +640,89 @@ page, .card, .fav-sheet, .guide-box, .note-edit-box, .note-ask-box, .dev-sheet, 
 .settings-caret.closed { transform: rotate(-90deg); }
 .onboard-bar { position: fixed; left: 108rpx; right: 24rpx; top: 26rpx; z-index: 3000; display: flex; align-items: center; gap: 16rpx; padding: 16rpx 24rpx; border-radius: 20rpx; background: var(--card-bg, #fff); border: 2rpx solid var(--card-border, #e2dccf); box-shadow: var(--card-shadow); font-size: 24rpx; color: var(--text-color, #2f2a24); white-space: normal; line-height: 1.6; }
 .onboard-bar .ob-close { color: var(--meta-color, #766d63); font-size: 24rpx; padding: 4rpx 8rpx; }
+
+/* ====== 液态玻璃效果（仅 iOS 设备 + 用户开启时生效；根节点 .app.glass-on 触发） ======
+   模拟苹果原生 Liquid Glass：半透明 + 背景模糊 + 边缘高光 + 内描边
+   非 iOS 设备不会出现 .glass-on 类（_applyGlass 在 _isIOS 为假时强制关闭） */
+.app.glass-on .card,
+.app.glass-on .theme-panel,
+.app.glass-on .dd-box,
+.app.glass-on .guide-box,
+.app.glass-on .fav-sheet,
+.app.glass-on .note-edit-box,
+.app.glass-on .note-ask-box,
+.app.glass-on .dev-sheet,
+.app.glass-on .onboard-bar {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24rpx) saturate(180%);
+  -webkit-backdrop-filter: blur(24rpx) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12), inset 0 1rpx 0 rgba(255, 255, 255, 0.7), inset 0 -1rpx 0 rgba(255, 255, 255, 0.25);
+}
+/* 深色主题下玻璃偏暗 */
+.app.glass-on.theme-dark .card,
+.app.glass-on.theme-dark .theme-panel,
+.app.glass-on.theme-dark .dd-box,
+.app.glass-on.theme-dark .guide-box,
+.app.glass-on.theme-dark .fav-sheet,
+.app.glass-on.theme-dark .note-edit-box,
+.app.glass-on.theme-dark .note-ask-box,
+.app.glass-on.theme-dark .dev-sheet,
+.app.glass-on.theme-dark .onboard-bar {
+  background: rgba(40, 40, 45, 0.55);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.4), inset 0 1rpx 0 rgba(255, 255, 255, 0.15);
+}
+/* 输入框玻璃化 */
+.app.glass-on .input {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12rpx) saturate(160%);
+  -webkit-backdrop-filter: blur(12rpx) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.app.glass-on.theme-dark .input {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+/* 按钮玻璃化（次级按钮更明显；主按钮保留主色仅加内高光） */
+.app.glass-on .btn.secondary {
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(16rpx) saturate(160%);
+  -webkit-backdrop-filter: blur(16rpx) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.6);
+}
+.app.glass-on .btn {
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1), inset 0 1rpx 0 rgba(255, 255, 255, 0.35);
+}
+.app.glass-on.theme-dark .btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+/* 体裁选择标签 / 主题选项小药丸玻璃化 */
+.app.glass-on .theme-opt,
+.app.glass-on .type-tag {
+  backdrop-filter: blur(10rpx);
+  -webkit-backdrop-filter: blur(10rpx);
+}
+.app.glass-on .theme-opt:not(.active),
+.app.glass-on .type-tag:not(.active) {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+.app.glass-on.theme-dark .theme-opt:not(.active),
+.app.glass-on.theme-dark .type-tag:not(.active) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+/* 体裁选择抽屉的滚动区也半透明，露出底层卡片纹理 */
+.app.glass-on .tc-scroll {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.app.glass-on.theme-dark .tc-scroll {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+/* 设置项标签辅助说明（液态玻璃开关行的「仅 iOS 设备」） */
+.theme-sub { font-size: 20rpx; opacity: .55; margin-left: 8rpx; font-weight: 400; }

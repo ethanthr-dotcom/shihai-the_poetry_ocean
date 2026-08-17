@@ -75,13 +75,16 @@ Page({
     optShake: false,
     optBrief: false,
     optSign: "",
+    optGlass: false,
+    showGlassOpt: false,
+    glassOn: false,
+    themeDark: false,
     statsLine: "",
     onboardShow: false,
     briefQuote: "",
     briefFull: false,
     ripple: null,
     type: "",
-    typePickerMode: "circle",
     typeCircleShow: false,
     typeCircleQuery: "",
     typeSel: [],
@@ -198,12 +201,17 @@ Page({
     const greet = h >= 5 && h < 8 ? "晨读" : h < 12 ? "上午品读" : h < 14 ? "午间小读" : h < 18 ? "午后漫读" : h < 23 ? "灯下夜读" : "深夜静读";
     this.setData({ randomTip: greet + " · " + this.data.randomTip });
     try { let sm0 = wx.getStorageSync("shihai-search-mode-v1"); if (sm0 === "auto") { sm0 = "title"; try { wx.setStorageSync("shihai-search-mode-v1", "title"); } catch (e2) {} } if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title") this.setData({ searchMode: sm0, smIdx: ["author", "dynasty", "title"].indexOf(sm0) }); } catch (e) {}
-    try { const tp = wx.getStorageSync("shihai-type-picker-v1"); if (tp === "dropdown" || tp === "circle") this.setData({ typePickerMode: tp }); } catch (e) {}
     try { const tl = wx.getStorageSync("shihai-type-list-v1"); if (Array.isArray(tl) && tl.length) { this._typesArr = tl; this.setData({ type: tl.length === 1 ? tl[0] : tl[0] + " · 等" + tl.length + "种" }); } } catch (e) {}
-    // 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名）
-    this._opts = { preview: true, shake: false, brief: false, sign: "" };
+    // 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名 / 液态玻璃）
+    this._opts = { preview: true, shake: false, brief: false, sign: "", glass: true };
     try { const o0 = wx.getStorageSync("shihai-opts-v1"); if (o0) this._opts = { ...this._opts, ...o0 }; } catch (e) {}
-    this.setData({ optPreview: !!this._opts.preview, optShake: !!this._opts.shake, optBrief: !!this._opts.brief, optSign: this._opts.sign || "" });
+    // 液态玻璃仅 iOS 设备可用；非 iOS 强制关闭且不显示开关
+    let sysInfo = {};
+    try { sysInfo = wx.getDeviceInfo ? wx.getDeviceInfo() : wx.getSystemInfoSync(); } catch (e) {}
+    this._isIOS = /ios/i.test(sysInfo.platform || sysInfo.system || "");
+    const glassOn = this._isIOS ? !!this._opts.glass : false;
+    this.setData({ optPreview: !!this._opts.preview, optShake: !!this._opts.shake, optBrief: !!this._opts.brief, optSign: this._opts.sign || "", optGlass: glassOn, showGlassOpt: this._isIOS });
+    this._applyGlass(glassOn);
     if (this._opts.shake) this._startShake();
     // 体裁全量内嵌：常见体裁 chips 直达 + 完整面板分组可搜索
     this.setData({
@@ -404,16 +412,7 @@ Page({
   },
   onTypeMoreTap() {
     this.haptic();
-    if (this.data.typePickerMode === "circle") { this.openTypeCircle(); return; }
-    if (this.data.typeDropdownShow) {
-      if (Date.now() - (this._typeDdOpenedAt || 0) < 350) return; // 防展开瞬间的连击误关
-      this.hideSheet("typeDropdownShow"); return;
-    }
-    this._typeDdOpenedAt = Date.now();
-    // 初始化下拉多选的临时选中数组（基于 _typesArr）
-    this._ddSel = Array.isArray(this._typesArr) ? this._typesArr.slice() : [];
-    this.setData({ typeDropdownShow: true, typeQuery: "", ddSel: this._ddSel.slice() });
-    this._applyTypeQuery();
+    this.openTypeCircle();
   },
   onTypeQuery(e) {
     this.setData({ typeQuery: e.detail.value });
@@ -525,13 +524,6 @@ Page({
   },
   onTypeCircleClose() {
     this.hideSheet("typeCircleShow");
-  },
-  onTypePickerTap(e) {
-    const v = e.currentTarget.dataset.value;
-    this.haptic();
-    if (v !== "circle" && v !== "dropdown") return;
-    this.setData({ typePickerMode: v });
-    try { wx.setStorageSync("shihai-type-picker-v1", v); } catch (e2) {}
   },
   // 设置面板分组折叠
   onSgStyleToggle() { this.haptic(); this.setData({ sgStyleClosed: !this.data.sgStyleClosed }); },
@@ -1648,6 +1640,20 @@ Page({
     this.setData({ optSign: e.detail.value || "" });
     this._saveOpts();
   },
+  // 液态玻璃效果开关（仅 iOS 设备显示此项）
+  onGlassTap(e) {
+    this.haptic();
+    const on = e.currentTarget.dataset.value === "on";
+    this._opts.glass = on;
+    this._saveOpts();
+    this.setData({ optGlass: on });
+    this._applyGlass(on);
+  },
+  _applyGlass(on) {
+    // 通过根节点 class 控制全局液态玻璃样式；非 iOS 即使 on 也无效
+    if (!this._isIOS) on = false;
+    this.setData({ glassOn: on });
+  },
   onBriefFullTap() {
     this.haptic();
     this.setData({ briefFull: true });
@@ -1767,8 +1773,16 @@ Page({
     let shareRatio = this.data.shareRatio;
     if (isVertical) shareRatio = "auto";
     const varsStyle = Object.keys(vars).map((k) => k + ":" + vars[k]).join(";");
+    // 计算 bg 亮度判断是否深色主题（用于液态玻璃深色适配）
+    const bgHex = (vars["--bg-color"] || "").replace("#", "");
+    let themeDark = false;
+    if (/^[0-9a-fA-F]{6}$/.test(bgHex)) {
+      const r = parseInt(bgHex.slice(0, 2), 16), g = parseInt(bgHex.slice(2, 4), 16), b = parseInt(bgHex.slice(4, 6), 16);
+      themeDark = (0.299 * r + 0.587 * g + 0.114 * b) < 128;
+    }
     this.setData({
       varsStyle,
+      themeDark,
       isVertical,
       shareRatio,
       ratioOptions: RATIO_OPTIONS.map((o) => ({
