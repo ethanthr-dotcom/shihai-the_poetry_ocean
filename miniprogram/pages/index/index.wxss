@@ -568,8 +568,8 @@ page, .card, .fav-sheet, .guide-box, .note-edit-box, .note-ask-box, .dev-sheet, 
 .tc-col { flex: 1; min-width: 0; }
 .tc-col-h { font-size: 22rpx; opacity: .6; text-align: center; margin-bottom: 10rpx; letter-spacing: 2rpx; }
 .tc-scroll { height: 52vh; background: rgba(79, 95, 74, .07); border: 2rpx solid var(--card-border); box-sizing: border-box; }
-.tc-left { border-radius: 240rpx 28rpx 28rpx 240rpx; padding: 18rpx 12rpx 18rpx 34rpx; }
-.tc-right { border-radius: 28rpx 240rpx 240rpx 28rpx; padding: 18rpx 34rpx 18rpx 12rpx; }
+.tc-left { border-radius: 20rpx; padding: 18rpx 16rpx; }
+.tc-right { border-radius: 20rpx; padding: 18rpx 16rpx; }
 .tc-item { font-size: 26rpx; padding: 13rpx 8rpx; text-align: center; border-bottom: 1rpx dashed var(--card-border); color: var(--text-color); letter-spacing: 1rpx; }
 .tc-item:active { opacity: .55; transform: scale(.96); }
 .tc-sel { animation: tcIn .3s ease-out; color: var(--seal-color, #a3382f); font-weight: 600; }
@@ -577,7 +577,7 @@ page, .card, .fav-sheet, .guide-box, .note-edit-box, .note-ask-box, .dev-sheet, 
 .tc-empty { font-size: 24rpx; opacity: .5; text-align: center; padding: 28rpx 0; }
 .tc-foot { display: flex; gap: 20rpx; margin-top: 26rpx; }
 .tc-clear { flex: 1; }
-.tc-ok { flex: 2; }
+.tc-ok { flex: 1; }
 
 /* 查询结果：□ 现象说明（显眼内联提示，非弹窗） */
 .results-note { margin: 12rpx 0 8rpx; padding: 16rpx 22rpx; font-size: 23rpx; line-height: 1.65; color: var(--seal-color, #a3382f); border: 2rpx dashed var(--seal-color, #a3382f); border-radius: 14rpx; }
