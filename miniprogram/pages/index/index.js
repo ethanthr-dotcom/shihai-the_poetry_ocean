@@ -212,6 +212,15 @@ Page({
     data.ensureSearchIndex();
     this._stats = { total: 0, dates: [], streak: 0, last: "" };
     try { const st0 = wx.getStorageSync("shihai-stats-v1"); if (st0 && typeof st0.total === "number") this._stats = st0; } catch (e) {}
+    // 访问统计：先读本地缓存快速展示，再订阅云端更新
+    try { this._visitCount = wx.getStorageSync("shihai-visit-count") || 0; } catch (e) { this._visitCount = 0; }
+    const app = getApp();
+    if (app && typeof app.onVisitUpdate === "function") {
+      this._unsubVisit = app.onVisitUpdate((cnt) => {
+        this._visitCount = cnt || 0;
+        if (this.data.guideShow) this._refreshStatsLine();
+      });
+    }
     const term0 = this._solarTermToday();
     if (term0) this.setData({ libTip: this.data.libTip + " · 今日" + term0 });
     this.setData({ colorOptions: this.data.colorOptions.map((o) => ({ ...o, dot: themes.THEMES.color[o.value].vars["--bg-color"] })) });
@@ -880,10 +889,15 @@ Page({
   },
   onGuideOpen() {
     this.haptic();
+    this.setData({ guideShow: true });
+    this._refreshStatsLine();
+  },
+  _refreshStatsLine() {
     const st = this._stats || { total: 0, dates: [], streak: 0 };
+    const vc = this._visitCount || 0;
+    const vcStr = vc > 0 ? " · 全站到访 " + vc.toLocaleString() + " 次" : "";
     this.setData({
-      statsLine: "已读 " + st.total + " 首 · 到访 " + (st.dates ? st.dates.length : 0) + " 天 · 连续 " + (st.streak || 0) + " 天",
-      guideShow: true
+      statsLine: "已读 " + st.total + " 首 · 到访 " + (st.dates ? st.dates.length : 0) + " 天 · 连续 " + (st.streak || 0) + " 天" + vcStr
     });
   },
   onGuideClose() {
@@ -1922,5 +1936,8 @@ Page({
       query: this._shareQuery(),
       imageUrl: this.data.shareImg || undefined
     };
+  },
+  onUnload() {
+    if (typeof this._unsubVisit === "function") { try { this._unsubVisit(); } catch (e) {} }
   }
 });

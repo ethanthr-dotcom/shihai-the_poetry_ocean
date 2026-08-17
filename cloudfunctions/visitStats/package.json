@@ -1,0 +1,9 @@
+{
+  "name": "visitStats",
+  "version": "1.0.0",
+  "description": "诗海访问统计云函数：基于云开发数据库的持久化计数器，记录全局访问次数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

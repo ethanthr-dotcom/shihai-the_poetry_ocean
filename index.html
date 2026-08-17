@@ -3192,6 +3192,20 @@
       try { localStorage.setItem(STATS_KEY, JSON.stringify(readStats)); } catch (e) {}
     }
 
+    // ====== 访问统计（持久化：localStorage 存本机访问次数，更新站点后依旧保留） ======
+    const VISIT_KEY = "shihai-visit-v1";
+    let visitInfo = { count: 0, lastDay: "" };
+    try { const v0 = JSON.parse(localStorage.getItem(VISIT_KEY) || "null"); if (v0 && typeof v0.count === "number") visitInfo = v0; } catch (e) {}
+    (function recordVisit() {
+      const ds = todayStr(0);
+      // 同一天内多次打开只计一次，避免刷新刷量
+      if (visitInfo.lastDay !== ds) {
+        visitInfo.lastDay = ds;
+        visitInfo.count = (visitInfo.count || 0) + 1;
+        try { localStorage.setItem(VISIT_KEY, JSON.stringify(visitInfo)); } catch (e) {}
+      }
+    })();
+
     // ====== 二十四节气问候（寿星通用公式 C21） ======
     const SOLAR_TERMS = ["小寒","大寒","立春","雨水","惊蛰","春分","清明","谷雨","立夏","小满","芒种","夏至","小暑","大暑","立秋","处暑","白露","秋分","寒露","霜降","立冬","小雪","大雪","冬至"];
     const TERM_C21 = [5.4055,20.12,3.87,18.73,5.63,20.646,4.81,20.1,5.52,21.04,5.678,21.37,7.108,22.83,7.5,23.13,7.646,23.042,8.318,23.438,7.438,22.36,7.18,21.94];
@@ -3671,7 +3685,7 @@
     // ====== 使用指南（顶部灯泡呼出） ======
     $("guideToggle").addEventListener("click", () => {
       haptic();
-      $("guideStats").textContent = "已读 " + readStats.total + " 首 · 到访 " + (readStats.dates ? readStats.dates.length : 0) + " 天 · 连续 " + (readStats.streak || 0) + " 天";
+      $("guideStats").textContent = "已读 " + readStats.total + " 首 · 到访 " + (readStats.dates ? readStats.dates.length : 0) + " 天 · 连续 " + (readStats.streak || 0) + " 天 · 累计访问 " + (visitInfo.count || 0) + " 天";
       $("guideSheet").classList.add("open");
     });
     $("guideSheetBackdrop").addEventListener("click", () => { haptic(); closeSheet($("guideSheet")); });

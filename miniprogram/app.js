@@ -14,7 +14,7 @@ const FONT_FILES = [
 ];
 
 App({
-  globalData: { total: 0, fontOk: false, fontLoaded: [], fontSrc: "" },
+  globalData: { total: 0, fontOk: false, fontLoaded: [], fontSrc: "", visitCount: 0, visitCbks: [] },
 
   // webview(页面) + native(canvas 分享图) 双端生效；失败逐个 CDN 降级，最终静默回退系统宋体
   _loadFont(file, weightIdx, cdnIdx) {
@@ -51,11 +51,85 @@ App({
     // 思源宋体：两个 CDN 依次直载
     FONT_FILES.forEach((file, i) => this._loadFont(file, i, 0));
     this._loadPoemData();
+    // 访问统计：每日每设备仅递增一次云端计数，避免反复刷量
+    this._trackVisit();
     wx.onNetworkStatusChange((res) => {
       if (res.isConnected && !this.globalData.fontOk) {
         setTimeout(() => FONT_FILES.forEach((file, i) => this._loadFont(file, i, 0)), 1200);
       }
+      // 网络恢复后若访问计数未取到，重试一次
+      if (res.isConnected && !this.globalData.visitCount) this._trackVisit(true);
     });
+  },
+
+  // 访问统计：本地记录上次上报日期，同一天内多次打开不重复计数；云端持久化保存
+  _trackVisit(force) {
+    const LAST_KEY = "shihai-visit-last-day";
+    const today = (() => { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); })();
+    let lastDay = "";
+    try { lastDay = wx.getStorageSync(LAST_KEY) || ""; } catch (e) {}
+    if (!force && lastDay === today) {
+      // 当天已上报：仅查询展示用计数
+      this._queryVisit();
+      return;
+    }
+    try { wx.setStorageSync(LAST_KEY, today); } catch (e) {}
+    if (cfg.DATA_MODE !== "cloudbase" || !cfg.CLOUDBASE_ENV) return;
+    wx.cloud.callFunction({
+      name: "visitStats",
+      data: { action: "incr", platform: "mp" },
+      success: (res) => {
+        const cnt = res && res.result && typeof res.result.count === "number" ? res.result.count : 0;
+        if (cnt) {
+          this.globalData.visitCount = cnt;
+          try { wx.setStorageSync("shihai-visit-count", cnt); } catch (e) {}
+          this._notifyVisit(cnt);
+        }
+      },
+      fail: () => { this._queryVisit(); }
+    });
+  },
+
+  // 仅查询计数（当天已上报过时使用）
+  _queryVisit() {
+    if (cfg.DATA_MODE !== "cloudbase" || !cfg.CLOUDBASE_ENV) {
+      // 非云开发模式：用本地累计计数
+      const LOCAL_KEY = "shihai-visit-local";
+      let local = 0;
+      try { local = wx.getStorageSync(LOCAL_KEY) || 0; } catch (e) {}
+      this.globalData.visitCount = local;
+      this._notifyVisit(local);
+      return;
+    }
+    wx.cloud.callFunction({
+      name: "visitStats",
+      data: { action: "query" },
+      success: (res) => {
+        const cnt = res && res.result && typeof res.result.count === "number" ? res.result.count : 0;
+        this.globalData.visitCount = cnt;
+        try { wx.setStorageSync("shihai-visit-count", cnt); } catch (e) {}
+        this._notifyVisit(cnt);
+      },
+      fail: () => {
+        // 取云端失败时回退本地缓存
+        let cached = 0;
+        try { cached = wx.getStorageSync("shihai-visit-count") || 0; } catch (e) {}
+        this.globalData.visitCount = cached;
+        this._notifyVisit(cached);
+      }
+    });
+  },
+
+  // 通知页面更新展示
+  _notifyVisit(cnt) {
+    this.globalData.visitCbks.forEach((fn) => { try { fn(cnt); } catch (e) {} });
+  },
+  onVisitUpdate(fn) {
+    if (typeof fn === "function") this.globalData.visitCbks.push(fn);
+    return () => {
+      const i = this.globalData.visitCbks.indexOf(fn);
+      if (i >= 0) this.globalData.visitCbks.splice(i, 1);
+    };
   },
 
   _loadPoemData() {
