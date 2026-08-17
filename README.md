@@ -1,5 +1,7 @@
 # 🌊 诗海 · The Poetry Ocean
 
+![License](https://img.shields.io/github/license/ethanthr-dotcom/shihai-the_poetry_ocean)
+
 一个面向中文古典诗词的开源数字化展示项目——收录 **344,240 首古诗词**，纯前端静态网站，无服务器、无后端依赖，通过现代 Web 技术让千年诗意重新被看见。
 
 <p align="center">
