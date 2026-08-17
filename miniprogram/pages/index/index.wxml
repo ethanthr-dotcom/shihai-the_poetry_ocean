@@ -1,4 +1,4 @@
-<view class="app {{themeDark ? 'theme-dark' : ''}} {{optFontFace ? 'font-' + optFontFace : ''}}" style="{{varsStyle}}" bindtap="onPageTap" bindtouchstart="onRippleTouch">
+<view class="app {{themeDark ? 'theme-dark' : ''}}" style="{{varsStyle}}" bindtap="onPageTap" bindtouchstart="onRippleTouch">
   <!-- 顶部加载进度条 -->
   <view class="progress {{progressState}}"></view>
   <view wx:if="{{ripple}}" class="ink-ripple" style="left:{{ripple.x}}px;top:{{ripple.y}}px"></view>
@@ -26,7 +26,7 @@
       <image class="site-logo" src="/assets/logo-yang.png" mode="aspectFit"></image>
     </view>
     <view class="subtitle">在线诗词浏览器 · {{libTip}}</view>
-    <view class="data-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</view>
+    <view class="data-note">提示：个别文字显示为「□」是原始古籍数据缺损所致，属正常现象，并非程序错误</view>
 
     <view class="controls">
       <view class="row">
@@ -122,7 +122,7 @@
           </block>
         </view>
       </view>
-      <view class="results-note">提示：个别文字显示为「□」是原始古籍数据缺损或字体未收录所致，属正常现象，并非程序错误</view>
+      <view class="results-note">提示：个别文字显示为「□」是原始古籍数据缺损所致，属正常现象，并非程序错误</view>
       <view wx:if="{{searchProgress}}" class="results-progress">{{searchProgress}}</view>
       <view wx:for="{{resultsList}}" wx:key="id" id="resItem-{{index}}" class="result-item {{item.open ? 'open' : ''}} {{item.seen ? 'seen' : ''}}">
         <view class="result-head" data-index="{{index}}" bindtap="onResultItemTap">
@@ -234,22 +234,6 @@
       <view class="theme-label">分享签名</view>
       <input class="input opt-sign" maxlength="20" placeholder="展示在分享卡片页脚（可留空）" value="{{optSign}}" bindinput="onSignInput" />
     </view>
-    <view class="theme-section">
-      <view class="theme-label">字体风格</view>
-      <view class="theme-options">
-        <view class="theme-opt {{optFontFace === '' ? 'active' : ''}}" data-value="" bindtap="onFontFaceTap">默认</view>
-        <view class="theme-opt {{optFontFace === 'kai' ? 'active' : ''}}" data-value="kai" bindtap="onFontFaceTap">楷书</view>
-        <view class="theme-opt {{optFontFace === 'xing' ? 'active' : ''}}" data-value="xing" bindtap="onFontFaceTap">行书</view>
-        <view class="theme-opt {{optFontFace === 'cao' ? 'active' : ''}}" data-value="cao" bindtap="onFontFaceTap">草书</view>
-      </view>
-    </view>
-    <view class="theme-section">
-      <view class="theme-label">节气主题<text class="theme-sub">按节气自动配色</text></view>
-      <view class="theme-options">
-        <view class="theme-opt {{solarTheme ? 'active' : ''}}" data-value="on" bindtap="onSolarThemeTap">开</view>
-        <view class="theme-opt {{solarTheme ? '' : 'active'}}" data-value="off" bindtap="onSolarThemeTap">关</view>
-      </view>
-    </view>
       </view>
     </view>
     </scroll-view>
@@ -336,7 +320,7 @@
         <view class="guide-item"><text class="guide-k">批注</text>点诗词旁的<text class="guide-b">纸笔图标</text>写下感悟；右上角纸笔按钮打开批注本，支持<text class="guide-b">批量管理与删除</text>；批注可生成「批注大、诗词小」的分享卡片，<text class="guide-b">生成时再选比例</text>。</view>
         <view class="guide-item"><text class="guide-k">分享卡片</text>在卡片内选择比例后点<text class="guide-b">「下载或分享卡片」</text>，生成高清图片保存或转发。</view>
         <view class="guide-item"><text class="guide-k">主题排版</text>右上角<text class="guide-b">齿轮</text>可切换主题配色、横竖排版与字号版式。</view>
-        <view class="guide-item"><text class="guide-k">缺字说明</text>个别文字显示为<text class="guide-b">「□」</text>，是原始古籍数据缺损或字体未收录所致，<text class="guide-b">属正常现象，并非程序错误</text>。</view>
+        <view class="guide-item"><text class="guide-k">缺字说明</text>个别文字显示为<text class="guide-b">「□」</text>，是原始古籍数据缺损所致，<text class="guide-b">属正常现象，并非程序错误</text>。</view>
         <view class="guide-item"><text class="guide-k">温馨提示</text>收藏与批注仅保存在本机<text class="guide-b">本地缓存</text>（相当于 cookie），清除缓存或卸载后会丢失，心仪的诗词与感悟请<text class="guide-b">及时生成卡片保存</text>。</view>
       </scroll-view>
       <button class="btn primary guide-ok" bindtap="onGuideClose">我知道了</button>

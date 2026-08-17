@@ -3,7 +3,7 @@
   min-height: 100vh;
   background: var(--bg-color, #f4f1e8);
   color: var(--text-color, #2f2a24);
-  font-family: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  font-family: "Songti SC", "STSong", "SimSun", "PingFang SC", serif;
   transition: background 0.3s, color 0.3s;
 }
 
@@ -76,7 +76,7 @@
   background: var(--input-bg);
   color: var(--text-color);
 }
-.ph { color: var(--label-color); opacity: .6; font-family: "Noto Serif SC", serif; font-style: italic; }
+.ph { color: var(--label-color); opacity: .6; font-family: "Songti SC", "STSong", serif; font-style: italic; }
 
 /* 按钮行负边距外扩：两个主按钮比控件区更宽，向屏幕边缘靠近 */
 .btn-row { margin: 0 -16rpx; }
@@ -469,7 +469,7 @@
 .type-panel { margin-top: 8rpx; margin-bottom: 28rpx; border: 2rpx solid var(--card-border); background: var(--sheet-bg, var(--bg-color)); border-radius: 20rpx; padding: 20rpx; }
 .mini-btn.solid { background: var(--button-bg, #8b2c2c); border-color: var(--button-bg, #8b2c2c); color: var(--button-text, #fff); opacity: 1; font-size: 26rpx; padding: 12rpx 32rpx; }
 .card-fav, .result-fav, .fav-heart { font-style: normal; flex: none; line-height: 1; }
-.input { font-family: "Noto Serif SC", "Songti SC", "SimSun", serif; }
+.input { font-family: "Songti SC", "STSong", "SimSun", serif; }
 
 /* ====== 卡片内收藏符号 ====== */
 .card-body { position: relative; }
@@ -638,9 +638,4 @@ page, .card, .fav-sheet, .guide-box, .note-edit-box, .note-ask-box, .dev-sheet, 
 .settings-caret.closed { transform: rotate(-90deg); }
 .onboard-bar { position: fixed; left: 108rpx; right: 24rpx; top: 26rpx; z-index: 3000; display: flex; align-items: center; gap: 16rpx; padding: 16rpx 24rpx; border-radius: 20rpx; background: var(--card-bg, #fff); border: 2rpx solid var(--card-border, #e2dccf); box-shadow: var(--card-shadow); font-size: 24rpx; color: var(--text-color, #2f2a24); white-space: normal; line-height: 1.6; }
 .onboard-bar .ob-close { color: var(--meta-color, #766d63); font-size: 24rpx; padding: 4rpx 8rpx; }
-/* ====== 书法字体（用户选择时通过 wx.loadFontFace 动态加载开源字体） ====== */
-.font-kai .verse-line, .font-kai .title { font-family: "LXGW WenKai", "Noto Serif SC", "Songti SC", serif; }
-.font-xing .verse-line, .font-xing .title { font-family: "Long Cang", "Noto Serif SC", "Songti SC", serif; font-size: 1.05em; }
-.font-cao .verse-line, .font-cao .title { font-family: "Liu Jian Mao Cao", "Noto Serif SC", "Songti SC", serif; font-size: 1.08em; }
-.theme-sub { font-size: 20rpx; opacity: .55; margin-left: 8rpx; font-weight: 400; }
 

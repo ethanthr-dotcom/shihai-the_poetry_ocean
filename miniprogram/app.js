@@ -1,43 +1,9 @@
-// 诗海小程序入口：网络字体 + 索引预取（与网页版同源同字体）
+// 诗海小程序入口：索引预取 + 访问统计
 const cfg = require("./utils/config");
 const data = require("./utils/data");
 
-// 思源宋体：CDN 直载（最初版本方案，真机验证可正常显示）
-// 主源 jsDelivr，失败自动切备用 CDN（unpkg，固定版本）；两者都失败则静默回退系统宋体
-const FONT_CDNS = [
-  "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5/files/",
-  "https://unpkg.com/@fontsource/noto-serif-sc@5.3.0/files/"
-];
-const FONT_FILES = [
-  "noto-serif-sc-chinese-simplified-400-normal.woff2",
-  "noto-serif-sc-chinese-simplified-600-normal.woff2"
-];
-
 App({
-  globalData: { total: 0, fontOk: false, fontLoaded: [], fontSrc: "", visitCount: 0, visitCbks: [] },
-
-  // webview(页面) + native(canvas 分享图) 双端生效；失败逐个 CDN 降级，最终静默回退系统宋体
-  _loadFont(file, weightIdx, cdnIdx) {
-    if (cdnIdx >= FONT_CDNS.length) return; // 全部来源均失败：回退系统字体
-    const url = FONT_CDNS[cdnIdx] + file;
-    wx.loadFontFace({
-      global: true,
-      family: "Noto Serif SC",
-      source: 'url("' + url + '")',
-      desc: { weight: weightIdx === 0 ? "400" : "600" },
-      scopes: ["native", "webview"],
-      success: () => {
-        console.log("font loaded:", url);
-        if (!this.globalData.fontLoaded.includes(file)) this.globalData.fontLoaded.push(file);
-        this.globalData.fontSrc = "CDN 直载";
-        if (this.globalData.fontLoaded.length >= FONT_FILES.length) this.globalData.fontOk = true;
-      },
-      fail: (err) => {
-        console.warn("loadFontFace fail:", url, err);
-        this._loadFont(file, weightIdx, cdnIdx + 1);
-      }
-    });
-  },
+  globalData: { total: 0, visitCount: 0, visitCbks: [] },
 
   onLaunch() {
     // 云开发模式：先初始化云环境（数据走云函数，免服务器域名白名单）
@@ -48,15 +14,10 @@ App({
         console.warn("云开发初始化失败：", e);
       }
     }
-    // 思源宋体：两个 CDN 依次直载
-    FONT_FILES.forEach((file, i) => this._loadFont(file, i, 0));
     this._loadPoemData();
     // 访问统计：每次打开都递增云端计数（每日可多次）；10 秒短节流防异常刷量
     this._trackVisit();
     wx.onNetworkStatusChange((res) => {
-      if (res.isConnected && !this.globalData.fontOk) {
-        setTimeout(() => FONT_FILES.forEach((file, i) => this._loadFont(file, i, 0)), 1200);
-      }
       // 网络恢复后若访问计数未取到，重试一次
       if (res.isConnected && !this.globalData.visitCount) this._trackVisit();
     });

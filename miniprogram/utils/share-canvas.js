@@ -1,7 +1,7 @@
 // 分享卡片绘制：与网页版 canvas 绘制逻辑逐行一致（宽固定 3000，高按比例）
 const verse = require("./verse");
 
-const FONT = '"Noto Serif SC", "Songti SC", "STSong", "SimSun", serif';
+const FONT = '"Songti SC", "STSong", "SimSun", "PingFang SC", serif';
 const LOGO_RATIO = 222 / 126;   // 横版 logo 宽高比
 const V_LOGO_RATIO = 126 / 222; // 竖版 logo 宽高比
 
