@@ -59,10 +59,14 @@
             <block wx:for="{{typeOptionsShown}}" wx:key="k">
               <view wx:if="{{item.g}}" class="type-group-h">{{item.g}}</view>
               <view wx:else
-                class="type-tag {{(item.t === '无' && !type) || item.t === type ? 'active' : ''}}" data-value="{{item.t}}" bindtap="onTypeOptTap">{{item.t}}</view>
+                class="type-tag {{(item.t === '无' && (!ddSel || ddSel.length === 0)) || (ddSel && ddSel.indexOf(item.t) >= 0) ? 'active' : ''}}" data-value="{{item.t}}" bindtap="onTypeOptTap">{{item.t}}</view>
             </block>
           </view>
         </scroll-view>
+        <view class="tc-foot">
+          <button class="btn secondary" bindtap="onTypeDropdownClear">清空</button>
+          <button class="btn primary" bindtap="onTypeDropdownConfirm">确认{{ddSel && ddSel.length ? '（已选' + ddSel.length + '）' : ''}}</button>
+        </view>
       </view>
       <view class="btn-row">
         <button class="btn primary" disabled="{{randomLoading}}" bindtap="onRandomTap">
@@ -251,7 +255,7 @@
       <view class="theme-label">体裁选择方式</view>
       <view class="theme-options">
         <view class="theme-opt {{typePickerMode === 'circle' ? 'active' : ''}}" data-value="circle" bindtap="onTypePickerTap">双圆多选</view>
-        <view class="theme-opt {{typePickerMode === 'dropdown' ? 'active' : ''}}" data-value="dropdown" bindtap="onTypePickerTap">下拉单选</view>
+        <view class="theme-opt {{typePickerMode === 'dropdown' ? 'active' : ''}}" data-value="dropdown" bindtap="onTypePickerTap">下拉多选</view>
       </view>
     </view>
       </view>

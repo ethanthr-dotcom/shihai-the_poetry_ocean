@@ -567,7 +567,7 @@ page, .card, .fav-sheet, .guide-box, .note-edit-box, .note-ask-box, .dev-sheet, 
 .tc-cols { display: flex; gap: 20rpx; margin-top: 20rpx; }
 .tc-col { flex: 1; min-width: 0; }
 .tc-col-h { font-size: 22rpx; opacity: .6; text-align: center; margin-bottom: 10rpx; letter-spacing: 2rpx; }
-.tc-scroll { height: 52vh; background: rgba(79, 95, 74, .07); border: 2rpx solid var(--card-border); box-sizing: border-box; }
+.tc-scroll { height: 38vh; background: rgba(79, 95, 74, .07); border: 2rpx solid var(--card-border); box-sizing: border-box; }
 .tc-left { border-radius: 20rpx; padding: 18rpx 16rpx; }
 .tc-right { border-radius: 20rpx; padding: 18rpx 16rpx; }
 .tc-item { font-size: 26rpx; padding: 13rpx 8rpx; text-align: center; border-bottom: 1rpx dashed var(--card-border); color: var(--text-color); letter-spacing: 1rpx; }
@@ -575,9 +575,9 @@ page, .card, .fav-sheet, .guide-box, .note-edit-box, .note-ask-box, .dev-sheet, 
 .tc-sel { animation: tcIn .3s ease-out; color: var(--seal-color, #a3382f); font-weight: 600; }
 @keyframes tcIn { from { transform: translateX(90rpx); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .tc-empty { font-size: 24rpx; opacity: .5; text-align: center; padding: 28rpx 0; }
-.tc-foot { display: flex; gap: 20rpx; margin-top: 26rpx; align-items: stretch; }
-.tc-foot .btn { flex: 1 1 0; width: 0; min-width: 0; margin: 0; height: 88rpx; min-height: 88rpx; padding: 0 24rpx; line-height: 88rpx; box-sizing: border-box; font-size: 30rpx; }
-.tc-foot .btn.secondary { margin-top: 0; }
+.tc-foot { display: flex; gap: 20rpx; margin-top: 26rpx; }
+.tc-foot .btn { flex: 1; width: 50%; margin: 0 !important; height: 88rpx; padding: 0 !important; line-height: 88rpx; box-sizing: border-box; font-size: 30rpx; border-radius: 20rpx; }
+.tc-foot .btn.secondary { border-width: 2rpx; }
 
 /* 查询结果：□ 现象说明（显眼内联提示，非弹窗） */
 .results-note { margin: 12rpx 0 8rpx; padding: 16rpx 22rpx; font-size: 23rpx; line-height: 1.65; color: var(--seal-color, #a3382f); border: 2rpx dashed var(--seal-color, #a3382f); border-radius: 14rpx; }

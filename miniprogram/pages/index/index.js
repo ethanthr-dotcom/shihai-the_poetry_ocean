@@ -111,6 +111,7 @@ Page({
     typeOptions: [],
     typeQuery: "",
     typeOptionsShown: [],
+    ddSel: [],
     resultsList: [],
     resultsLoading: false,
     resultsDone: false,
@@ -371,24 +372,19 @@ Page({
   },
   onTypeInput(e) { this._typesArr = []; this.setData({ type: e.detail.value }); },
 
-  _resolveTypeFilter() {
-    if (this._typesArr && this._typesArr.length) return this._typesArr.slice();
-    const t = (this.data.type || "").trim();
-    return t || null;
-  },
-
   onRandomTap() {
     this.haptic();
     const kw = (this.data.keyword || "").trim();
-    const type = this._resolveTypeFilter();
-    // 填了搜索词或体裁 → 重新检索（清空旧列表）；未填 → 随机一首（恢复卡片）
-    if (kw || type) {
-      this._resultGen = (this._resultGen || 0) + 1;
-      this.openResults(kw, type);
+    const hasTypeArr = Array.isArray(this._typesArr) && this._typesArr.length > 0;
+    const typeDisplay = (this.data.type || "").trim();
+    // 用真实的多选数组判断是否选了体裁；显示字符串仅供兜底
+    const effTypeStr = typeDisplay && typeDisplay.indexOf(" · 等") < 0 && typeDisplay.indexOf("体裁：") < 0 ? typeDisplay : "";
+    // 填了搜索词 或 选了体裁 → 重新搜索（重置列表状态）；未填 → 随机一首（恢复卡片）
+    if (kw || hasTypeArr || effTypeStr) {
+      this.openResults(kw, effTypeStr);
       return;
     }
-    this._resultGen = (this._resultGen || 0) + 1;
-    this.setData({ listMode: false, resultsList: [], resultsDone: false, resultsCount: 0, searchProgress: "" });
+    this.setData({ listMode: false });
     this.loadRandomPoem(true);
   },
 
@@ -405,7 +401,9 @@ Page({
       this.hideSheet("typeDropdownShow"); return;
     }
     this._typeDdOpenedAt = Date.now();
-    this.setData({ typeDropdownShow: true, typeQuery: "" });
+    // 初始化下拉多选的临时选中数组（基于 _typesArr）
+    this._ddSel = Array.isArray(this._typesArr) ? this._typesArr.slice() : [];
+    this.setData({ typeDropdownShow: true, typeQuery: "", ddSel: this._ddSel.slice() });
     this._applyTypeQuery();
   },
   onTypeQuery(e) {
@@ -431,13 +429,40 @@ Page({
     }
     this.setData({ typeOptionsShown: out });
   },
+  // 判断某个体裁是否在当前临时选中集合中
+  _ddHas(t) {
+    if (!this._ddSel) return false;
+    return this._ddSel.indexOf(t) >= 0;
+  },
   onTypeOptTap(e) {
     const v = e.currentTarget.dataset.value;
     this.haptic();
-    this._typesArr = [];
-    try { wx.setStorageSync("shihai-type-list-v1", []); } catch (e2) {}
-    if (v === "无") { this.setData({ type: "" }); this.hideSheet("typeDropdownShow"); return; }
-    this.setData({ type: v === this.data.type ? "" : v });
+    this._ddSel = this._ddSel || [];
+    if (v === "无") {
+      // 清空全部
+      this._ddSel = [];
+    } else {
+      const idx = this._ddSel.indexOf(v);
+      if (idx >= 0) this._ddSel.splice(idx, 1);
+      else this._ddSel.push(v);
+    }
+    // 不自动关闭面板，只更新选中态
+    this.setData({ ddSel: this._ddSel.slice() });
+  },
+  onTypeDropdownClear() {
+    this.haptic();
+    this._ddSel = [];
+    this.setData({ ddSel: [] });
+  },
+  onTypeDropdownConfirm() {
+    this.haptic();
+    const sel = this._ddSel || [];
+    this._typesArr = sel.slice();
+    try { wx.setStorageSync("shihai-type-list-v1", sel); } catch (e2) {}
+    this.setData({ type: sel.length === 0 ? "" : (sel.length === 1 ? sel[0] : sel[0] + " · 等" + sel.length + "种") });
+    this.hideSheet("typeDropdownShow");
+  },
+  onTypeDropdownClose() {
     this.hideSheet("typeDropdownShow");
   },
   // ====== 双半圆滚动多选体裁选择器 ======
@@ -942,30 +967,28 @@ Page({
 
   // ====== 搜索结果列表：就地替换诗词卡片；无限分页（页面触底）；手风琴；批量收藏 ======
   async openResults(kw, type) {
-    const gen = this._resultGen || 0;
-    if (this._typesArr && this._typesArr.length) type = this._typesArr.slice();
-    else if (type && typeof type === "string") type = type.trim() || null;
+    // 优先用多选数组 _typesArr；如果 type 是「xxx · 等N种」格式但 _typesArr 为空，说明是之前的旧值，需要忽略
+    let effType = null;
+    if (this._typesArr && this._typesArr.length) {
+      effType = this._typesArr;
+    } else if (type && type.indexOf(" · 等") < 0 && type.indexOf("体裁：") < 0) {
+      // 单选且是纯体裁名称（没有复合文字）
+      effType = type;
+    }
     if (!this.indexReady) { this.showStatus("诗词库尚未加载完成，请稍候……"); return; }
-    if (type) {
+    if (effType) {
       const full = await data.ensureFullIndex();
-      if (gen !== this._resultGen) return;
-      if (!full) {
-        this.setData({ listMode: false, resultsList: [], resultsDone: true, resultsCount: 0, searchProgress: "" });
-        this.showStatus("筛选数据加载失败，请检查网络后重试", true);
-        return;
-      }
+      if (!full) { this.showStatus("筛选数据加载失败，请检查网络后重试", true); return; }
       if (!this._authorSet) this._buildKnownSets(full);
     } else if (kw && this.data.searchMode === "author") {
       const full = await data.ensureFullIndex(); // 失败不阻断：退化为全库流式扫描
-      if (gen !== this._resultGen) return;
       if (full && !this._authorSet) this._buildKnownSets(full);
     }
     const base = await data.loadIndex();
-    if (gen !== this._resultGen) return;
     const mode = this.data.searchMode;
     // 优先用全索引分块（含 authors），作者/朝代收窄才能生效
     const baseChunks = data.getFullChunks() || base.chunks;
-    let candidates = type ? data.filterChunks("", "", type) : baseChunks.slice();
+    let candidates = effType ? data.filterChunks("", "", effType) : baseChunks.slice();
     if (kw) {
       candidates = data.sortChunksByKw(candidates, kw, mode);
       // 朝代检索：只扫描含该朝代的数据块（精简索引即含 dynasties，可靠）
@@ -980,41 +1003,23 @@ Page({
       }
       if (mode === "title") { await data.ensureSearchIndex(); candidates = data.narrowByDigest(candidates, kw); }
     }
-    if (gen !== this._resultGen) return;
-    if (!candidates.length) {
-      this.setData({ listMode: false, resultsList: [], resultsDone: true, resultsCount: 0, searchProgress: "" });
-      this.showStatus("未找到匹配条件的诗词", true);
-      return;
-    }
+    if (!candidates.length) { this.showStatus("未找到匹配条件的诗词", true); return; }
     this._resultChunks = candidates;
     this._resultCursor = 0;
     this._pendingItems = [];
-    this._resultFilter = { kw, type, mode };
+    this._resultFilter = { kw, type: effType, mode };
     this._resultsBusy = false;
     this._openIdx = null;
     this._seenIds = this._seenIds || new Set();
     this.setData({
       listMode: true, resultsList: [], resultsDone: false, resultsCount: 0,
       selMode: false, selIds: {}, selCount: 0,
-      hasPoem: false, poem: null, verseLines: [], statusText: "", statusError: false,
       searchProgress: "正在检索：0 / " + candidates.length + " 个数据块 · 已命中 0 首"
     });
-    wx.pageScrollTo({ scrollTop: 0, duration: 0 });
     setTimeout(() => wx.pageScrollTo({ selector: ".results-panel", duration: 300 }), 80);
-    this.loadMoreResults(gen);
+    this.loadMoreResults();
   },
-  _makeResultItem(p, kw) {
-    const id = favId(p);
-    return {
-      id, t: p.t, a: p.a, d: p.d, y: p.y, c: p.c, open: false,
-      seen: this._seenIds.has(id), fav: this._favSet.has(id),
-      hasNote: !!(this._noteMap && this._noteMap.has(id)),
-      tSegs: this._kwSegs(p.t || "无题", kw),
-      mSegs: this._kwSegs((p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : ""), kw)
-    };
-  },
-  async loadMoreResults(gen) {
-    if (gen != null && gen !== this._resultGen) return;
+  async loadMoreResults() {
     if (this._resultsBusy || this.data.resultsDone || !this.data.listMode) return;
     this._resultsBusy = true;
     this.setData({ resultsLoading: true });
@@ -1022,71 +1027,59 @@ Page({
     let added = 0;
     this._pendingItems = this._pendingItems || [];
     try {
-      while (added < 20 && (this._pendingItems.length || this._resultCursor < this._resultChunks.length)) {
-        if (gen != null && gen !== this._resultGen) return;
+      const TARGET = 20;
+      // 维护一个本地真实长度计数器，避免并发中 this.data.resultsList.length 读旧值导致覆盖
+      let localLen = this.data.resultsList.length;
+      while (added < TARGET && (this._pendingItems.length || this._resultCursor < this._resultChunks.length)) {
         // 先上屏上一轮缓冲的命中
         if (this._pendingItems.length) {
-          const take0 = this._pendingItems.splice(0, 20 - added);
-          const base0 = this.data.resultsList.length;
+          const take0 = this._pendingItems.splice(0, TARGET - added);
           const patch0 = {};
-          take0.forEach((it, k) => { patch0["resultsList[" + (base0 + k) + "]"] = it; });
+          take0.forEach((it, k) => { patch0["resultsList[" + (localLen + k) + "]"] = it; });
           this.setData(patch0);
+          localLen += take0.length;
           added += take0.length;
           continue;
         }
-        // 并行拉取数据块，主线程顺序合并，避免并发 setData 竞态
+        // 并行拉取 6 个数据块，但收集命中后统一排序再一次性上屏（避免并发写同一下标互相覆盖）
         const batch = this._resultChunks.slice(this._resultCursor, this._resultCursor + 6);
         this._resultCursor += batch.length;
-        const batchItems = await Promise.all(batch.map(async (c) => {
-          const poems = await data.loadChunk(c.file);
-          return poems.filter((p) => data.matchKw(p, kw, type, mode)).map((p) => this._makeResultItem(p, kw));
+        const allHits = [];
+        await Promise.all(batch.map(async (c) => {
+          try {
+            const poems = await data.loadChunk(c.file);
+            poems.filter((p) => data.matchKw(p, kw, type, mode)).forEach((p) => {
+              const id = favId(p);
+              allHits.push({ id, t: p.t, a: p.a, d: p.d, y: p.y, c: p.c, open: false, seen: this._seenIds.has(id), fav: this._favSet.has(id), hasNote: !!(this._noteMap && this._noteMap.has(id)), tSegs: this._kwSegs(p.t || "无题", kw), mSegs: this._kwSegs((p.d || "") + " · " + (p.a || "") + (p.y ? " · " + p.y : ""), kw) });
+            });
+          } catch (e) {}
         }));
-        if (gen != null && gen !== this._resultGen) return;
-        const patch = {};
-        let listLen = this.data.resultsList.length;
-        batchItems.forEach((items) => {
-          items.forEach((it) => {
-            if (added < 20) {
-              patch["resultsList[" + listLen + "]"] = it;
-              listLen++;
-              added++;
-            } else {
-              this._pendingItems.push(it);
-            }
-          });
-        });
-        if (Object.keys(patch).length) this.setData(patch);
-        this.setData({
-          searchProgress: "正在检索：" + Math.min(this._resultCursor, this._resultChunks.length) + " / " + this._resultChunks.length + " 个数据块 · 已命中 " + listLen + " 首",
-          resultsCount: listLen
-        });
+        if (allHits.length) {
+          const room = Math.max(0, TARGET - added);
+          const take = allHits.slice(0, room);
+          if (allHits.length > room) this._pendingItems = this._pendingItems.concat(allHits.slice(room));
+          if (take.length) {
+            const patch = {};
+            take.forEach((it, k) => { patch["resultsList[" + (localLen + k) + "]"] = it; });
+            this.setData(patch);
+            localLen += take.length;
+            added += take.length;
+          }
+        }
+        this.setData({ searchProgress: "正在检索：" + Math.min(this._resultCursor, this._resultChunks.length) + " / " + this._resultChunks.length + " 个数据块 · 已命中 " + localLen + " 首" });
       }
-      if (gen != null && gen !== this._resultGen) return;
       this.setData({
         resultsDone: this._resultCursor >= this._resultChunks.length && !this._pendingItems.length,
-        resultsCount: this.data.resultsList.length,
+        resultsCount: localLen,
         searchProgress: ""
       });
     } catch (err) {
-      if (gen != null && gen !== this._resultGen) return;
       this.setData({ searchProgress: "" });
       this.showStatus("读取失败：" + (err && err.message ? err.message : err), true);
     } finally {
-      if (gen != null && gen !== this._resultGen) return;
       this._resultsBusy = false;
       this.setData({ resultsLoading: false });
-      this._checkAutoLoadMore();
     }
-  },
-  _checkAutoLoadMore() {
-    if (!this.data.listMode || this.data.resultsDone || this.data.resultsLoading || this._resultsBusy) return;
-    wx.createSelectorQuery().select(".page").boundingClientRect().selectViewport().scrollOffset().exec((res) => {
-      const page = res && res[0];
-      const vp = res && res[1];
-      if (!page || !vp) return;
-      const winH = this._winH || wx.getSystemInfoSync().windowHeight;
-      if (page.height - vp.scrollTop - winH < 480) this.loadMoreResults(this._resultGen);
-    });
   },
   // 按搜索词切分文本用于高亮（搜索引擎式加粗）
   _kwSegs(text, kw) {
@@ -1101,12 +1094,7 @@ Page({
   },
   // 页面触底自动加载下一页
   onReachBottom() {
-    if (this.data.listMode && !this.data.resultsDone && !this.data.resultsLoading) this.loadMoreResults(this._resultGen);
-  },
-  onPageScroll() {
-    if (!this.data.listMode || this.data.resultsDone || this.data.resultsLoading) return;
-    clearTimeout(this._scrollLoadTimer);
-    this._scrollLoadTimer = setTimeout(() => this._checkAutoLoadMore(), 120);
+    if (this.data.listMode && !this.data.resultsDone && !this.data.resultsLoading) this.loadMoreResults();
   },
   onResultItemTap(e) {
     const idx = e.currentTarget.dataset.index;
