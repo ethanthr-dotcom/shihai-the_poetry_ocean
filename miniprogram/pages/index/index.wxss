@@ -381,7 +381,7 @@
 
 /* ====== 浮层关闭退场动画（遮罩淡出 + 盒子下滑） ====== */
 .sheet-closing.picker-mask, .sheet-closing.share-mask, .sheet-closing.dev-mask, .sheet-closing.disclaimer { animation: maskOut .22s ease-in forwards; }
-.sheet-closing .guide-box, .sheet-closing .fav-sheet, .sheet-closing .note-edit-box, .sheet-closing .note-ask-box, .sheet-closing .share-sheet, .sheet-closing .dev-sheet, .sheet-closing .disclaimer-sheet { animation: sheetDrop .22s ease-in forwards; }
+.sheet-closing .tc-box, .sheet-closing .guide-box, .sheet-closing .fav-sheet, .sheet-closing .note-edit-box, .sheet-closing .note-ask-box, .sheet-closing .share-sheet, .sheet-closing .dev-sheet, .sheet-closing .disclaimer-sheet { animation: sheetDrop .22s ease-in forwards; }
 .sheet-closing.type-panel { animation: dropOut .18s ease-in forwards; }
 .splash.sheet-closing { animation: maskOut .35s ease-in forwards; }
 @keyframes maskOut { to { opacity: 0; } }
@@ -561,6 +561,23 @@ page, .card, .fav-sheet, .guide-box, .note-edit-box, .note-ask-box, .dev-sheet, 
 .hist-toggle.ready { opacity: 1; pointer-events: auto; }
 .hist-icon { width: 42rpx; height: 42rpx; background: var(--text-color); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm1-13h-2v6l4.7 2.8 1-1.7-3.7-2.2z'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm1-13h-2v6l4.7 2.8 1-1.7-3.7-2.2z'/%3E%3C/svg%3E") no-repeat center / contain; }
 .guide-ok { margin-top: 8rpx; }
+/* 双半圆多选体裁选择器 */
+.tc-box { width: 100%; background: var(--sheet-bg, var(--bg-color)); border-radius: 36rpx 36rpx 0 0; padding: 36rpx 32rpx calc(28rpx + env(safe-area-inset-bottom)); animation: sheetUp .28s ease-out; }
+.tc-count { font-size: 24rpx; color: var(--seal-color, #a3382f); margin-left: 12rpx; font-weight: normal; }
+.tc-cols { display: flex; gap: 20rpx; margin-top: 20rpx; }
+.tc-col { flex: 1; min-width: 0; }
+.tc-col-h { font-size: 22rpx; opacity: .6; text-align: center; margin-bottom: 10rpx; letter-spacing: 2rpx; }
+.tc-scroll { height: 52vh; background: rgba(79, 95, 74, .07); border: 2rpx solid var(--card-border); box-sizing: border-box; }
+.tc-left { border-radius: 240rpx 28rpx 28rpx 240rpx; padding: 18rpx 12rpx 18rpx 34rpx; }
+.tc-right { border-radius: 28rpx 240rpx 240rpx 28rpx; padding: 18rpx 34rpx 18rpx 12rpx; }
+.tc-item { font-size: 26rpx; padding: 13rpx 8rpx; text-align: center; border-bottom: 1rpx dashed var(--card-border); color: var(--text-color); letter-spacing: 1rpx; }
+.tc-item:active { opacity: .55; transform: scale(.96); }
+.tc-sel { animation: tcIn .3s ease-out; color: var(--seal-color, #a3382f); font-weight: 600; }
+@keyframes tcIn { from { transform: translateX(90rpx); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.tc-empty { font-size: 24rpx; opacity: .5; text-align: center; padding: 28rpx 0; }
+.tc-foot { display: flex; gap: 20rpx; margin-top: 26rpx; }
+.tc-clear { flex: 1; }
+.tc-ok { flex: 2; }
 
 /* 查询结果：□ 现象说明（显眼内联提示，非弹窗） */
 .results-note { margin: 12rpx 0 8rpx; padding: 16rpx 22rpx; font-size: 23rpx; line-height: 1.65; color: var(--seal-color, #a3382f); border: 2rpx dashed var(--seal-color, #a3382f); border-radius: 14rpx; }

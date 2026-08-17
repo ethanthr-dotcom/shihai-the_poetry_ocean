@@ -147,7 +147,7 @@ function shuffle(arr) {
 // 统一搜索：作者 / 朝代精确匹配，标题模糊（包含）匹配
 function matchKw(p, kw, type, mode) {
   if (/[\u25a1\ufffd]/.test((p.t ?? "") + (p.a ?? ""))) return false;
-  if (type && (p.y ?? "").trim() !== type) return false;
+  if (type && (Array.isArray(type) ? type.indexOf((p.y ?? "").trim()) < 0 : (p.y ?? "").trim() !== type)) return false;
   if (!kw) return true;
   if (mode === "author") return (p.a ?? "").trim() === kw;
   if (mode === "dynasty") return (p.d ?? "").trim() === kw;

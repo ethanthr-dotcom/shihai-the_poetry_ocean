@@ -247,10 +247,45 @@
       <view class="theme-label">分享签名</view>
       <input class="input opt-sign" maxlength="20" placeholder="展示在分享卡片页脚（可留空）" value="{{optSign}}" bindinput="onSignInput" />
     </view>
+    <view class="theme-section">
+      <view class="theme-label">体裁选择方式</view>
+      <view class="theme-options">
+        <view class="theme-opt {{typePickerMode === 'circle' ? 'active' : ''}}" data-value="circle" bindtap="onTypePickerTap">双圆多选</view>
+        <view class="theme-opt {{typePickerMode === 'dropdown' ? 'active' : ''}}" data-value="dropdown" bindtap="onTypePickerTap">下拉单选</view>
+      </view>
+    </view>
       </view>
     </view>
     </scroll-view>
     <view class="panel-hint">点击页面空白处即可关闭</view>
+  </view>
+
+  <!-- 双半圆滚动多选体裁选择器（点体裁框展开） -->
+  <view wx:if="{{typeCircleShow || typeCircleShowClosing}}" class="picker-mask {{typeCircleShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onTypeCircleClose">
+    <view class="tc-box" catchtap="noop">
+      <view class="sheet-head">选择体裁<text class="tc-count">{{typeSel.length ? ' · 已选 ' + typeSel.length + ' 种' : '（可多选）'}}</text></view>
+      <input class="input dd-search" placeholder="搜索体裁，如：绝句" placeholder-class="ph" value="{{typeCircleQuery}}" bindinput="onTypeCircleQuery" />
+      <view class="tc-cols">
+        <view class="tc-col">
+          <view class="tc-col-h">已选（点击移出）</view>
+          <scroll-view class="tc-scroll tc-left" scroll-y="true" enhanced="true" show-scrollbar="false" catchtouchmove="noop">
+            <view wx:if="{{!typeSel.length}}" class="tc-empty">点右侧体裁选入</view>
+            <view wx:for="{{typeSel}}" wx:key="*this" class="tc-item tc-sel" data-value="{{item}}" bindtap="onTypeCircleUnpick">{{item}}</view>
+          </scroll-view>
+        </view>
+        <view class="tc-col">
+          <view class="tc-col-h">可选（点击选入）</view>
+          <scroll-view class="tc-scroll tc-right" scroll-y="true" enhanced="true" show-scrollbar="false" catchtouchmove="noop">
+            <view wx:for="{{typePool}}" wx:key="*this" class="tc-item" data-value="{{item}}" bindtap="onTypeCirclePick">{{item}}</view>
+            <view wx:if="{{!typePool.length}}" class="tc-empty">无匹配体裁</view>
+          </scroll-view>
+        </view>
+      </view>
+      <view class="tc-foot">
+        <button class="btn secondary tc-clear" bindtap="onTypeCircleClear">清空</button>
+        <button class="btn primary tc-ok" bindtap="onTypeCircleConfirm">确认</button>
+      </view>
+    </view>
   </view>
 
   <!-- 首次使用提示（确认一次后不再显示） -->

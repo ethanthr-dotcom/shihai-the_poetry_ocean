@@ -81,6 +81,11 @@ Page({
     briefFull: false,
     ripple: null,
     type: "",
+    typePickerMode: "circle",
+    typeCircleShow: false,
+    typeCircleQuery: "",
+    typeSel: [],
+    typePool: [],
     libTip: "收录 34 万余首古诗词",
     statusText: "正在加载诗词库……",
     statusError: false,
@@ -192,6 +197,8 @@ Page({
     const greet = h >= 5 && h < 8 ? "晨读" : h < 12 ? "上午品读" : h < 14 ? "午间小读" : h < 18 ? "午后漫读" : h < 23 ? "灯下夜读" : "深夜静读";
     this.setData({ randomTip: greet + " · " + this.data.randomTip });
     try { let sm0 = wx.getStorageSync("shihai-search-mode-v1"); if (sm0 === "auto") { sm0 = "title"; try { wx.setStorageSync("shihai-search-mode-v1", "title"); } catch (e2) {} } if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title") this.setData({ searchMode: sm0, smIdx: ["author", "dynasty", "title"].indexOf(sm0) }); } catch (e) {}
+    try { const tp = wx.getStorageSync("shihai-type-picker-v1"); if (tp === "dropdown" || tp === "circle") this.setData({ typePickerMode: tp }); } catch (e) {}
+    try { const tl = wx.getStorageSync("shihai-type-list-v1"); if (Array.isArray(tl) && tl.length) { this._typesArr = tl; this.setData({ type: tl.length === 1 ? tl[0] : tl[0] + " · 等" + tl.length + "种" }); } } catch (e) {}
     // 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名）
     this._opts = { preview: true, shake: false, brief: false, sign: "" };
     try { const o0 = wx.getStorageSync("shihai-opts-v1"); if (o0) this._opts = { ...this._opts, ...o0 }; } catch (e) {}
@@ -362,7 +369,7 @@ Page({
     const m = this.data.searchMode;
     this.setData({ kwStateText: m === "author" ? "按作者检索" : m === "dynasty" ? "按朝代检索" : "按标题检索", kwStateMuted: false });
   },
-  onTypeInput(e) { this.setData({ type: e.detail.value }); },
+  onTypeInput(e) { this._typesArr = []; this.setData({ type: e.detail.value }); },
 
   onRandomTap() {
     this.haptic();
@@ -381,7 +388,12 @@ Page({
   },
   onTypeMoreTap() {
     this.haptic();
-    if (this.data.typeDropdownShow) { this.hideSheet("typeDropdownShow"); return; }
+    if (this.data.typePickerMode === "circle") { this.openTypeCircle(); return; }
+    if (this.data.typeDropdownShow) {
+      if (Date.now() - (this._typeDdOpenedAt || 0) < 350) return; // 防展开瞬间的连击误关
+      this.hideSheet("typeDropdownShow"); return;
+    }
+    this._typeDdOpenedAt = Date.now();
     this.setData({ typeDropdownShow: true, typeQuery: "" });
     this._applyTypeQuery();
   },
@@ -411,9 +423,63 @@ Page({
   onTypeOptTap(e) {
     const v = e.currentTarget.dataset.value;
     this.haptic();
+    this._typesArr = [];
+    try { wx.setStorageSync("shihai-type-list-v1", []); } catch (e2) {}
     if (v === "无") { this.setData({ type: "" }); this.hideSheet("typeDropdownShow"); return; }
     this.setData({ type: v === this.data.type ? "" : v });
     this.hideSheet("typeDropdownShow");
+  },
+  // ====== 双半圆滚动多选体裁选择器 ======
+  openTypeCircle() {
+    this._typesArr = this._typesArr || [];
+    this.setData({ typeCircleShow: true, typeCircleQuery: "", typeSel: this._typesArr.slice() });
+    this._rebuildTypePool();
+  },
+  _rebuildTypePool() {
+    const q = (this.data.typeCircleQuery || "").trim();
+    const sel = new Set(this.data.typeSel || []);
+    let pool = TYPE_LIST_ALL.filter((t) => !sel.has(t));
+    if (q) pool = pool.filter((t) => t.indexOf(q) >= 0);
+    this.setData({ typePool: pool.slice(0, 400) });
+  },
+  onTypeCircleQuery(e) {
+    this.setData({ typeCircleQuery: e.detail.value });
+    this._rebuildTypePool();
+  },
+  onTypeCirclePick(e) {
+    const t = e.currentTarget.dataset.value;
+    this.haptic();
+    this.setData({ typeSel: (this.data.typeSel || []).concat([t]) });
+    this._rebuildTypePool();
+  },
+  onTypeCircleUnpick(e) {
+    const t = e.currentTarget.dataset.value;
+    this.haptic();
+    this.setData({ typeSel: (this.data.typeSel || []).filter((x) => x !== t) });
+    this._rebuildTypePool();
+  },
+  onTypeCircleClear() {
+    this.haptic();
+    this.setData({ typeSel: [] });
+    this._rebuildTypePool();
+  },
+  onTypeCircleConfirm() {
+    this.haptic();
+    const sel = this.data.typeSel || [];
+    this._typesArr = sel.slice();
+    try { wx.setStorageSync("shihai-type-list-v1", sel); } catch (e2) {}
+    this.setData({ type: sel.length === 0 ? "" : (sel.length === 1 ? sel[0] : sel[0] + " · 等" + sel.length + "种") });
+    this.hideSheet("typeCircleShow");
+  },
+  onTypeCircleClose() {
+    this.hideSheet("typeCircleShow");
+  },
+  onTypePickerTap(e) {
+    const v = e.currentTarget.dataset.value;
+    this.haptic();
+    if (v !== "circle" && v !== "dropdown") return;
+    this.setData({ typePickerMode: v });
+    try { wx.setStorageSync("shihai-type-picker-v1", v); } catch (e2) {}
   },
   // 设置面板分组折叠
   onSgStyleToggle() { this.haptic(); this.setData({ sgStyleClosed: !this.data.sgStyleClosed }); },
@@ -865,6 +931,7 @@ Page({
 
   // ====== 搜索结果列表：就地替换诗词卡片；无限分页（页面触底）；手风琴；批量收藏 ======
   async openResults(kw, type) {
+    if (this._typesArr && this._typesArr.length) type = this._typesArr;
     if (!this.indexReady) { this.showStatus("诗词库尚未加载完成，请稍候……"); return; }
     if (type) {
       const full = await data.ensureFullIndex();
