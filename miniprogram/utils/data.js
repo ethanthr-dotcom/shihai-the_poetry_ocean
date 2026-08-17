@@ -51,7 +51,11 @@ async function ensureFullIndex() {
 }
 
 // 搜索摘要索引：每块标题字符集，标题模糊检索先收窄数据块
+// v2 格式：含 globalChars（移除高频字符后的索引字符集），cs 只含 globalChars 内的字符
 let SEARCH_IDX = null;
+let _digestMap = null;       // 缓存 file -> Set<char>，避免每次搜索重建
+let _digestGlobalSet = null; // 全局被索引字符集（v2），用于过滤 kw
+let _digestVer = 0;
 async function ensureSearchIndex() {
   if (SEARCH_IDX) return SEARCH_IDX;
   const cached = readCache(cfg.SEARCH_CACHE_KEY);
@@ -64,19 +68,38 @@ async function ensureSearchIndex() {
 }
 function narrowByDigest(candidates, kw) {
   if (!SEARCH_IDX || !Array.isArray(SEARCH_IDX.chunks) || !kw || kw.length < 2) return candidates;
-  const map = new Map();
-  SEARCH_IDX.chunks.forEach((c) => map.set(c.f, c.cs));
-  const uniq = [...new Set(kw)];
+  // 首次或索引变更时构建 file -> Set<char> 映射（Set 的 has 是 O(1)，远快于字符串 indexOf）
+  if (!_digestMap || _digestVer !== SEARCH_IDX) {
+    _digestMap = new Map();
+    SEARCH_IDX.chunks.forEach((c) => _digestMap.set(c.f, new Set(c.cs)));
+    // v2：构建全局索引字符集；v1（无 globalChars）则视为全部字符都索引
+    _digestGlobalSet = SEARCH_IDX.globalChars ? new Set(SEARCH_IDX.globalChars) : null;
+    _digestVer = SEARCH_IDX;
+  }
+  // v2：kw 中只保留被索引的字符（高频字符已移除，无区分度，跳过）
+  const uniq = [...new Set(kw)].filter((ch) => !_digestGlobalSet || _digestGlobalSet.has(ch));
+  if (!uniq.length) return candidates; // kw 中无被索引字符，无法收窄
   return candidates.filter((c) => {
-    const cs = map.get(c.file);
-    if (!cs) return true;
-    return uniq.every((ch) => cs.indexOf(ch) >= 0);
+    const set = _digestMap.get(c.file);
+    if (!set) return true;
+    for (let i = 0; i < uniq.length; i++) if (!set.has(uniq[i])) return false;
+    return true;
   });
 }
 
-// 按需加载单个分块（内存缓存，限制数量防膨胀）
+// 按需加载单个分块（内存 LRU 缓存，限制数量防膨胀）
+let _chunkHits = 0, _chunkMisses = 0;
+const _prefetchInflight = new Map(); // 预取去重：避免重复预取同一块
 async function loadChunk(file) {
-  if (chunkCache.has(file)) return chunkCache.get(file);
+  if (chunkCache.has(file)) {
+    _chunkHits++;
+    // LRU 刷新：删除再插入，让其成为最近使用
+    const v = chunkCache.get(file);
+    chunkCache.delete(file);
+    chunkCache.set(file, v);
+    return v;
+  }
+  _chunkMisses++;
   // 网络失败自动重试（共 3 次，间隔递增）
   let poems = null, err = null;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -85,10 +108,16 @@ async function loadChunk(file) {
   }
   if (err) throw err;
   chunkCache.set(file, poems);
-  if (chunkCache.size > 12) {
+  if (chunkCache.size > 20) {
     chunkCache.delete(chunkCache.keys().next().value);
   }
   return poems;
+}
+// 预取下一块（不阻塞当前流程，失败静默；用于翻页时提前预热下一块）
+function prefetchChunk(file) {
+  if (!file || chunkCache.has(file) || _prefetchInflight.has(file)) return;
+  const p = loadChunk(file).then(() => { _prefetchInflight.delete(file); }).catch(() => { _prefetchInflight.delete(file); });
+  _prefetchInflight.set(file, p);
 }
 
 function chunkHasDynasty(c, dynasty) {
@@ -155,14 +184,40 @@ function matchKw(p, kw, type, mode) {
   return (p.a ?? "").trim() === kw || (p.d ?? "").trim() === kw || (p.t ?? "").indexOf(kw) >= 0;
 }
 // 分块优先级：全索引中已知作者 > 含该朝代的分块，加快命中
+// 预构建 file -> Set<author> 缓存，避免每次都对 authors 数组做 .some(.trim()===kw)
+let _authorSetMap = null;
+let _authorSetVer = 0;
+function _ensureAuthorSetMap() {
+  if (_authorSetMap && _authorSetVer === FULL_INDEX) return;
+  if (!FULL_INDEX || !Array.isArray(FULL_INDEX.chunks)) { _authorSetMap = null; return; }
+  _authorSetMap = new Map();
+  FULL_INDEX.chunks.forEach((c) => {
+    if (!Array.isArray(c.authors)) return;
+    const s = new Set();
+    for (let i = 0; i < c.authors.length; i++) { const a = (c.authors[i] || "").trim(); if (a) s.add(a); }
+    _authorSetMap.set(c.file, s);
+  });
+  _authorSetVer = FULL_INDEX;
+}
 function chunkKwScore(c, kw, mode) {
   let s = 0;
-  if (FULL_INDEX && Array.isArray(c.authors) && c.authors.some((a) => a.trim() === kw)) s += 2;
+  if (FULL_INDEX) {
+    _ensureAuthorSetMap();
+    const set = _authorSetMap && _authorSetMap.get(c.file);
+    if (set && set.has(kw)) s += 2;
+  }
   if (chunkHasDynasty(c, kw)) s += (mode === "dynasty" ? 2 : 1);
   return s;
 }
 function sortChunksByKw(list, kw, mode) {
   return list.slice().sort((a, b) => chunkKwScore(b, kw, mode) - chunkKwScore(a, kw, mode));
+}
+// 判断某分块是否含指定作者（用预构建 Set，O(1) 查找）
+function chunkHasAuthor(file, kw) {
+  if (!FULL_INDEX) return false;
+  _ensureAuthorSetMap();
+  const set = _authorSetMap && _authorSetMap.get(file);
+  return !!(set && set.has(kw));
 }
 
 // 统一搜索版随机抽诗：关键词（作者/朝代精确 + 标题模糊）+ 体裁
@@ -290,9 +345,16 @@ function collectTypes() {
   return TYPES_LIST;
 }
 
-// 开发者调试：内存分块缓存统计
+// 开发者调试：内存分块缓存统计（含命中率）
 function cacheStats() {
-  return { count: chunkCache.size, chunks: Array.from(chunkCache.keys()) };
+  const total = _chunkHits + _chunkMisses;
+  return {
+    count: chunkCache.size,
+    chunks: Array.from(chunkCache.keys()),
+    hits: _chunkHits,
+    misses: _chunkMisses,
+    hitRate: total ? Math.round((_chunkHits / total) * 100) + "%" : "—"
+  };
 }
 
 function getFullChunks() { return FULL_INDEX && Array.isArray(FULL_INDEX.chunks) ? FULL_INDEX.chunks : null; }
@@ -301,10 +363,12 @@ module.exports = {
   loadIndex,
   ensureFullIndex,
   loadChunk,
+  prefetchChunk,
   filterChunks,
   matchPoem,
   matchKw,
   chunkKwScore,
+  chunkHasAuthor,
   sortChunksByKw,
   findRandomPoemByKw,
   findRandomPoem,

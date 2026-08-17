@@ -1010,7 +1010,7 @@ Page({
       if (mode === "author") {
         const fc = data.getFullChunks();
         if (fc) {
-          const n = candidates.filter((c) => Array.isArray(c.authors) && c.authors.some((a) => a.trim() === kw));
+          const n = candidates.filter((c) => data.chunkHasAuthor(c.file, kw));
           if (n.length) candidates = n;
         }
       }
@@ -1086,6 +1086,10 @@ Page({
         resultsCount: localLen,
         searchProgress: ""
       });
+      // 预取下一批首块，翻页时可直接命中缓存
+      if (!this.data.resultsDone && this._resultCursor < this._resultChunks.length) {
+        data.prefetchChunk(this._resultChunks[this._resultCursor].file);
+      }
     } catch (err) {
       this.setData({ searchProgress: "" });
       this.showStatus("读取失败：" + (err && err.message ? err.message : err), true);
