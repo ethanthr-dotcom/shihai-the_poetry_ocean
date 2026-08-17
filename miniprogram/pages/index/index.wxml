@@ -1,4 +1,4 @@
-<view class="app {{glassOn ? 'glass-on' : ''}} {{themeDark ? 'theme-dark' : ''}}" style="{{varsStyle}}" bindtap="onPageTap" bindtouchstart="onRippleTouch">
+<view class="app {{themeDark ? 'theme-dark' : ''}}" style="{{varsStyle}}" bindtap="onPageTap" bindtouchstart="onRippleTouch">
   <!-- 顶部加载进度条 -->
   <view class="progress {{progressState}}"></view>
   <view wx:if="{{ripple}}" class="ink-ripple" style="left:{{ripple.x}}px;top:{{ripple.y}}px"></view>
@@ -233,13 +233,6 @@
     <view class="theme-section">
       <view class="theme-label">分享签名</view>
       <input class="input opt-sign" maxlength="20" placeholder="展示在分享卡片页脚（可留空）" value="{{optSign}}" bindinput="onSignInput" />
-    </view>
-    <view wx:if="{{showGlassOpt}}" class="theme-section">
-      <view class="theme-label">液态玻璃<text class="theme-sub">仅 iOS 设备</text></view>
-      <view class="theme-options">
-        <view class="theme-opt {{optGlass ? 'active' : ''}}" data-value="on" bindtap="onGlassTap">开</view>
-        <view class="theme-opt {{optGlass ? '' : 'active'}}" data-value="off" bindtap="onGlassTap">关</view>
-      </view>
     </view>
       </view>
     </view>

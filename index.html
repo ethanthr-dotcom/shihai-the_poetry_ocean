@@ -729,77 +729,6 @@
     @keyframes onboardPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
     .onboard-tip { position: fixed; transform: translateX(-50%); background: var(--card-bg, #fff); color: var(--text-color); border: 1px solid var(--accent-color); padding: 8px 14px; border-radius: 10px; font-size: 13px; white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.25); pointer-events: none; }
     .card-sub-tools { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: nowrap; margin-top: 12px; margin-bottom: 10px; }
-
-    /* ====== 液态玻璃效果（仅苹果设备 + 用户开启时生效；body.glass-on 触发） ======
-       模拟苹果原生 Liquid Glass：半透明 + 背景模糊 + 边缘高光 + 内描边
-       非苹果设备 body 不会有 .glass-on 类（applyGlass 在 IS_APPLE 为假时强制移除） */
-    .theme-sub { font-size: 11px; opacity: .55; margin-left: 6px; font-weight: 400; }
-    body.glass-opt-show .glass-only-opt { display: block !important; }
-    body.glass-on .card,
-    body.glass-on .theme-panel,
-    body.glass-on .sheet-box,
-    body.glass-on .guide-box,
-    body.glass-on .onboard-bar,
-    body.glass-on .results-panel {
-      background: rgba(255, 255, 255, 0.55);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-color: rgba(255, 255, 255, 0.65);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(255, 255, 255, 0.25);
-    }
-    /* 深色主题下玻璃偏暗 */
-    body.glass-on.theme-dark .card,
-    body.glass-on.theme-dark .theme-panel,
-    body.glass-on.theme-dark .sheet-box,
-    body.glass-on.theme-dark .guide-box,
-    body.glass-on.theme-dark .onboard-bar,
-    body.glass-on.theme-dark .results-panel {
-      background: rgba(40, 40, 45, 0.55);
-      border-color: rgba(255, 255, 255, 0.18);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
-    /* 输入框玻璃化 */
-    body.glass-on .input {
-      background: rgba(255, 255, 255, 0.4);
-      backdrop-filter: blur(12px) saturate(160%);
-      -webkit-backdrop-filter: blur(12px) saturate(160%);
-      border-color: rgba(255, 255, 255, 0.5);
-    }
-    body.glass-on.theme-dark .input {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.18);
-    }
-    /* 按钮玻璃化（次级按钮更明显；主按钮保留主色仅加内高光） */
-    body.glass-on .btn.secondary {
-      background: rgba(255, 255, 255, 0.35);
-      backdrop-filter: blur(16px) saturate(160%);
-      -webkit-backdrop-filter: blur(16px) saturate(160%);
-      border-color: rgba(255, 255, 255, 0.5);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    }
-    body.glass-on .btn {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-    }
-    body.glass-on.theme-dark .btn.secondary {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.2);
-    }
-    /* 体裁选择标签 / 主题选项小药丸玻璃化 */
-    body.glass-on .theme-opt,
-    body.glass-on .type-tag {
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-    body.glass-on .theme-opt:not(.active),
-    body.glass-on .type-tag:not(.active) {
-      background: rgba(255, 255, 255, 0.3);
-      border-color: rgba(255, 255, 255, 0.45);
-    }
-    body.glass-on.theme-dark .theme-opt:not(.active),
-    body.glass-on.theme-dark .type-tag:not(.active) {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.16);
-    }
   </style>
 </head>
 <body>
@@ -1152,13 +1081,6 @@
       <div class="theme-label">分享签名</div>
       <input id="optSignInput" class="input opt-sign" maxlength="20" placeholder="展示在分享卡片页脚（可留空）">
     </div>
-    <div class="theme-section glass-only-opt" style="display:none">
-      <div class="theme-label">液态玻璃<span class="theme-sub">仅苹果设备</span></div>
-      <div class="theme-options" data-group="optGlass">
-        <button class="theme-opt active" data-value="on">开</button>
-        <button class="theme-opt" data-value="off">关</button>
-      </div>
-    </div>
       </div>
     </div>
   </div>
@@ -1200,23 +1122,11 @@
     let searchMode = "auto";
     try { const sm0 = localStorage.getItem(SEARCH_MODE_KEY); if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title") searchMode = sm0; else if (sm0 === "auto") { searchMode = "title"; localStorage.setItem(SEARCH_MODE_KEY, "title"); } } catch (e) {}
     function saveSearchMode() { try { localStorage.setItem(SEARCH_MODE_KEY, searchMode); } catch (e) {} }
-    // ====== 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名 / 液态玻璃） ======
+    // ====== 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名） ======
     const OPTS_KEY = "shihai-opts-v1";
-    let appOpts = { preview: true, shake: false, brief: false, sign: "", glass: true };
+    let appOpts = { preview: true, shake: false, brief: false, sign: "" };
     try { const o0 = JSON.parse(localStorage.getItem(OPTS_KEY) || "null"); if (o0) appOpts = { ...appOpts, ...o0 }; } catch (e) {}
     function saveOpts() { try { localStorage.setItem(OPTS_KEY, JSON.stringify(appOpts)); } catch (e) {}
-    // 液态玻璃仅苹果设备可用（iPhone / iPad / Mac Safari）；非苹果强制关闭且不显示开关
-    const IS_APPLE = (function () {
-      const ua = navigator.userAgent;
-      const isIOS = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 0);
-      const isMacSafari = /Macintosh/i.test(ua) && /Safari/i.test(ua) && !/Chrome/i.test(ua) && !/CriOS/i.test(ua);
-      return isIOS || isMacSafari;
-    })();
-    function applyGlass() {
-      const on = IS_APPLE ? !!appOpts.glass : false;
-      document.body.classList.toggle("glass-on", on);
-      document.body.classList.toggle("glass-opt-show", IS_APPLE);
-    }
     // ====== 搜索历史（最近 6 条） ======
     // ====== 搜索摘要索引：每块标题字符集，标题模糊检索先收窄数据块 ======
     const SEARCH_INDEX_KEY = "poetry-search-index-v2";
@@ -2660,7 +2570,7 @@
       }
       // 文字方向（竖排）
       document.body.classList.toggle("vertical", currentTheme.direction === "vertical");
-      // 计算 bg 亮度判断是否深色主题（用于液态玻璃深色适配）
+      // 计算 bg 亮度判断是否深色主题
       const bgHex = (getComputedStyle(root).getPropertyValue("--bg-color").trim() || "").replace("#", "");
       let themeDark = false;
       if (/^[0-9a-fA-F]{6}$/.test(bgHex)) {
@@ -2672,7 +2582,7 @@
       // 同步面板选中状态
       document.querySelectorAll(".theme-options").forEach((container) => {
         const group = container.dataset.group;
-        if (group === "notePrompt" || group === "optSearchMode" || group === "optPreview" || group === "optShake" || group === "optBrief" || group === "optGlass") return; // 非主题项，单独同步
+        if (group === "notePrompt" || group === "optSearchMode" || group === "optPreview" || group === "optShake" || group === "optBrief") return; // 非主题项，单独同步
         const value = currentTheme[group];
         container.querySelectorAll(".theme-opt").forEach((btn) => {
           btn.classList.toggle("active", btn.dataset.value === value);
@@ -3393,7 +3303,7 @@
       });
     }
     function syncOptsUI() {
-      [["optPreview", appOpts.preview], ["optShake", appOpts.shake], ["optBrief", appOpts.brief], ["optGlass", appOpts.glass]].forEach(([g, on]) => {
+      [["optPreview", appOpts.preview], ["optShake", appOpts.shake], ["optBrief", appOpts.brief]].forEach(([g, on]) => {
         document.querySelectorAll('.theme-options[data-group="' + g + '"] .theme-opt').forEach((b) =>
           b.classList.toggle("active", (b.dataset.value === "on") === !!on));
       });
@@ -3929,13 +3839,6 @@
           if (key === "brief" && currentPoem) { briefFull = false; briefOverrideId = ""; renderPoem(currentPoem); }
           return;
         }
-        if (group === "optGlass") {
-          appOpts.glass = value === "on";
-          saveOpts();
-          syncOptsUI();
-          applyGlass();
-          return;
-        }
         if (group === "optSearchMode") {
           searchMode = value; saveSearchMode(); renderModeChips(); updateKwHint(); return;
         }
@@ -4216,7 +4119,6 @@
     }
     syncOptsUI();
     if (appOpts.shake) setShake(true);
-    applyGlass(); // 液态玻璃：按设备类型与用户开关应用
     setTimeout(maybeOnboard, 4200);
 
     (async () => {

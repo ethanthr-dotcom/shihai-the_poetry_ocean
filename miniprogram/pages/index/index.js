@@ -75,9 +75,6 @@ Page({
     optShake: false,
     optBrief: false,
     optSign: "",
-    optGlass: false,
-    showGlassOpt: false,
-    glassOn: false,
     themeDark: false,
     statsLine: "",
     onboardShow: false,
@@ -197,16 +194,10 @@ Page({
     this.setData({ randomTip: greet + " · " + this.data.randomTip });
     try { let sm0 = wx.getStorageSync("shihai-search-mode-v1"); if (sm0 === "auto") { sm0 = "title"; try { wx.setStorageSync("shihai-search-mode-v1", "title"); } catch (e2) {} } if (sm0 === "author" || sm0 === "dynasty" || sm0 === "title") this.setData({ searchMode: sm0, smIdx: ["author", "dynasty", "title"].indexOf(sm0) }); } catch (e) {}
     try { const tl = wx.getStorageSync("shihai-type-list-v1"); if (Array.isArray(tl) && tl.length) { this._typesArr = tl; this.setData({ type: tl.length === 1 ? tl[0] : tl[0] + " · 等" + tl.length + "种" }); } } catch (e) {}
-    // 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名 / 液态玻璃）
-    this._opts = { preview: true, shake: false, brief: false, sign: "", glass: true };
+    // 精致化选项（主题小预览 / 摇一摇抽诗 / 名句速览 / 分享签名）
+    this._opts = { preview: true, shake: false, brief: false, sign: "" };
     try { const o0 = wx.getStorageSync("shihai-opts-v1"); if (o0) this._opts = { ...this._opts, ...o0 }; } catch (e) {}
-    // 液态玻璃仅 iOS 设备可用；非 iOS 强制关闭且不显示开关
-    let sysInfo = {};
-    try { sysInfo = wx.getDeviceInfo ? wx.getDeviceInfo() : wx.getSystemInfoSync(); } catch (e) {}
-    this._isIOS = /ios/i.test(sysInfo.platform || sysInfo.system || "");
-    const glassOn = this._isIOS ? !!this._opts.glass : false;
-    this.setData({ optPreview: !!this._opts.preview, optShake: !!this._opts.shake, optBrief: !!this._opts.brief, optSign: this._opts.sign || "", optGlass: glassOn, showGlassOpt: this._isIOS });
-    this._applyGlass(glassOn);
+    this.setData({ optPreview: !!this._opts.preview, optShake: !!this._opts.shake, optBrief: !!this._opts.brief, optSign: this._opts.sign || "" });
     if (this._opts.shake) this._startShake();
     // 预热搜索摘要索引，首次标题检索更快
     data.ensureSearchIndex();
@@ -1572,20 +1563,6 @@ Page({
     this.setData({ optSign: e.detail.value || "" });
     this._saveOpts();
   },
-  // 液态玻璃效果开关（仅 iOS 设备显示此项）
-  onGlassTap(e) {
-    this.haptic();
-    const on = e.currentTarget.dataset.value === "on";
-    this._opts.glass = on;
-    this._saveOpts();
-    this.setData({ optGlass: on });
-    this._applyGlass(on);
-  },
-  _applyGlass(on) {
-    // 通过根节点 class 控制全局液态玻璃样式；非 iOS 即使 on 也无效
-    if (!this._isIOS) on = false;
-    this.setData({ glassOn: on });
-  },
   onBriefFullTap() {
     this.haptic();
     this.setData({ briefFull: true });
@@ -1705,7 +1682,7 @@ Page({
     let shareRatio = this.data.shareRatio;
     if (isVertical) shareRatio = "auto";
     const varsStyle = Object.keys(vars).map((k) => k + ":" + vars[k]).join(";");
-    // 计算 bg 亮度判断是否深色主题（用于液态玻璃深色适配）
+    // 计算 bg 亮度判断是否深色主题
     const bgHex = (vars["--bg-color"] || "").replace("#", "");
     let themeDark = false;
     if (/^[0-9a-fA-F]{6}$/.test(bgHex)) {
