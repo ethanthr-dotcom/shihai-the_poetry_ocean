@@ -111,10 +111,6 @@ Page({
     shareImg: "",
     randomBtnLines: ["与诗相逢"],
     randomTip: "读到心动的一首，可在下方生成卡片保存或分享 · 点诗词旁 ✎ 可写下感悟",
-    typeOptions: [],
-    typeQuery: "",
-    typeOptionsShown: [],
-    ddSel: [],
     resultsList: [],
     resultsLoading: false,
     resultsDone: false,
@@ -124,7 +120,6 @@ Page({
     selIds: {},
     selCount: 0,
     currentFav: false,
-    typeDropdownShow: false,
     favSheetShow: false,
     favBurst: false,
     guideShow: false,
@@ -213,10 +208,7 @@ Page({
     this.setData({ optPreview: !!this._opts.preview, optShake: !!this._opts.shake, optBrief: !!this._opts.brief, optSign: this._opts.sign || "", optGlass: glassOn, showGlassOpt: this._isIOS });
     this._applyGlass(glassOn);
     if (this._opts.shake) this._startShake();
-    // 体裁全量内嵌：常见体裁 chips 直达 + 完整面板分组可搜索
-    this.setData({
-      typeOptions: TYPE_LIST_ALL,
-    });
+    // 预热搜索摘要索引，首次标题检索更快
     data.ensureSearchIndex();
     this._stats = { total: 0, dates: [], streak: 0, last: "" };
     try { const st0 = wx.getStorageSync("shihai-stats-v1"); if (st0 && typeof st0.total === "number") this._stats = st0; } catch (e) {}
@@ -405,73 +397,10 @@ Page({
     this.loadRandomPoem(true);
   },
 
-  // ====== 体裁选择器：常见体裁 chips 直达；「全部」展开分组可搜索面板 ======
-  _typeGroup(t) {
-    if (/^(五|七|六|四|三|杂)言/.test(t) || /(绝句|律诗|古风|排律|乐府|歌行)$/.test(t) || t === "诗经" || t === "楚辞" || t === "元曲" || t === "民谣") return "诗";
-    return "词牌 · 曲牌";
-  },
+  // ====== 体裁选择器入口 ======
   onTypeMoreTap() {
     this.haptic();
     this.openTypeCircle();
-  },
-  onTypeQuery(e) {
-    this.setData({ typeQuery: e.detail.value });
-    this._applyTypeQuery();
-  },
-  _applyTypeQuery() {
-    const q = (this.data.typeQuery || "").trim();
-    const list = this.data.typeOptions || [];
-    const mk = (t) => ({ t, k: "t:" + t });
-    const gh = (g) => ({ g, k: "g:" + g });
-    const out = [];
-    if (q) {
-      list.filter((t) => t.indexOf(q) >= 0).slice(0, 299).forEach((t) => out.push(mk(t)));
-    } else {
-      out.push(gh("常见"));
-      ["无"].concat(list.slice(0, 12)).forEach((t) => out.push(mk(t)));
-      const rest = list.slice(12);
-      ["诗", "词牌 · 曲牌"].forEach((g) => {
-        const sub = rest.filter((t) => this._typeGroup(t) === g);
-        if (sub.length) { out.push(gh(g + " · " + sub.length)); sub.forEach((t) => out.push(mk(t))); }
-      });
-    }
-    this.setData({ typeOptionsShown: out });
-  },
-  // 判断某个体裁是否在当前临时选中集合中
-  _ddHas(t) {
-    if (!this._ddSel) return false;
-    return this._ddSel.indexOf(t) >= 0;
-  },
-  onTypeOptTap(e) {
-    const v = e.currentTarget.dataset.value;
-    this.haptic();
-    this._ddSel = this._ddSel || [];
-    if (v === "无") {
-      // 清空全部
-      this._ddSel = [];
-    } else {
-      const idx = this._ddSel.indexOf(v);
-      if (idx >= 0) this._ddSel.splice(idx, 1);
-      else this._ddSel.push(v);
-    }
-    // 不自动关闭面板，只更新选中态
-    this.setData({ ddSel: this._ddSel.slice() });
-  },
-  onTypeDropdownClear() {
-    this.haptic();
-    this._ddSel = [];
-    this.setData({ ddSel: [] });
-  },
-  onTypeDropdownConfirm() {
-    this.haptic();
-    const sel = this._ddSel || [];
-    this._typesArr = sel.slice();
-    try { wx.setStorageSync("shihai-type-list-v1", sel); } catch (e2) {}
-    this.setData({ type: sel.length === 0 ? "" : (sel.length === 1 ? sel[0] : sel[0] + " · 等" + sel.length + "种") });
-    this.hideSheet("typeDropdownShow");
-  },
-  onTypeDropdownClose() {
-    this.hideSheet("typeDropdownShow");
   },
   // ====== 双半圆滚动多选体裁选择器 ======
   openTypeCircle() {
@@ -1482,7 +1411,6 @@ Page({
     const patch = {};
     if (this.data.themePanelOpen) patch.themePanelOpen = false;
     if (Object.keys(patch).length) this.setData(patch);
-    if (this.data.typeDropdownShow) this.hideSheet("typeDropdownShow");
   },
   // ====== 开发者入口：长按设置齿轮 5s ======
   onGearTouchStart(e) {

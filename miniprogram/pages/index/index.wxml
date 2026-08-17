@@ -51,26 +51,6 @@
           </view>
         </view>
       </view>
-      <!-- 体裁选择弹窗：底部抽屉 + 遮罩（点遮罩关闭，点内容不关） -->
-      <view wx:if="{{typeDropdownShow || typeDropdownShowClosing}}" class="picker-mask {{typeDropdownShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" catchtap="onTypeDropdownClose">
-        <view class="dd-box" catchtap="noop">
-          <view class="sheet-head">选择体裁<text class="tc-count">{{ddSel && ddSel.length ? ' · 已选 ' + ddSel.length + ' 种' : '（可多选）'}}</text></view>
-          <input class="input dd-search" placeholder="搜索体裁，如：绝句" placeholder-class="ph" value="{{typeQuery}}" bindinput="onTypeQuery" />
-          <scroll-view class="dd-list" scroll-y>
-            <view class="type-grid">
-              <block wx:for="{{typeOptionsShown}}" wx:key="k">
-                <view wx:if="{{item.g}}" class="type-group-h">{{item.g}}</view>
-                <view wx:else
-                  class="type-tag {{(item.t === '无' && (!ddSel || ddSel.length === 0)) || (ddSel && ddSel.indexOf(item.t) >= 0) ? 'active' : ''}}" data-value="{{item.t}}" bindtap="onTypeOptTap">{{item.t}}</view>
-              </block>
-            </view>
-          </scroll-view>
-          <view class="tc-foot">
-            <button class="btn secondary" bindtap="onTypeDropdownClear">清空</button>
-            <button class="btn primary" bindtap="onTypeDropdownConfirm">确认{{ddSel && ddSel.length ? '（已选' + ddSel.length + '）' : ''}}</button>
-          </view>
-        </view>
-      </view>
       <view class="btn-row">
         <button class="btn primary" disabled="{{randomLoading}}" bindtap="onRandomTap">
           <block wx:if="{{randomLoading}}">正在读取……</block>
@@ -271,7 +251,7 @@
   <view wx:if="{{typeCircleShow || typeCircleShowClosing}}" class="picker-mask {{typeCircleShowClosing ? ' sheet-closing' : ''}}" catchtouchmove="noop" bindtap="onTypeCircleClose">
     <view class="tc-box" catchtap="noop">
       <view class="sheet-head">选择体裁<text class="tc-count">{{typeSel.length ? ' · 已选 ' + typeSel.length + ' 种' : '（可多选）'}}</text></view>
-      <input class="input dd-search" placeholder="搜索体裁，如：绝句" placeholder-class="ph" value="{{typeCircleQuery}}" bindinput="onTypeCircleQuery" />
+      <input class="input tc-search" placeholder="搜索体裁，如：绝句" placeholder-class="ph" value="{{typeCircleQuery}}" bindinput="onTypeCircleQuery" />
       <view class="tc-cols">
         <view class="tc-col">
           <view class="tc-col-h">已选（点击移出）</view>

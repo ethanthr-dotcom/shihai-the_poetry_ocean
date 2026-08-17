@@ -1221,31 +1221,34 @@
     // ====== 搜索摘要索引：每块标题字符集，标题模糊检索先收窄数据块 ======
     const SEARCH_INDEX_KEY = "poetry-search-index-v2";
     let SEARCH_IDX = null;
+    let _digestVer = 0, _digestBuiltVer = -1;
     async function ensureSearchIndex() {
       if (SEARCH_IDX) return SEARCH_IDX;
       try {
         const cached = JSON.parse(localStorage.getItem(SEARCH_INDEX_KEY) || "null");
-        if (cached && Date.now() - cached.ts < CACHE_TTL) { SEARCH_IDX = cached.data; return SEARCH_IDX; }
+        if (cached && Date.now() - cached.ts < CACHE_TTL) { SEARCH_IDX = cached.data; _digestVer++; return SEARCH_IDX; }
       } catch (e) {}
       try {
         const res = await fetch(DATA_BASE + "data/search-index.json");
         if (res.ok) {
           SEARCH_IDX = await res.json();
           try { localStorage.setItem(SEARCH_INDEX_KEY, JSON.stringify({ data: SEARCH_IDX, ts: Date.now() })); } catch (e) {}
+          _digestVer++;
         }
       } catch (e) {}
       return SEARCH_IDX;
     }
-    let _digestMap = null, _digestVer = 0, _digestGlobalSet = null;
+    let _digestMap = null, _digestGlobalSet = null;
     function narrowByDigest(candidates, kw) {
       if (!SEARCH_IDX || !Array.isArray(SEARCH_IDX.chunks) || !kw || kw.length < 2) return candidates;
       // 首次或索引变更时构建 file -> Set<char>（Set.has O(1) 远快于字符串 indexOf）
-      if (!_digestMap || _digestVer !== SEARCH_IDX) {
+      // 用版本号比较：缓存反序列化后对象引用会变，版本号稳定避免重复重建
+      if (!_digestMap || _digestVer !== _digestBuiltVer) {
         _digestMap = new Map();
         SEARCH_IDX.chunks.forEach((c) => _digestMap.set(c.f, new Set(c.cs)));
         // v2：构建全局索引字符集；v1（无 globalChars）则视为全部字符都索引
         _digestGlobalSet = SEARCH_IDX.globalChars ? new Set(SEARCH_IDX.globalChars) : null;
-        _digestVer = SEARCH_IDX;
+        _digestBuiltVer = _digestVer;
       }
       // v2：kw 中只保留被索引的字符（高频字符已移除，无区分度，跳过）
       const uniq = [...new Set(kw)].filter((ch) => !_digestGlobalSet || _digestGlobalSet.has(ch));

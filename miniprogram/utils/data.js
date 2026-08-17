@@ -55,26 +55,29 @@ async function ensureFullIndex() {
 let SEARCH_IDX = null;
 let _digestMap = null;       // 缓存 file -> Set<char>，避免每次搜索重建
 let _digestGlobalSet = null; // 全局被索引字符集（v2），用于过滤 kw
-let _digestVer = 0;
+let _digestVer = 0;          // 版本号：每次 SEARCH_IDX 更新时自增，避免对象引用比较失效
+let _digestBuiltVer = -1;    // _digestMap 构建时的 _digestVer，不等则重建
 async function ensureSearchIndex() {
   if (SEARCH_IDX) return SEARCH_IDX;
   const cached = readCache(cfg.SEARCH_CACHE_KEY);
-  if (cached) { SEARCH_IDX = cached; return SEARCH_IDX; }
+  if (cached) { SEARCH_IDX = cached; _digestVer++; return SEARCH_IDX; }
   try {
     SEARCH_IDX = await fetchJson(cfg.DATA_BASE + "data/search-index.json");
     writeCache(cfg.SEARCH_CACHE_KEY, SEARCH_IDX);
+    _digestVer++;
   } catch (e) {}
   return SEARCH_IDX;
 }
 function narrowByDigest(candidates, kw) {
   if (!SEARCH_IDX || !Array.isArray(SEARCH_IDX.chunks) || !kw || kw.length < 2) return candidates;
   // 首次或索引变更时构建 file -> Set<char> 映射（Set 的 has 是 O(1)，远快于字符串 indexOf）
-  if (!_digestMap || _digestVer !== SEARCH_IDX) {
+  // 用版本号比较：缓存反序列化后对象引用会变，版本号稳定避免重复重建
+  if (!_digestMap || _digestVer !== _digestBuiltVer) {
     _digestMap = new Map();
     SEARCH_IDX.chunks.forEach((c) => _digestMap.set(c.f, new Set(c.cs)));
     // v2：构建全局索引字符集；v1（无 globalChars）则视为全部字符都索引
     _digestGlobalSet = SEARCH_IDX.globalChars ? new Set(SEARCH_IDX.globalChars) : null;
-    _digestVer = SEARCH_IDX;
+    _digestBuiltVer = _digestVer;
   }
   // v2：kw 中只保留被索引的字符（高频字符已移除，无区分度，跳过）
   const uniq = [...new Set(kw)].filter((ch) => !_digestGlobalSet || _digestGlobalSet.has(ch));

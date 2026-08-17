@@ -51,7 +51,7 @@ App({
     // 思源宋体：两个 CDN 依次直载
     FONT_FILES.forEach((file, i) => this._loadFont(file, i, 0));
     this._loadPoemData();
-    // 访问统计：每日每设备仅递增一次云端计数，避免反复刷量
+    // 访问统计：每次打开都递增云端计数（每日可多次）；10 秒短节流防异常刷量
     this._trackVisit();
     wx.onNetworkStatusChange((res) => {
       if (res.isConnected && !this.globalData.fontOk) {
