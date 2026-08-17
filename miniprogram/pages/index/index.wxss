@@ -575,9 +575,9 @@ page, .card, .fav-sheet, .guide-box, .note-edit-box, .note-ask-box, .dev-sheet, 
 .tc-sel { animation: tcIn .3s ease-out; color: var(--seal-color, #a3382f); font-weight: 600; }
 @keyframes tcIn { from { transform: translateX(90rpx); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .tc-empty { font-size: 24rpx; opacity: .5; text-align: center; padding: 28rpx 0; }
-.tc-foot { display: flex; gap: 20rpx; margin-top: 26rpx; }
-.tc-clear { flex: 1; }
-.tc-ok { flex: 1; }
+.tc-foot { display: flex; gap: 20rpx; margin-top: 26rpx; align-items: stretch; }
+.tc-foot .btn { flex: 1 1 0; width: 0; min-width: 0; margin: 0; height: 88rpx; min-height: 88rpx; padding: 0 24rpx; line-height: 88rpx; box-sizing: border-box; font-size: 30rpx; }
+.tc-foot .btn.secondary { margin-top: 0; }
 
 /* 查询结果：□ 现象说明（显眼内联提示，非弹窗） */
 .results-note { margin: 12rpx 0 8rpx; padding: 16rpx 22rpx; font-size: 23rpx; line-height: 1.65; color: var(--seal-color, #a3382f); border: 2rpx dashed var(--seal-color, #a3382f); border-radius: 14rpx; }

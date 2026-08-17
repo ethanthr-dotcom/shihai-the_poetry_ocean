@@ -96,9 +96,22 @@ function chunkHasDynasty(c, dynasty) {
   return c.dynasty === dynasty;
 }
 
+function hasTypeFilter(type) {
+  if (!type) return false;
+  if (Array.isArray(type)) return type.length > 0;
+  return String(type).trim().length > 0;
+}
+
+function poemTypeMatches(poemType, type) {
+  const y = (poemType || "").trim();
+  if (Array.isArray(type)) return type.some((t) => (t || "").trim() === y);
+  return y === String(type).trim();
+}
+
 // 索引层筛选候选块
 function filterChunks(author, dynasty, type) {
-  const source = (author || type) && FULL_INDEX ? FULL_INDEX : INDEX;
+  const useFull = (author || hasTypeFilter(type)) && FULL_INDEX;
+  const source = useFull ? FULL_INDEX : INDEX;
   if (!source) return [];
   let chunks = source.chunks;
   if (dynasty) chunks = chunks.filter((c) => chunkHasDynasty(c, dynasty));
@@ -107,9 +120,9 @@ function filterChunks(author, dynasty, type) {
       (c) => Array.isArray(c.authors) && c.authors.some((a) => a.trim() === author)
     );
   }
-  if (type) {
+  if (hasTypeFilter(type)) {
     chunks = chunks.filter(
-      (c) => Array.isArray(c.types) && c.types.some((t) => t.trim() === type)
+      (c) => Array.isArray(c.types) && c.types.some((t) => poemTypeMatches(t, type))
     );
   }
   return chunks;
@@ -147,7 +160,7 @@ function shuffle(arr) {
 // 统一搜索：作者 / 朝代精确匹配，标题模糊（包含）匹配
 function matchKw(p, kw, type, mode) {
   if (/[\u25a1\ufffd]/.test((p.t ?? "") + (p.a ?? ""))) return false;
-  if (type && (Array.isArray(type) ? type.indexOf((p.y ?? "").trim()) < 0 : (p.y ?? "").trim() !== type)) return false;
+  if (hasTypeFilter(type) && !poemTypeMatches(p.y, type)) return false;
   if (!kw) return true;
   if (mode === "author") return (p.a ?? "").trim() === kw;
   if (mode === "dynasty") return (p.d ?? "").trim() === kw;
@@ -170,13 +183,13 @@ async function findRandomPoemByKw(kw, type, maxLen, mode) {
   const index = await loadIndex();
   if (!index) throw new Error("索引加载失败");
 
-  if ((kw || type) && !FULL_INDEX) {
+  if ((kw || hasTypeFilter(type)) && !FULL_INDEX) {
     await ensureFullIndex();
     if (!FULL_INDEX) throw new Error("筛选数据加载失败，请检查网络后重试");
   }
 
   // 优先用全索引分块（含 authors），作者/朝代收窄才能生效
-  let candidates = type ? filterChunks("", "", type) : (FULL_INDEX && FULL_INDEX.chunks ? FULL_INDEX.chunks.slice() : index.chunks.slice());
+  let candidates = hasTypeFilter(type) ? filterChunks("", "", type) : (FULL_INDEX && FULL_INDEX.chunks ? FULL_INDEX.chunks.slice() : index.chunks.slice());
   if (kw) {
     candidates = sortChunksByKw(candidates, kw, mode);
     if (mode === "author" || mode === "dynasty") candidates = candidates.filter((c) => chunkKwScore(c, kw, mode) > 0);
@@ -206,7 +219,7 @@ async function findRandomPoem(author, dynasty, type, maxLen) {
   const index = await loadIndex();
   if (!index) throw new Error("索引加载失败");
 
-  if ((author || type) && !FULL_INDEX) {
+  if ((author || hasTypeFilter(type)) && !FULL_INDEX) {
     await ensureFullIndex();
     if (!FULL_INDEX) throw new Error("筛选数据加载失败，请检查网络后重试");
   }
