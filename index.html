@@ -339,6 +339,10 @@
     .type-panel.open { display: block; }
     .type-panel .sheet-search { margin-bottom: 10px; }
     .dd-list { max-height: 38vh; overflow-y: auto; }
+    .dd-foot { display: flex; gap: 10px; margin-top: 10px; }
+    .dd-foot .dd-btn { flex: 1; width: 50%; margin: 0; padding: 0; height: 40px; line-height: 38px; box-sizing: border-box; font-size: 14px; letter-spacing: 2px; border-radius: 10px; cursor: pointer; font-family: inherit; }
+    .dd-btn.ghost { background: transparent; border: 1px solid var(--card-border); color: var(--text-color); }
+    .dd-btn.solid { background: var(--button-bg); border: 1px solid var(--button-bg); color: var(--button-text); }
 
     /* 卡片内收藏符号 */
     .card-body { position: relative; }
@@ -820,6 +824,10 @@
       <div id="typeDropdown" class="type-panel">
         <input id="typeQuery" class="input sheet-search" placeholder="搜索体裁，如：绝句">
         <div class="dd-list"><div id="typeGrid" class="type-grid"></div></div>
+        <div class="dd-foot">
+          <button id="ddClearBtn" class="dd-btn ghost" type="button">清空</button>
+          <button id="ddConfirmBtn" class="dd-btn solid" type="button">确认</button>
+        </div>
       </div>
       <div class="btn-row">
         <button id="randomButton" type="button">与诗相逢</button>
@@ -1100,6 +1108,15 @@
     const cardToolsInner = $("cardToolsInner");
     const keywordInput = $("keyword");
     let typeValue = "";
+    // 体裁多选数组（与小程序一致）：确认后写入 localStorage，刷新自动恢复
+    let typeSelArr = [];
+    try {
+      const tl0 = JSON.parse(localStorage.getItem("shihai-type-list-v1") || "null");
+      if (Array.isArray(tl0) && tl0.length) {
+        typeSelArr = tl0;
+        typeValue = tl0.length === 1 ? tl0[0] : tl0[0] + " · 等" + tl0.length + "种";
+      }
+    } catch (e) {}
     // ====== 搜索方式：作者 / 朝代 / 标题（搜索区标签与设置面板同步） ======
     const SEARCH_MODE_KEY = "shihai-search-mode-v1";
     let searchMode = "auto";
@@ -1174,7 +1191,7 @@
       if (!ek) return t;
       return t.split(ek).join('<b class="kw-hit">' + ek + "</b>");
     }
-    const typeInput = { get value() { return typeValue; } };
+    const typeInput = { get value() { return typeSelArr.length ? typeSelArr : typeValue; } };
     const progressEl = $("progress");
     function progressStart() {
       if (!progressEl) return;
@@ -1642,16 +1659,16 @@
       }
       if (type) {
         chunks = chunks.filter(
-          (c) => Array.isArray(c.types) && c.types.some((t) => t.trim() === type)
+          (c) => Array.isArray(c.types) && c.types.some((t) => (Array.isArray(type) ? type.indexOf(t.trim()) >= 0 : t.trim() === type))
         );
       }
       return chunks;
     }
 
-    // 统一搜索：作者 / 朝代精确匹配，标题模糊（包含）匹配
+    // 统一搜索：作者 / 朝代精确匹配，标题模糊（包含）匹配；体裁支持多选数组
     function matchKw(p, kw, type, mode) {
       if (/[\u25a1\ufffd]/.test((p.t ?? "") + (p.a ?? ""))) return false;
-      if (type && (p.y ?? "").trim() !== type) return false;
+      if (type && (Array.isArray(type) ? type.indexOf((p.y ?? "").trim()) < 0 : (p.y ?? "").trim() !== type)) return false;
       if (!kw) return true;
       if (mode === "author") return (p.a ?? "").trim() === kw;
       if (mode === "dynasty") return (p.d ?? "").trim() === kw;
@@ -1692,7 +1709,8 @@
       progressStart();
 
       const kw = forceRandom ? "" : keywordInput.value.trim();
-      const type = forceRandom ? "" : typeInput.value.trim();
+      const t0 = forceRandom ? "" : typeInput.value;
+      const type = Array.isArray(t0) ? t0 : String(t0 || "").trim();
 
       try {
         if (!INDEX) {
@@ -1829,10 +1847,14 @@
     button.addEventListener("click", () => {
       haptic();
       const kw = keywordInput.value.trim();
-      const type = typeValue.trim();
-      // 填了搜索词或体裁 → 列出全部匹配结果（无限分页）；未填 → 随机一首
-      if (kw || type) openResults(kw, type);
-      else { setListMode(false); loadRandomPoem(); }
+      const hasTypeArr = Array.isArray(typeSelArr) && typeSelArr.length > 0;
+      const typeDisplay = (typeValue || "").trim();
+      // 用真实的多选数组判断是否选了体裁；显示字符串仅供兜底（排除「xxx · 等N种」旧值）
+      const effTypeStr = typeDisplay && typeDisplay.indexOf(" · 等") < 0 && typeDisplay.indexOf("体裁：") < 0 ? typeDisplay : "";
+      // 填了搜索词或体裁 → 每次都重新开始搜索（重置列表）；未填 → 随机一首
+      if (kw || hasTypeArr || effTypeStr) { openResults(kw, hasTypeArr ? typeSelArr : effTypeStr); return; }
+      setListMode(false);
+      loadRandomPoem();
     });
 
     // 搜索方式标签与设置面板同步 + 输入实时识别提示
@@ -2548,12 +2570,26 @@
       lab.textContent = typeValue ? "体裁：" + typeValue : "体裁：点击选择";
       lab.classList.toggle("ph", !typeValue);
     }
+    // 下拉多选：临时选中集合 ddSel，点选不收起，底部清空/确认
+    let ddSel = [];
+    function ddConfirmLabel() {
+      const b = $("ddConfirmBtn");
+      if (b) b.textContent = ddSel.length ? "确认（已选" + ddSel.length + "）" : "确认";
+    }
+    function syncGridActive() {
+      $("typeGrid").querySelectorAll(".type-tag").forEach((el) => {
+        const t = el.dataset.t;
+        el.classList.toggle("active", t === "无" ? ddSel.length === 0 : ddSel.indexOf(t) >= 0);
+      });
+    }
     $("typeField").addEventListener("click", () => {
       haptic();
       const dd = $("typeDropdown");
       if (dd.classList.contains("open")) { closeTypeDropdown(); return; }
       $("typeQuery").value = "";
+      ddSel = typeSelArr.slice();
       renderTypeGrid();
+      ddConfirmLabel();
       dd.classList.add("open");
     });
     function renderTypeGrid() {
@@ -2562,14 +2598,19 @@
       grid.innerHTML = "";
       const mk = (t) => {
         const el = document.createElement("span");
-        el.className = "type-tag" + ((t === "无" ? !typeValue : t === typeValue) ? " active" : "");
+        el.dataset.t = t;
+        el.className = "type-tag" + ((t === "无" ? ddSel.length === 0 : ddSel.indexOf(t) >= 0) ? " active" : "");
         el.textContent = t;
         el.addEventListener("click", () => {
           haptic();
-          typeValue = t === "无" ? "" : (t === typeValue ? "" : t);
-          renderTypeChips();
-          renderTypeGrid();
-          closeTypeDropdown();
+          if (t === "无") ddSel = [];
+          else {
+            const i = ddSel.indexOf(t);
+            if (i >= 0) ddSel.splice(i, 1); else ddSel.push(t);
+          }
+          // 多选不自动收起，仅更新选中态
+          syncGridActive();
+          ddConfirmLabel();
         });
         return el;
       };
@@ -2595,6 +2636,20 @@
     }
     renderTypeChips();
     $("typeQuery").addEventListener("input", renderTypeGrid);
+    $("ddClearBtn").addEventListener("click", () => {
+      haptic();
+      ddSel = [];
+      syncGridActive();
+      ddConfirmLabel();
+    });
+    $("ddConfirmBtn").addEventListener("click", () => {
+      haptic();
+      typeSelArr = ddSel.slice();
+      try { localStorage.setItem("shihai-type-list-v1", JSON.stringify(typeSelArr)); } catch (e) {}
+      typeValue = typeSelArr.length === 0 ? "" : (typeSelArr.length === 1 ? typeSelArr[0] : typeSelArr[0] + " · 等" + typeSelArr.length + "种");
+      renderTypeChips();
+      closeTypeDropdown();
+    });
     // 下拉之外任意点击收起
     document.addEventListener("click", (e) => {
       if (!e.target.closest("#typeDropdown") && !e.target.closest("#typeField")) {
@@ -2604,7 +2659,7 @@
 
     // ====== 搜索结果列表：就地替换诗词卡片；页面触底翻页；手风琴；批量收藏 ======
     let resultChunks = [], resultCursor = 0, resultFilter = {}, resultBusy = false;
-    let results = [], resultsDone = false;
+    let results = [], resultsDone = false, pendingHits = [];
     let listMode = false, selMode = false, openItem = null;
     const selIds = new Set();
     const resultsPanel = $("resultsPanel");
@@ -2732,29 +2787,47 @@
       $("resultsFoot").textContent = "正在加载……";
       const { kw, type, mode } = resultFilter;
       const pg = $("resultsProgress");
+      const listEl = $("resultsList");
       let added = 0;
       try {
-        while (added < 20 && resultCursor < resultChunks.length) {
-          // 并行拉取 6 个数据块；每块加载完成立即上屏命中项（命中一个弹出一个）
+        const TARGET = 20; // 单次严格上限 20 条，滑到底再续载
+        while (added < TARGET && (pendingHits.length || resultCursor < resultChunks.length)) {
+          // 先上屏上一轮缓冲的命中
+          if (pendingHits.length) {
+            const take0 = pendingHits.splice(0, TARGET - added);
+            take0.forEach((p) => {
+              results.push(p);
+              listEl.appendChild(makeResultItem(p));
+            });
+            added += take0.length;
+            continue;
+          }
+          // 并行拉取 6 个数据块，命中先进缓冲，再按剩余额度上屏（避免单次超载）
           const batch = resultChunks.slice(resultCursor, resultCursor + 6);
           resultCursor += batch.length;
-          const listEl = $("resultsList");
+          const allHits = [];
           await Promise.all(batch.map(async (c) => {
-            const poems = await loadChunk(c.file);
-            const hits = poems.filter((p) => matchKw(p, kw, type, mode));
-            if (!hits.length) return;
-            await new Promise((r) => setTimeout(r, 0)); // 让出渲染
-            hits.forEach((p) => {
-              const withId = { ...p, id: favId(p) };
-              results.push(withId);
-              listEl.appendChild(makeResultItem(withId));
-              added += 1;
-            });
-            if (pg) pg.textContent = "正在检索：" + Math.min(resultCursor, resultChunks.length) + " / " + resultChunks.length + " 个数据块 · 已命中 " + results.length + " 首";
+            try {
+              const poems = await loadChunk(c.file);
+              poems.filter((p) => matchKw(p, kw, type, mode)).forEach((p) => {
+                allHits.push({ ...p, id: favId(p) });
+              });
+            } catch (e) {}
           }));
+          const room = Math.max(0, TARGET - added);
+          const take = allHits.slice(0, room);
+          pendingHits = pendingHits.concat(allHits.slice(room));
+          if (take.length) {
+            await new Promise((r) => setTimeout(r, 0)); // 让出渲染
+            take.forEach((p) => {
+              results.push(p);
+              listEl.appendChild(makeResultItem(p));
+            });
+            added += take.length;
+          }
           if (pg) pg.textContent = "正在检索：" + Math.min(resultCursor, resultChunks.length) + " / " + resultChunks.length + " 个数据块 · 已命中 " + results.length + " 首";
         }
-        resultsDone = resultCursor >= resultChunks.length;
+        resultsDone = resultCursor >= resultChunks.length && !pendingHits.length;
         updateResultsCount();
         if (pg) pg.style.display = "none";
         $("resultsFoot").textContent = resultsDone
@@ -2791,7 +2864,7 @@
       }
       if (!candidates.length) { showStatus("未找到匹配条件的诗词", true); return; }
       resultChunks = candidates; resultCursor = 0; resultFilter = { kw, type, mode };
-      results = []; resultsDone = false; resultBusy = false; openItem = null;
+      results = []; resultsDone = false; resultBusy = false; openItem = null; pendingHits = [];
       selMode = false; selIds.clear(); updateSelBar();
       $("resultsList").innerHTML = "";
       updateResultsCount();
