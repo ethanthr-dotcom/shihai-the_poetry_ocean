@@ -274,14 +274,14 @@
       <view class="tc-cols">
         <view class="tc-col">
           <view class="tc-col-h">已选（点击移出）</view>
-          <scroll-view class="tc-scroll tc-left" scroll-y="true" enhanced="true" show-scrollbar="false" catchtouchmove="noop">
+          <scroll-view class="tc-scroll tc-left" scroll-y="true" enhanced="true" show-scrollbar="false" catchtouchmove="noop" bindscroll="onTypeCircleScroll">
             <view wx:if="{{!typeSel.length}}" class="tc-empty">点右侧体裁选入</view>
             <view wx:for="{{typeSel}}" wx:key="*this" class="tc-item tc-sel" data-value="{{item}}" bindtap="onTypeCircleUnpick">{{item}}</view>
           </scroll-view>
         </view>
         <view class="tc-col">
           <view class="tc-col-h">可选（点击选入）</view>
-          <scroll-view class="tc-scroll tc-right" scroll-y="true" enhanced="true" show-scrollbar="false" catchtouchmove="noop">
+          <scroll-view class="tc-scroll tc-right" scroll-y="true" enhanced="true" show-scrollbar="false" catchtouchmove="noop" bindscroll="onTypeCircleScroll">
             <view wx:for="{{typePool}}" wx:key="*this" class="tc-item" data-value="{{item}}" bindtap="onTypeCirclePick">{{item}}</view>
             <view wx:if="{{!typePool.length}}" class="tc-empty">无匹配体裁</view>
           </scroll-view>

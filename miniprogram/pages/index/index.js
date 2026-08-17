@@ -507,6 +507,13 @@ Page({
     this.setData({ type: sel.length === 0 ? "" : (sel.length === 1 ? sel[0] : sel[0] + " · 等" + sel.length + "种") });
     this.hideSheet("typeCircleShow");
   },
+  // 滚动时节流触发震动反馈（每 120ms 一次，避免连击过频）
+  onTypeCircleScroll() {
+    const now = Date.now();
+    if (now - (this._tcScrollHapticAt || 0) < 120) return;
+    this._tcScrollHapticAt = now;
+    this.haptic();
+  },
   onTypeCircleClose() {
     this.hideSheet("typeCircleShow");
   },
