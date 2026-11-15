@@ -21,3 +21,14 @@ project.private.config.json
 miniprogram/project.config.json
 miniprogram/project.private.config.json
 TUTORIAL.md
+
+# iOS 工程：构建产物与大体积 .app/.ipa 不入库
+ios/build/
+ios/DerivedData/
+*.xcuserstate
+**/xcuserdata/
+*.ipa
+*.app/
+
+# 本机工作区私有数据
+.workbuddy/memory/

@@ -10,7 +10,7 @@
 
 > 掬古人之诗，养今时之心。
 
-一个面向中文古典诗词的开源数字化展示项目——收录 **344,240 首古诗词**，纯前端静态网站，无服务器、无后端依赖，通过现代 Web 技术让千年诗意重新被看见。
+一个面向中文古典诗词的开源数字化展示项目——收录 **344,240 首古诗词**，提供网页端、微信小程序与 **iOS 离线 App** 三种形态。网页端为纯前端静态网站；iOS App 把 34 万首诗词与全部资源打包进应用本体，运行时零云服务、零网络请求。
 
 <p align="center">
   <img src="docs/screenshots/web-card.png" width="30%" alt="诗海网页端诗词卡片" />
@@ -28,6 +28,7 @@
 - [🛠️ 技术栈](#️-技术栈)
 - [📁 仓库结构](#-仓库结构)
 - [🔧 本地部署指南（手把手教学）](#-本地部署指南手把手教学)
+- [🍎 iOS 离线 App（全量数据内置）](#-ios-离线-app全量数据内置)
 - [📚 数据说明](#-数据说明)
 - [🎨 主题与排版](#-主题与排版)
 - [📱 功能使用详解](#-功能使用详解)
@@ -127,9 +128,10 @@
 ```
 网页端    浏览器 ──► 单文件 index.html ──► data/*.json（本地相对路径 / jsDelivr CDN）
 小程序端  页面 ──► wx.cloud.callFunction ──► poemData / poemData2（数据 gzip 打包在函数内）
+iOS 端    WKWebView ──► shihai://localhost ──► .app/WebRoot/data/*.json（全量内置，零网络）
 ```
 
-两端共享同一套 `data/` 数据，小程序通过云函数中转。数据层逻辑在两端是同构的。
+三端共享同一套 `data/` 数据：网页端走相对路径或 CDN，小程序通过云函数中转，iOS App 直接读应用内嵌文件。数据层逻辑同构。
 
 | 部分 | 技术 |
 |---|---|
@@ -139,6 +141,7 @@
 | 字体 | 系统字体栈（Songti SC / STSong / SimSun / PingFang SC / serif），免网络加载，秒开 |
 | 数据分发 | jsDelivr CDN（网页）/ 微信云开发云函数（小程序，gzip 打包） |
 | 小程序 | 微信原生小程序 + 多端应用，Web 端功能完整移植 |
+| iOS App | Swift / UIKit + WKWebView + 自定义 `WKURLSchemeHandler`，全量数据内置、无云依赖 |
 | 数据管线 | Python：繁简转换（zhconv）、乱码清理、切片、两级索引 |
 
 ---
@@ -166,6 +169,12 @@ chinese-poetry-master/
 │   ├── poemData/                     #   数据函数 1（索引 + 分块 001-140）
 │   ├── poemData2/                    #   数据函数 2（分块 141-345）
 │   └── visitStats/                   #   访问统计
+├── ios/                              # iOS 离线 App（Xcode 工程，全量数据内置）
+│   ├── Shihai.xcodeproj/             #   工程与共享 scheme
+│   ├── Shihai/                       #   Swift 源码 / Info.plist / 图标 / 原生桥接 JS
+│   ├── scripts/                      #   资源装配、图标生成、一键构建
+│   └── build/                        #   本地构建产物（不入库）
+├── docs/IOS_APP_REPORT.md            # iOS 端构建与验证报告书
 ├── project.config.example.json       # 开发者工具配置模板
 ├── README.md                         # 中文说明（本文件）
 ├── README_EN.md                      # 英文说明
@@ -346,6 +355,45 @@ python3 tools/rebuild_search_index.py
 ```
 
 这个脚本会移除高频字符（出现在 >50% 分块中的字符），将搜索索引体积减小约 59%。
+
+---
+
+## 🍎 iOS 离线 App（全量数据内置）
+
+把小程序 / 网页端的完整能力装进一个原生 iOS 应用：**345 个诗词分块 + 3 个索引 + 全部图标资源 + 网页本体**全部嵌入 `.app`，运行时不请求任何服务器、CDN、云函数或云数据库。
+
+| 项 | 值 |
+|---|---|
+| 工程 | `ios/Shihai.xcodeproj`（Xcode 14+，iOS 16.0+，iPhone / iPad） |
+| Bundle ID | `com.shihai.poetry.ocean` |
+| 内置数据 | 348 个 JSON（约 90.3 MB），WebRoot 约 103 MB |
+| 产物 | `ios/build/Shihai-Simulator.app`、`Shihai-device-unsigned.app`、`Shihai-unsigned.ipa`（约 45 MB） |
+| 网络 | App 内部仅允许 `shihai://localhost`，外链由系统浏览器打开 |
+
+### 一键构建
+
+```bash
+bash ios/scripts/build.sh
+```
+
+脚本会：编译模拟器与真机 Release → 由 `prepare-webroot.py` 把 `index.html`（强制 `DATA_BASE = ""`、移除 CDN 引用）、`data/`、`assets/` 与原生桥接层装配进 `.app/WebRoot/` → 校验分块数量与离线配置 → 打包 IPA。全过程不联网。
+
+### 在 Xcode 中运行
+
+打开 `ios/Shihai.xcodeproj`，选择 `Shihai` scheme 与任意模拟器，`⌘R` 即可。构建阶段 `Embed Offline Web Bundle` 会自动把本地数据嵌入，无需手动拷贝。
+
+### 装到真机
+
+`Shihai-unsigned.ipa` 为未签名包。用 Xcode 打开工程，把 `DEVELOPMENT_TEAM` 改成自己的 Team ID 后 `Product → Archive → Distribute`，或用签名工具重签后安装。仓库内不携带任何证书或私钥。
+
+### 离线机制
+
+- `WKURLSchemeHandler` 把 `shihai://localhost/**` 映射到 `.app/WebRoot/**`，`fetch()` 同源可用，`localStorage` 正常持久化。
+- 导航策略只允许自定义 scheme；`http(s)` 外链转交系统浏览器，WebView 自身零网络请求。
+- `shihai-native.js` 补齐 iOS 原生能力：触感反馈、分享卡片存相册、收藏 txt 导出、主题背景同步、摇一摇、`localStorage` 兜底。
+- 不引入微信云开发 / 云函数 / 云数据库；访问统计、收藏、批注全部留在本机。
+
+构建与验证细节见 [iOS 端报告书](docs/IOS_APP_REPORT.md)。
 
 ---
 

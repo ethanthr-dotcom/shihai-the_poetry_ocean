@@ -10,7 +10,7 @@
 
 > Scoop the poems of the ancients, nourish the heart of today.
 
-An open-source digital showcase for classical Chinese poetry — featuring **344,240 poems**, built as a pure front-end static website with no server and no back-end dependencies, using modern web technology to let a thousand years of verse be seen anew.
+An open-source digital showcase for classical Chinese poetry — featuring **344,240 poems**, available as a website, a WeChat Mini Program, and a fully offline **iOS app**. The iOS build embeds the entire corpus and every asset inside the app bundle: zero cloud services, zero network requests at runtime.
 
 <p align="center">
   <img src="docs/screenshots/web-card.png" width="30%" alt="The Poetry Ocean web poem card" />
@@ -28,6 +28,7 @@ An open-source digital showcase for classical Chinese poetry — featuring **344
 - [🛠️ Tech Stack](#️-tech-stack)
 - [📁 Repository Structure](#-repository-structure)
 - [🔧 Local Deployment Guide (Step by Step)](#-local-deployment-guide-step-by-step)
+- [🍎 Offline iOS App (full corpus bundled)](#-offline-ios-app-full-corpus-bundled)
 - [📚 Data](#-data)
 - [🎨 Themes & Layouts](#-themes--layouts)
 - [📱 Feature Guide](#-feature-guide)
@@ -125,11 +126,12 @@ The Poetry Ocean is not only a poetry display site, but an exploration of how tr
 ### Architecture Overview
 
 ```
-Web            Browser ──► single-file index.html ──► data/*.json (local relative path / jsDelivr CDN)
-Mini-program   Pages    ──► wx.cloud.callFunction ──► poemData / poemData2 (data gzipped inside the function)
+Web            Browser    ──► single-file index.html ──► data/*.json (relative path / jsDelivr CDN)
+Mini-program   Pages       ──► wx.cloud.callFunction ──► poemData / poemData2 (gzip inside functions)
+iOS app        WKWebView   ──► shihai://localhost ──► .app/WebRoot/data/*.json (bundled, no network)
 ```
 
-Both platforms share the same `data/` directory. The mini-program accesses data through cloud functions. The data layer logic is isomorphic across both platforms.
+All three platforms share the same `data/` corpus. The iOS app reads it directly from the bundle. The data layer logic stays isomorphic.
 
 | Part | Technology |
 |------|------------|
@@ -139,6 +141,7 @@ Both platforms share the same `data/` directory. The mini-program accesses data 
 | Font | System font stack (Songti SC / STSong / SimSun / PingFang SC / serif), no network loading, instant display |
 | Data Distribution | jsDelivr CDN (web) / WeChat Cloud Development cloud functions (mini-program, gzipped) |
 | Mini-program | Native WeChat Mini Program + multi-platform app, full port of the web features |
+| iOS App | Swift / UIKit + WKWebView + custom `WKURLSchemeHandler`; full corpus bundled, no cloud dependency |
 | Data Pipeline | Python: traditional-to-simplified conversion (zhconv), garble cleanup, slicing, two-level index |
 
 ---
@@ -166,6 +169,12 @@ chinese-poetry-master/
 │   ├── poemData/                     #   Data function 1 (index + chunks 001-140)
 │   ├── poemData2/                    #   Data function 2 (chunks 141-345)
 │   └── visitStats/                   #   Visit counter
+├── ios/                              # Offline iOS app (Xcode project, full corpus bundled)
+│   ├── Shihai.xcodeproj/             #   Project + shared scheme
+│   ├── Shihai/                       #   Swift sources / Info.plist / icon / native bridge JS
+│   ├── scripts/                      #   Bundle assembly, icon generator, one-shot build
+│   └── build/                        #   Local build output (git-ignored)
+├── docs/IOS_APP_REPORT.md            # iOS build & verification report
 ├── project.config.example.json       # DevTools config template
 ├── README.md                         # Chinese readme
 ├── README_EN.md                      # English readme (this file)
@@ -346,6 +355,45 @@ python3 tools/rebuild_search_index.py
 ```
 
 This script removes high-frequency characters (appearing in >50% of chunks), reducing the search index size by ~59%.
+
+---
+
+## 🍎 Offline iOS App (full corpus bundled)
+
+A native iOS app carrying the complete feature set of the web version: **345 poem chunks + 3 indexes + all icons + the whole web UI** are embedded in the `.app`. No server, CDN, cloud function or cloud database is used at runtime.
+
+| Item | Value |
+|------|-------|
+| Project | `ios/Shihai.xcodeproj` (Xcode 14+, iOS 16.0+, iPhone / iPad) |
+| Bundle ID | `com.shihai.poetry.ocean` |
+| Bundled data | 348 JSON files (~90.3 MB), WebRoot ~103 MB |
+| Output | `ios/build/Shihai-Simulator.app`, `Shihai-device-unsigned.app`, `Shihai-unsigned.ipa` (~45 MB) |
+| Network | Only `shihai://localhost` inside the app; external links open in the system browser |
+
+### Build
+
+```bash
+bash ios/scripts/build.sh
+```
+
+The script compiles Release builds for simulator and device, runs `prepare-webroot.py` to embed `index.html` (forced `DATA_BASE = ""`, CDN references removed), `data/`, `assets/` and the native bridge into `.app/WebRoot/`, verifies chunk count and offline config, then zips the IPA. No network access during the build.
+
+### Run in Xcode
+
+Open `ios/Shihai.xcodeproj`, pick the `Shihai` scheme and any simulator, press `⌘R`. The `Embed Offline Web Bundle` build phase embeds local data automatically.
+
+### Install on a device
+
+`Shihai-unsigned.ipa` is unsigned. Set your own `DEVELOPMENT_TEAM` in the Xcode project, then `Product → Archive → Distribute`, or re-sign the IPA with your signing tool. No certificate or private key is stored in this repository.
+
+### How offline works
+
+- A `WKURLSchemeHandler` maps `shihai://localhost/**` to `.app/WebRoot/**`; same-origin `fetch()` and `localStorage` work normally.
+- Navigation policy allows only the custom scheme; `http(s)` links are handed to the system browser. The WebView itself makes zero network requests.
+- `shihai-native.js` adds iOS-native capabilities: haptics, saving share cards to Photos, exporting favorites as text, theme background sync, shake-to-refresh, and a `localStorage` fallback.
+- No WeChat Cloud Development / cloud functions / cloud database. Visit counts, favorites and annotations stay on-device.
+
+See the [iOS build report](docs/IOS_APP_REPORT.md) for verification details.
 
 ---
 
