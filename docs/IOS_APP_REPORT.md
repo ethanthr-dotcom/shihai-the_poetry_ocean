@@ -39,7 +39,8 @@ ios/
 │       └── LaunchBackground.colorset/Contents.json
 ├── scripts/
 │   ├── prepare-webroot.py              # 组装离线资源包并修补网页本体
-│   ├── make_appicon.sh                 # 生成 1024px 无 alpha 图标
+│   ├── make_appicon.sh                 # 图标生成入口（编译并调用 Swift 工具）
+│   ├── make_appicon.swift              # CoreGraphics 绘制：留白 + 圆形裁剪 + 投影
 │   └── build.sh                        # 一键构建 + 校验 + 打 IPA
 └── build/                              # 构建产物（.gitignore 忽略）
     ├── Shihai-Simulator.app            # 模拟器可直接安装
@@ -85,6 +86,7 @@ ios/
 | 设备 | iPhone / iPad（1,2） |
 | 版本 | 1.0.0 (1) |
 | 签名 | 工程启用 Automatic（Team `6LR3AB4299`）；命令行产物 `CODE_SIGNING_ALLOWED=NO` 未签名 |
+| App 图标 | 白底留白，圆形印章缩到画布约 64%，带柔和向下投影；`ios/scripts/make_appicon.swift` 生成，输出 1024px 无 alpha PNG |
 
 ---
 
@@ -131,7 +133,7 @@ bash ios/scripts/build.sh
 3. 校验两份 `.app` 内 `WebRoot/data/*.json` 数量与离线配置。
 4. 复制产物、`zip` 成未签名 IPA、写 `BUILD_INFO.txt`。
 
-构建脚本对环境的两处适配：图标生成改用 `sips`（避免 CLI 中 AppKit 初始化崩溃）；资源同步改为增量覆盖（避免构建期大批量删除被拦截）。
+构建脚本对环境的两处适配：图标生成改用纯 CoreGraphics 的命令行工具（避免 CLI 中 AppKit 初始化崩溃，同时支持圆形裁剪、留白与投影）；资源同步改为增量覆盖（避免构建期大批量删除被拦截）。
 
 ---
 

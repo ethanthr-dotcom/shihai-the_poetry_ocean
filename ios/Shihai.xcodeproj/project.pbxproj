@@ -28,6 +28,7 @@
 		B10000000000000000000009 /* prepare-webroot.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "prepare-webroot.py"; sourceTree = "<group>"; };
 		B1000000000000000000000A /* make_appicon.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = make_appicon.sh; sourceTree = "<group>"; };
 		B1000000000000000000000B /* build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build.sh; sourceTree = "<group>"; };
+		B1000000000000000000000C /* make_appicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = make_appicon.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +89,7 @@
 				B10000000000000000000009 /* prepare-webroot.py */,
 				B1000000000000000000000A /* make_appicon.sh */,
 				B1000000000000000000000B /* build.sh */,
+				B1000000000000000000000C /* make_appicon.swift */,
 			);
 			path = scripts;
 			sourceTree = "<group>";
@@ -246,7 +248,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6LR3AB4299;
+				DEVELOPMENT_TEAM = G49BQ948NC;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Shihai/Info.plist;
 				MARKETING_VERSION = 1.0.0;
@@ -265,7 +267,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6LR3AB4299;
+				DEVELOPMENT_TEAM = G49BQ948NC;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Shihai/Info.plist;
 				MARKETING_VERSION = 1.0.0;
