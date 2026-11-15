@@ -195,6 +195,8 @@ SyntaxError: Unexpected end of script @ index.html:4061
 
 仓库不含任何证书、私钥或 App Store 凭据；也未执行上架动作。
 
+**推送记录**：提交 `e1f379f` 已推送到 `origin/main`。本机网络代理对 `git push` 的 CONNECT 隧道返回 502，因此改走 GitHub Git Data API：逐个创建 20 个 blob → 基于远端 tree 创建新 tree → 用与本地完全一致的 tree / 作者 / 时间 / 提交信息创建 commit → 更新 `refs/heads/main`。远端 tree 与 commit SHA 均与本地一致并已核验，远端 `docs/IOS_APP_REPORT.md` 返回 200。
+
 ---
 
 ## 11. 已知边界
