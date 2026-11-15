@@ -145,6 +145,8 @@ final class OfflineWebController: NSObject, WKNavigationDelegate, WKUIDelegate, 
             if let hex = body["hex"] as? String { handleTheme(hex) }
         case "save-image":
             saveImage(body["dataURL"] as? String ?? "", filename: body["filename"] as? String ?? "诗海.png")
+        case "share-image":
+            shareImage(body["dataURL"] as? String ?? "", filename: body["filename"] as? String ?? "诗海.png")
         case "share-file":
             shareFile(body["dataURL"] as? String ?? "", filename: body["filename"] as? String ?? "诗海.txt")
         default:
@@ -190,6 +192,24 @@ final class OfflineWebController: NSObject, WKNavigationDelegate, WKUIDelegate, 
                 }
             }
         }
+    }
+
+    /// 预览面板「分享到微信」：调起系统分享面板，微信（已安装时）出现在列表中。
+    private func shareImage(_ raw: String, filename: String) {
+        guard let (data, _) = Self.decodeDataURL(raw), let image = UIImage(data: data) else {
+            toast("分享失败"); return
+        }
+        guard let vc = Self.topViewController() else { return }
+        if let weixin = URL(string: "weixin://"), !UIApplication.shared.canOpenURL(weixin) {
+            toast("未检测到微信，可在系统分享面板中选择其他方式")
+        }
+        let sheet = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        sheet.popoverPresentationController?.sourceView = vc.view
+        sheet.popoverPresentationController?.sourceRect = CGRect(
+            x: vc.view.bounds.midX, y: vc.view.bounds.midY, width: 1, height: 1
+        )
+        sheet.popoverPresentationController?.permittedArrowDirections = []
+        vc.present(sheet, animated: true)
     }
 
     private func shareFile(_ raw: String, filename: String) {

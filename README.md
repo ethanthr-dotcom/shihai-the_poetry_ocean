@@ -171,8 +171,10 @@ chinese-poetry-master/
 │   └── visitStats/                   #   访问统计
 ├── ios/                              # iOS 离线 App（Xcode 工程，全量数据内置）
 │   ├── Shihai.xcodeproj/             #   工程与共享 scheme
-│   ├── Shihai/                       #   Swift 源码 / Info.plist / 图标 / 原生桥接 JS
-│   ├── scripts/                      #   资源装配、图标生成、一键构建
+│   ├── Shihai/                       #   Swift 源码 / Info.plist / 字体 / 图标 / 桥接 JS
+│   │   ├── fonts/                    #     思源宋体 woff2
+│   │   └── AppIcon.icon/             #     Icon Composer 液态玻璃图标
+│   ├── scripts/                      #   资源装配、图标/字体生成、一键构建
 │   └── build/                        #   本地构建产物（不入库）
 ├── docs/IOS_APP_REPORT.md            # iOS 端构建与验证报告书
 ├── project.config.example.json       # 开发者工具配置模板
@@ -366,9 +368,15 @@ python3 tools/rebuild_search_index.py
 |---|---|
 | 工程 | `ios/Shihai.xcodeproj`（Xcode 14+，iOS 16.0+，iPhone / iPad） |
 | Bundle ID | `com.shihai.poetry.ocean` |
-| 内置数据 | 348 个 JSON（约 90.3 MB），WebRoot 约 103 MB |
-| 产物 | `ios/build/Shihai-Simulator.app`、`Shihai-device-unsigned.app`、`Shihai-unsigned.ipa`（约 45 MB） |
+| 内置数据 | 348 个 JSON（90.3 MB）+ 思源宋体 woff2（15.7 MB），WebRoot 约 120 MB |
+| 产物 | `ios/build/Shihai-Simulator.app`、`Shihai-device-unsigned.app`、`Shihai-unsigned.ipa`（约 65 MB） |
+| 字体 | 思源宋体 CN Regular / Bold 内嵌，页面正文与 Canvas 分享卡片共用 |
+| 图标 | Icon Composer `.icon` 液态玻璃自适应图标；传统 PNG 留白+阴影版作旧系统回退 |
 | 网络 | App 内部仅允许 `shihai://localhost`，外链由系统浏览器打开 |
+
+<p align="center">
+  <img src="docs/screenshots/ios-glass-icon.png" width="180" alt="诗海 iOS 液态玻璃图标" />
+</p>
 
 ### 一键构建
 
@@ -390,7 +398,9 @@ bash ios/scripts/build.sh
 
 - `WKURLSchemeHandler` 把 `shihai://localhost/**` 映射到 `.app/WebRoot/**`，`fetch()` 同源可用，`localStorage` 正常持久化。
 - 导航策略只允许自定义 scheme；`http(s)` 外链转交系统浏览器，WebView 自身零网络请求。
-- `shihai-native.js` 补齐 iOS 原生能力：触感反馈、分享卡片存相册、收藏 txt 导出、主题背景同步、摇一摇、`localStorage` 兜底。
+- `shihai-native.js` 补齐 iOS 原生能力：生成卡片后底部上弹预览（可全屏放大），并选择「分享到微信」（系统分享面板）或「保存到相册」；另有触感反馈、收藏 txt 导出、主题背景同步、摇一摇、`localStorage` 兜底。
+- 思源宋体 CN Regular / Bold 以 woff2 内嵌在包内，`@font-face` 与 Canvas `FONT` 同时切换，无 web font CDN；`ios/scripts/make_fonts.py` 可从本机 OTF 重新生成。
+- App 图标用 Icon Composer `.icon` 分层文档生成液态玻璃效果（Default / Dark / Clear / Tinted 由系统渲染），传统 PNG 图标保留作旧系统回退。
 - 不引入微信云开发 / 云函数 / 云数据库；访问统计、收藏、批注全部留在本机。
 
 构建与验证细节见 [iOS 端报告书](docs/IOS_APP_REPORT.md)。

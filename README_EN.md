@@ -171,8 +171,10 @@ chinese-poetry-master/
 │   └── visitStats/                   #   Visit counter
 ├── ios/                              # Offline iOS app (Xcode project, full corpus bundled)
 │   ├── Shihai.xcodeproj/             #   Project + shared scheme
-│   ├── Shihai/                       #   Swift sources / Info.plist / icon / native bridge JS
-│   ├── scripts/                      #   Bundle assembly, icon generator, one-shot build
+│   ├── Shihai/                       #   Swift sources / Info.plist / fonts / icons / bridge JS
+│   │   ├── fonts/                    #     Source Han Serif woff2
+│   │   └── AppIcon.icon/             #     Icon Composer Liquid Glass icon
+│   ├── scripts/                      #   Bundle assembly, icon/font generators, one-shot build
 │   └── build/                        #   Local build output (git-ignored)
 ├── docs/IOS_APP_REPORT.md            # iOS build & verification report
 ├── project.config.example.json       # DevTools config template
@@ -366,9 +368,15 @@ A native iOS app carrying the complete feature set of the web version: **345 poe
 |------|-------|
 | Project | `ios/Shihai.xcodeproj` (Xcode 14+, iOS 16.0+, iPhone / iPad) |
 | Bundle ID | `com.shihai.poetry.ocean` |
-| Bundled data | 348 JSON files (~90.3 MB), WebRoot ~103 MB |
-| Output | `ios/build/Shihai-Simulator.app`, `Shihai-device-unsigned.app`, `Shihai-unsigned.ipa` (~45 MB) |
+| Bundled data | 348 JSON files (90.3 MB) + Source Han Serif woff2 (15.7 MB), WebRoot ~120 MB |
+| Output | `ios/build/Shihai-Simulator.app`, `Shihai-device-unsigned.app`, `Shihai-unsigned.ipa` (~65 MB) |
+| Font | Source Han Serif CN Regular / Bold bundled, used by both the UI and Canvas share cards |
+| Icon | Icon Composer `.icon` with Liquid Glass; legacy PNG fallback for older systems |
 | Network | Only `shihai://localhost` inside the app; external links open in the system browser |
+
+<p align="center">
+  <img src="docs/screenshots/ios-glass-icon.png" width="180" alt="Shihai iOS Liquid Glass icon" />
+</p>
 
 ### Build
 
@@ -390,7 +398,9 @@ Open `ios/Shihai.xcodeproj`, pick the `Shihai` scheme and any simulator, press `
 
 - A `WKURLSchemeHandler` maps `shihai://localhost/**` to `.app/WebRoot/**`; same-origin `fetch()` and `localStorage` work normally.
 - Navigation policy allows only the custom scheme; `http(s)` links are handed to the system browser. The WebView itself makes zero network requests.
-- `shihai-native.js` adds iOS-native capabilities: haptics, saving share cards to Photos, exporting favorites as text, theme background sync, shake-to-refresh, and a `localStorage` fallback.
+- `shihai-native.js` adds iOS-native capabilities: a bottom sheet that previews a generated card (tap to zoom full-screen) with **Share to WeChat** (system share sheet) and **Save to Photos** actions, plus haptics, exporting favorites as text, theme background sync, shake-to-refresh, and a `localStorage` fallback.
+- Source Han Serif CN Regular / Bold is bundled as woff2; both the page CSS and the Canvas `FONT` use it. `ios/scripts/make_fonts.py` regenerates it from local OTF files. No web font CDN.
+- The app icon is an Icon Composer `.icon` layered document: the system renders Liquid Glass for Default / Dark / Clear / Tinted. A legacy PNG icon remains as the older-system fallback.
 - No WeChat Cloud Development / cloud functions / cloud database. Visit counts, favorites and annotations stay on-device.
 
 See the [iOS build report](docs/IOS_APP_REPORT.md) for verification details.

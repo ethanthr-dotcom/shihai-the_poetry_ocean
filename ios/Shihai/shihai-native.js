@@ -33,7 +33,7 @@
   };
   window.ShihaiNative = native;
 
-  /* ---- 运行期诊断：JS 异常写入 App Documents/shihai-debug.log ---- */
+  /* ---- 运行期诊断：JS 异常 / 字体加载失败写入 App Documents/shihai-debug.log ---- */
   window.addEventListener("error", function (e) {
     post("debug", { msg: "JS ERROR: " + e.message + " @" + (e.filename || "") + ":" + (e.lineno || 0) });
   });
@@ -71,7 +71,128 @@
     });
   } catch (e) {}
 
-  /* ---- 下载拦截：WKWebView 不支持 a[download]，转交原生保存 / 分享 ---- */
+  /* ---- 分享卡片预览浮层：底部上弹，预览图 + 分享到微信 / 保存到相册 ---- */
+  var SHARE_CSS = '' +
+    '.sh-mask{position:fixed;inset:0;z-index:2200;display:flex;align-items:flex-end;justify-content:center;' +
+    'background:rgba(0,0,0,.5);animation:shFade .22s ease}' +
+    '.sh-sheet{position:relative;width:100%;max-width:560px;box-sizing:border-box;' +
+    'background:var(--bg-color,#fff);color:var(--text-color,#333);' +
+    'border-top:1px solid var(--accent-color,#888);border-radius:18px 18px 0 0;' +
+    'padding:18px 20px calc(20px + env(safe-area-inset-bottom));' +
+    'box-shadow:0 -12px 40px rgba(0,0,0,.25);animation:shUp .3s cubic-bezier(.2,.8,.2,1)}' +
+    '.sh-head{font-size:16px;font-weight:600;text-align:center;letter-spacing:2px;margin-bottom:12px}' +
+    '.sh-preview{display:block;max-width:100%;max-height:46vh;margin:0 auto 14px;object-fit:contain;' +
+    'border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.18);cursor:zoom-in}' +
+    '.sh-actions{display:flex;gap:10px}' +
+    '.sh-btn{flex:1;padding:11px 6px;border-radius:10px;font-size:14px;letter-spacing:1px;cursor:pointer;' +
+    '-webkit-appearance:none;appearance:none;border:1px solid var(--card-border,#ddd);' +
+    'background:var(--input-bg,#fff);color:var(--text-color,#333)}' +
+    '.sh-btn.primary{background:var(--accent-color,#4f5f4a);color:var(--button-text,#fff);' +
+    'border-color:var(--accent-color,#4f5f4a)}' +
+    '.sh-tip{margin-top:10px;font-size:11px;line-height:1.6;text-align:center;opacity:.65}' +
+    '.sh-close{position:absolute;top:10px;right:14px;width:28px;height:28px;border:0;border-radius:50%;' +
+    'background:transparent;color:var(--meta-color,#888);font-size:17px;line-height:28px;' +
+    '-webkit-appearance:none;appearance:none;cursor:pointer}' +
+    '.sh-full{position:fixed;inset:0;z-index:2400;background:rgba(0,0,0,.92);display:flex;' +
+    'align-items:center;justify-content:center;padding:16px}' +
+    '.sh-full img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}' +
+    '@keyframes shFade{from{opacity:0}to{opacity:1}}' +
+    '@keyframes shUp{from{transform:translateY(100%)}to{transform:none}}';
+
+  var styleInjected = false;
+  var shareSheet = null;
+  function ensureShareStyle() {
+    if (styleInjected) return;
+    var style = document.createElement("style");
+    style.id = "shihai-share-style";
+    style.textContent = SHARE_CSS;
+    document.head.appendChild(style);
+    styleInjected = true;
+  }
+  function closeShareSheet() {
+    if (shareSheet && shareSheet.parentNode) shareSheet.parentNode.removeChild(shareSheet);
+    shareSheet = null;
+  }
+  function showFullPreview(src) {
+    var full = document.createElement("div");
+    full.className = "sh-full";
+    var img = document.createElement("img");
+    img.src = src;
+    img.alt = "分享卡片全屏预览";
+    full.appendChild(img);
+    full.addEventListener("click", function () {
+      if (full.parentNode) full.parentNode.removeChild(full);
+    });
+    document.body.appendChild(full);
+  }
+  function showShareSheet(dataURL, filename) {
+    try {
+      closeShareSheet();
+      ensureShareStyle();
+      var mask = document.createElement("div");
+      mask.className = "sh-mask";
+      var sheet = document.createElement("div");
+      sheet.className = "sh-sheet";
+
+      var close = document.createElement("button");
+      close.className = "sh-close";
+      close.type = "button";
+      close.setAttribute("aria-label", "关闭");
+      close.textContent = "✕";
+      close.addEventListener("click", function (e) { e.stopPropagation(); closeShareSheet(); });
+
+      var head = document.createElement("div");
+      head.className = "sh-head";
+      head.textContent = "分享卡片";
+
+      var img = document.createElement("img");
+      img.className = "sh-preview";
+      img.src = dataURL;
+      img.alt = "诗词分享卡片预览";
+      img.addEventListener("click", function (e) { e.stopPropagation(); showFullPreview(dataURL); });
+
+      var actions = document.createElement("div");
+      actions.className = "sh-actions";
+
+      function makeBtn(text, primary, handler) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "sh-btn" + (primary ? " primary" : "");
+        b.textContent = text;
+        b.addEventListener("click", function (e) {
+          e.stopPropagation();
+          post("haptic", {});
+          handler();
+        });
+        return b;
+      }
+      actions.appendChild(makeBtn("💬 分享到微信", true, function () {
+        post("share-image", { dataURL: dataURL, filename: filename });
+      }));
+      actions.appendChild(makeBtn("🖼️ 保存到相册", false, function () {
+        post("save-image", { dataURL: dataURL, filename: filename });
+      }));
+
+      var tip = document.createElement("div");
+      tip.className = "sh-tip";
+      tip.textContent = "在系统分享面板中选择微信 · 点图片全屏预览 · 点空白处关闭";
+
+      sheet.appendChild(close);
+      sheet.appendChild(head);
+      sheet.appendChild(img);
+      sheet.appendChild(actions);
+      sheet.appendChild(tip);
+      mask.appendChild(sheet);
+      mask.addEventListener("click", function (e) { if (e.target === mask) closeShareSheet(); });
+      document.body.appendChild(mask);
+      shareSheet = mask;
+    } catch (e) {
+      // 预览失败时退回直接保存，保证功能可用
+      post("save-image", { dataURL: dataURL, filename: filename });
+    }
+  }
+
+  /* ---- 下载拦截：图片先弹预览，文本交给系统分享 ---- */
   var blobMap = new Map();
   try {
     var createObjectURL = URL.createObjectURL.bind(URL);
@@ -93,7 +214,7 @@
     var href = this.getAttribute("href") || "";
     var name = this.download;
     if (href.indexOf("data:image/") === 0) {
-      post("save-image", { dataURL: href, filename: name });
+      showShareSheet(href, name);
       return;
     }
     if (href.indexOf("blob:") === 0) {
@@ -129,5 +250,19 @@
   document.addEventListener("DOMContentLoaded", function () {
     syncTheme();
     post("ready", {});
+    // 预载内嵌思源宋体，保证 Canvas 生成卡片时字体已就绪
+    try {
+      if (document.fonts && document.fonts.load) {
+        document.fonts.load('400 20px "Source Han Serif CN"').catch(function () {});
+        document.fonts.load('700 20px "Source Han Serif CN"').catch(function () {});
+        window.addEventListener("load", function () {
+          setTimeout(function () {
+            if (!document.fonts.check('20px "Source Han Serif CN"')) {
+              post("debug", { msg: "FONT NOT LOADED: Source Han Serif CN" });
+            }
+          }, 1500);
+        });
+      }
+    } catch (e) {}
   });
 })();

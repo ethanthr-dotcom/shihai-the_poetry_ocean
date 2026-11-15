@@ -23,6 +23,17 @@ IOS_HEAD = '''<head>
   <script src="shihai-native.js"></script>
   <style id="shihai-ios">html,body{-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}</style>'''
 
+# 放在 </head> 前，确保覆盖原始 :root 里的字体变量与硬编码的 Songti 字体栈
+FONT_CSS = '''  <style id="shihai-ios-font">
+    @font-face { font-family: "Source Han Serif CN"; src: url("fonts/SourceHanSerifCN-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: "Source Han Serif CN"; src: url("fonts/SourceHanSerifCN-Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+    :root { --font-body: "Source Han Serif CN", "Songti SC", serif; --font-content: "Source Han Serif CN", "Songti SC", serif; }
+    input, input::placeholder, textarea, button { font-family: "Source Han Serif CN", "Songti SC", serif !important; }
+  </style>'''
+
+CANVAS_FONT_OLD = '''const FONT = '"Songti SC", "STSong", "SimSun", "PingFang SC", serif';'''
+CANVAS_FONT_NEW = '''const FONT = '"Source Han Serif CN", "Songti SC", serif';'''
+
 
 def signature(folder: pathlib.Path) -> dict:
     files = sorted(p for p in folder.iterdir() if p.is_file())
@@ -68,6 +79,13 @@ def make_offline_html(repo: pathlib.Path, dest: pathlib.Path) -> str:
     if html.count("<head>") != 1:
         raise RuntimeError("index.html 的 <head> 标记异常")
     html = html.replace("<head>", IOS_HEAD, 1)
+    font_hits = html.count(CANVAS_FONT_OLD)
+    if font_hits != 2:
+        raise RuntimeError("Canvas 字体常量数量异常: %d" % font_hits)
+    html = html.replace(CANVAS_FONT_OLD, CANVAS_FONT_NEW)
+    if html.count("</head>") != 1:
+        raise RuntimeError("index.html 的 </head> 标记异常")
+    html = html.replace("</head>", FONT_CSS + "\n</head>", 1)
     if "jsdelivr" in html:
         raise RuntimeError("离线版 index.html 仍残留 CDN 引用")
     (dest / "index.html").write_text(html, encoding="utf-8")
@@ -81,7 +99,11 @@ def main() -> int:
     repo = pathlib.Path(sys.argv[1]).resolve()
     dest = pathlib.Path(sys.argv[2]).resolve()
     ios = repo / "ios"
-    for required in ("index.html", "data", "assets", "ios/Shihai/shihai-native.js"):
+    for required in (
+        "index.html", "data", "assets", "ios/Shihai/shihai-native.js",
+        "ios/Shihai/fonts/SourceHanSerifCN-Regular.woff2",
+        "ios/Shihai/fonts/SourceHanSerifCN-Bold.woff2",
+    ):
         if not (repo / required).exists():
             raise RuntimeError("缺少必需文件: " + required)
     dest.mkdir(parents=True, exist_ok=True)
@@ -99,7 +121,7 @@ def main() -> int:
         "bytes": (repo / "index.html").stat().st_size,
         "mtime": int((repo / "index.html").stat().st_mtime),
     }
-    stamp = {k: v for k, v in old_stamp.items() if k in ("data", "assets") and isinstance(v, dict)}
+    stamp = {k: v for k, v in old_stamp.items() if k in ("data", "assets", "fonts") and isinstance(v, dict)}
     if old_stamp.get("index") == html_sig and (dest / "index.html").exists():
         stamp["index"] = html_sig
         html_hash = "cached"
@@ -110,6 +132,7 @@ def main() -> int:
     shutil.copy2(ios / "Shihai" / "shihai-native.js", dest / "shihai-native.js")
     copy_tree(repo / "data", dest / "data", stamp, "data")
     copy_tree(repo / "assets", dest / "assets", stamp, "assets")
+    copy_tree(ios / "Shihai" / "fonts", dest / "fonts", stamp, "fonts")
     stamp_path.write_text(json.dumps(stamp, ensure_ascii=False, sort_keys=True), encoding="utf-8")
 
     chunks = [p for p in (dest / "data").iterdir() if p.suffix == ".json"]
@@ -119,13 +142,19 @@ def main() -> int:
     offline = (dest / "index.html").read_text(encoding="utf-8")
     if "jsdelivr" in offline or 'const DATA_BASE = "";' not in offline:
         raise RuntimeError("离线校验失败")
+    for font_name in ("SourceHanSerifCN-Regular.woff2", "SourceHanSerifCN-Bold.woff2"):
+        if not (dest / "fonts" / font_name).is_file():
+            raise RuntimeError("字体未内嵌: " + font_name)
+    if offline.count(CANVAS_FONT_NEW) != 2:
+        raise RuntimeError("Canvas 字体未切换到思源宋体")
     print(
-        "[WebRoot] index=%s chunks=%d data=%.1f MB assets=%d -> %s"
+        "[WebRoot] index=%s chunks=%d data=%.1f MB assets=%d fonts=%d -> %s"
         % (
             html_hash,
             len(chunks),
             total_bytes / 1024 / 1024,
             len([p for p in (dest / "assets").rglob("*") if p.is_file()]),
+            len([p for p in (dest / "fonts").iterdir() if p.is_file()]),
             dest,
         )
     )

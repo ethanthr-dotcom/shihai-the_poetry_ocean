@@ -343,6 +343,18 @@
     .card-fav { position: absolute; top: 10px; right: 14px; z-index: 3; background: none; border: 0; width: 26px; height: 26px; padding: 2px; cursor: pointer; color: var(--meta-color); opacity: .55; transition: opacity .2s, color .2s; font-family: inherit; box-sizing: border-box; }
     .card-fav:hover { opacity: .95; }
     .card-fav.on { color: var(--seal-color, #a3382f); opacity: 1; }
+    /* 卡片角标：清除 WebKit 按钮原生外观（灰底方块），统一基线并收进圆角边框内侧 */
+    .card > .card-fav, .card > .card-note {
+      -webkit-appearance: none; appearance: none;
+      background: transparent; border: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0; line-height: 0;
+      width: 26px; height: 26px; box-sizing: border-box;
+      top: 20px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card > .card-fav { right: 22px; }
+    .card > .card-note { right: 56px; }
 
     /* 搜索结果就地列表 */
     .results-panel { margin-top: 22px; }
